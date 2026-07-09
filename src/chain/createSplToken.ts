@@ -1,13 +1,7 @@
 /**
- * Create a real SPL token on Solana using the connected Phantom wallet.
- * User signs all transactions — no server private key needed.
+ * Mint a real SPL token into the connected Phantom wallet.
  */
-import {
-  Keypair,
-  SystemProgram,
-  Transaction,
-  PublicKey,
-} from '@solana/web3.js'
+import { Keypair, SystemProgram, Transaction, PublicKey } from '@solana/web3.js'
 import {
   MINT_SIZE,
   TOKEN_PROGRAM_ID,
@@ -27,9 +21,7 @@ export type CreateSplParams = {
   name: string
   symbol: string
   decimals?: number
-  /** human-readable total supply (e.g. 1_000_000_000) */
   supply?: number
-  /** revoke mint authority after minting (fixed supply) */
   revokeMint?: boolean
 }
 
@@ -56,25 +48,19 @@ export async function createSplTokenOnChain(
   } = params
 
   if (!wallet.publicKey || !wallet.sendTransaction) {
-    throw new Error('Connect Phantom wallet first')
+    throw new Error('Connect Phantom first')
   }
 
   const connection = getConnection()
   const payer = wallet.publicKey
   const mintKeypair = Keypair.generate()
   const mint = mintKeypair.publicKey
-
   const lamports = await getMinimumBalanceForRentExemptMint(connection)
   const ata = getAssociatedTokenAddressSync(mint, payer)
-
-  // raw supply with decimals
   const rawSupply = BigInt(supply) * BigInt(10 ** decimals)
-  // mintTo only accepts number | bigint up to safe range — use bigint
 
-  const tx1 = new Transaction()
-
-  // 1) Create mint account
-  tx1.add(
+  const tx = new Transaction()
+  tx.add(
     SystemProgram.createAccount({
       fromPubkey: payer,
       newAccountPubkey: mint,
@@ -83,58 +69,20 @@ export async function createSplTokenOnChain(
       programId: TOKEN_PROGRAM_ID,
     }),
   )
-
-  // 2) Initialize mint (payer = mint authority, no freeze)
-  tx1.add(
-    createInitializeMint2Instruction(
-      mint,
-      decimals,
-      payer, // mint authority
-      null, // freeze authority none
-      TOKEN_PROGRAM_ID,
-    ),
-  )
-
-  // 3) Create ATA for user
-  tx1.add(
-    createAssociatedTokenAccountInstruction(
-      payer,
-      ata,
-      payer,
-      mint,
-    ),
-  )
-
-  // 4) Mint full supply to user
-  tx1.add(
-    createMintToInstruction(
-      mint,
-      ata,
-      payer,
-      rawSupply,
-    ),
-  )
-
-  // 5) Optionally revoke mint authority (fixed supply)
+  tx.add(createInitializeMint2Instruction(mint, decimals, payer, null, TOKEN_PROGRAM_ID))
+  tx.add(createAssociatedTokenAccountInstruction(payer, ata, payer, mint))
+  tx.add(createMintToInstruction(mint, ata, payer, rawSupply))
   if (revokeMint) {
-    tx1.add(
-      createSetAuthorityInstruction(
-        mint,
-        payer,
-        AuthorityType.MintTokens,
-        null,
-      ),
-    )
+    tx.add(createSetAuthorityInstruction(mint, payer, AuthorityType.MintTokens, null))
   }
 
   const { blockhash, lastValidBlockHeight } =
     await connection.getLatestBlockhash('confirmed')
+  tx.feePayer = payer
+  tx.recentBlockhash = blockhash
+  tx.partialSign(mintKeypair)
 
-  tx1.feePayer = payer
-  tx1.recentBlockhash = blockhash
-  tx1.partialSign(mintKeypair)
-
-  const signature = await wallet.sendTransaction(tx1, connection, {
+  const signature = await wallet.sendTransaction(tx, connection, {
     skipPreflight: false,
     preflightCommitment: 'confirmed',
     maxRetries: 3,
@@ -145,10 +93,9 @@ export async function createSplTokenOnChain(
     'confirmed',
   )
   if (conf.value.err) {
-    throw new Error(`Token create failed: ${JSON.stringify(conf.value.err)}`)
+    throw new Error(`Mint failed: ${JSON.stringify(conf.value.err)}`)
   }
 
-  // name/symbol stored off-chain until Metaplex metadata is added
   void name
   void symbol
 

@@ -8,7 +8,7 @@ import {
 } from '@solana/web3.js'
 import type { WalletContextState } from '@solana/wallet-adapter-react'
 import { Buffer } from 'buffer'
-import { RPC_URL, FEE_RECIPIENT } from './config'
+import { RPC_URL, FEE_RECIPIENT, CLUSTER } from './config'
 
 const MEMO_PROGRAM = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr')
 
@@ -26,10 +26,7 @@ export async function fetchSolBalance(address: string): Promise<number> {
   }
 }
 
-/**
- * Send real SOL from connected wallet to platform treasury.
- * Returns transaction signature after confirmation.
- */
+/** Send SOL from connected wallet → treasury. Returns tx signature. */
 export async function paySolOnChain(params: {
   wallet: WalletContextState
   amountSol: number
@@ -49,8 +46,13 @@ export async function paySolOnChain(params: {
   const connection = getConnection()
   const balance = await connection.getBalance(wallet.publicKey)
   if (balance < lamports + 5000) {
+    const have = balance / LAMPORTS_PER_SOL
+    const tip =
+      CLUSTER === 'mainnet-beta'
+        ? ''
+        : ' Get free SOL: https://faucet.solana.com'
     throw new Error(
-      `Insufficient SOL on-chain. Need ~${amountSol.toFixed(4)} SOL + fees (have ${(balance / LAMPORTS_PER_SOL).toFixed(4)} SOL). ${import.meta.env.VITE_SOLANA_CLUSTER === 'mainnet-beta' ? '' : 'Get free SOL: https://faucet.solana.com'}`,
+      `Insufficient SOL. Need ~${amountSol.toFixed(4)} + fees (have ${have.toFixed(4)}).${tip}`,
     )
   }
 
@@ -75,7 +77,7 @@ export async function paySolOnChain(params: {
     new TransactionInstruction({
       keys: [{ pubkey: wallet.publicKey, isSigner: true, isWritable: true }],
       programId: MEMO_PROGRAM,
-      data: Buffer.from(memo, 'utf8'),
+      data: Buffer.from(memo.slice(0, 200), 'utf8'),
     }),
   )
 
@@ -89,10 +91,8 @@ export async function paySolOnChain(params: {
     { signature, blockhash, lastValidBlockHeight },
     'confirmed',
   )
-
   if (conf.value.err) {
-    throw new Error(`On-chain tx failed: ${JSON.stringify(conf.value.err)}`)
+    throw new Error(`Tx failed: ${JSON.stringify(conf.value.err)}`)
   }
-
   return signature
 }

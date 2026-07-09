@@ -5,12 +5,11 @@ import { TokenCard } from './TokenCard'
 import { BountiesStrip } from './BountiesStrip'
 import { useTokenFeed } from '../hooks/useTokenFeed'
 
-/** Map UI chips → store sort */
-const CHIPS: { id: SortTab | 'mayhem'; label: string; emoji?: string }[] = [
-  { id: 'market_cap', label: 'Movers', emoji: '⭐' },
-  { id: 'newest', label: 'Mayhem', emoji: '🔥' },
+const CHIPS: { id: SortTab; label: string }[] = [
+  { id: 'movers', label: '⭐ Movers' },
+  { id: 'mayhem', label: '🔥 Mayhem' },
   { id: 'featured', label: 'Featured' },
-  { id: 'about_to_graduate', label: 'Graduate' },
+  { id: 'graduate', label: 'Graduate' },
 ]
 
 export function TokenBoard() {
@@ -22,22 +21,18 @@ export function TokenBoard() {
   const sentinel = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 350)
+    const t = setTimeout(() => setBooting(false), 300)
     return () => clearTimeout(t)
   }, [])
 
-  useEffect(() => {
-    setVisible(24)
-  }, [sort])
+  useEffect(() => setVisible(24), [sort])
 
   useEffect(() => {
     const el = sentinel.current
     if (!el) return
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisible((v) => Math.min(v + 16, sorted.length))
-        }
+        if (entries[0]?.isIntersecting) setVisible((v) => Math.min(v + 16, sorted.length))
       },
       { rootMargin: '280px' },
     )
@@ -49,44 +44,27 @@ export function TokenBoard() {
   const trending = sorted.slice(0, 8)
 
   return (
-    <div className="mx-auto max-w-lg px-3 pb-24 pt-3 sm:max-w-7xl sm:px-4">
-      {/* Chip row — Movers / Mayhem like screenshots */}
-      <div className="mb-4 flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {CHIPS.map((c) => {
-          const active = sort === c.id
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setSort(c.id as SortTab)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition ${
-                active
-                  ? 'bg-[#86efac] text-black'
-                  : 'bg-[#1a1b22] text-[#9a9ba3] hover:text-white'
-              }`}
-            >
-              {c.emoji ? `${c.emoji} ` : ''}
-              {c.label}
-            </button>
-          )
-        })}
-        <button
-          type="button"
-          className="ml-auto shrink-0 rounded-full bg-[#1a1b22] p-2 text-[#6b6d78]"
-          aria-label="Filters"
-        >
-          ⚙
-        </button>
+    <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-5xl">
+      <div className="no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto">
+        {CHIPS.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setSort(c.id)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold ${
+              sort === c.id ? 'bg-[#86efac] text-black' : 'bg-[#1a1b22] text-[#9a9ba3]'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
       </div>
 
       <BountiesStrip />
 
-      {/* Trending strip */}
       <section className="mb-5">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-[15px] font-bold text-white">Trending now</h2>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <h2 className="mb-2 text-[15px] font-bold">Trending now</h2>
+        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
           {trending.map((t) => (
             <div key={`tr_${t.id}`} className="w-[140px] shrink-0">
               <TokenCard token={t} />
@@ -95,10 +73,10 @@ export function TokenBoard() {
         </div>
       </section>
 
-      <div className="mb-2 flex items-center justify-between text-[12px] text-[#6b6d78]">
+      <div className="mb-2 flex justify-between text-[12px] text-[#6b6d78]">
         <span>{count.toLocaleString()} coins live</span>
         <span>
-          showing {shown.length}/{count}
+          {shown.length}/{count}
         </span>
       </div>
 
@@ -112,16 +90,14 @@ export function TokenBoard() {
         <div className="rounded-2xl border border-dashed border-[#2a2b33] py-16 text-center">
           <p className="text-3xl">💊</p>
           <p className="mt-2 font-semibold">no coins found</p>
-          <p className="text-sm text-[#8b8d97]">try another search or create one</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {shown.map((t) => (
             <TokenCard key={t.id} token={t} />
           ))}
         </div>
       )}
-
       <div ref={sentinel} className="h-10" />
     </div>
   )

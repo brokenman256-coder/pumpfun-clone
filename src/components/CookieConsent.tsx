@@ -1,37 +1,25 @@
 import { useEffect, useState } from 'react'
 
-/**
- * Cookie / privacy sheet styled like pump.fun mobile.
- */
 export function CookieConsent() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     try {
-      if (localStorage.getItem('pump_cookie_ok') === '1') return
+      if (localStorage.getItem('pump_cookie_ok')) return
     } catch {
-      /* ignore */
+      /* */
     }
-    const t = window.setTimeout(() => setOpen(true), 800)
+    const t = window.setTimeout(() => setOpen(true), 700)
     return () => clearTimeout(t)
   }, [])
 
   if (!open) return null
 
-  function accept() {
+  function done(v: string) {
     try {
-      localStorage.setItem('pump_cookie_ok', '1')
+      localStorage.setItem('pump_cookie_ok', v)
     } catch {
-      /* ignore */
-    }
-    setOpen(false)
-  }
-
-  function reject() {
-    try {
-      localStorage.setItem('pump_cookie_ok', '0')
-    } catch {
-      /* ignore */
+      /* */
     }
     setOpen(false)
   }
@@ -45,24 +33,13 @@ export function CookieConsent() {
           personalized content.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={reject}
-            className="rounded-full border border-[#3a3b44] px-3.5 py-2 text-[12px] font-semibold text-white"
-          >
+          <button type="button" onClick={() => done('0')} className="rounded-full border border-[#3a3b44] px-3.5 py-2 text-[12px] font-semibold">
             Reject all
           </button>
-          <button
-            type="button"
-            className="rounded-full border border-[#3a3b44] px-3.5 py-2 text-[12px] font-semibold text-white"
-          >
+          <button type="button" className="rounded-full border border-[#3a3b44] px-3.5 py-2 text-[12px] font-semibold">
             Customize
           </button>
-          <button
-            type="button"
-            onClick={accept}
-            className="ml-auto rounded-full bg-[#86efac] px-4 py-2 text-[12px] font-bold text-black"
-          >
+          <button type="button" onClick={() => done('1')} className="ml-auto rounded-full bg-[#86efac] px-4 py-2 text-[12px] font-bold text-black">
             Accept all
           </button>
         </div>

@@ -3,24 +3,15 @@ import type { Token } from '../types'
 import { formatUsd, shortAddr, timeAgo } from '../lib/format'
 import { useCountUp } from '../hooks/useCountUp'
 
-/** Compact 2-col card matching pump.fun mobile grid */
 export function TokenCard({ token }: { token: Token }) {
-  const mcap = useCountUp(token.marketCapUsd, 350)
-  const shakeClass =
+  const mcap = useCountUp(token.marketCapUsd, 300)
+  const shake =
     token.shake === 'buy' ? 'shake-buy' : token.shake === 'sell' ? 'shake-sell' : ''
 
   return (
-    <Link
-      to={`/coin/${token.id}`}
-      className={`block overflow-hidden rounded-2xl bg-[#14151b] ${shakeClass}`}
-    >
+    <Link to={`/coin/${token.id}`} className={`block overflow-hidden rounded-2xl bg-[#14151b] ${shake}`}>
       <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
-        <img
-          src={token.imageUrl}
-          alt={token.name}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+        <img src={token.imageUrl} alt={token.name} className="h-full w-full object-cover" loading="lazy" />
         {token.complete && (
           <span className="absolute right-2 top-2 rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
             GRAD
@@ -34,7 +25,7 @@ export function TokenCard({ token }: { token: Token }) {
         <p className="flex items-center gap-1 truncate text-[11px] text-[#6b6d78]">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#86efac]" />
           {shortAddr(token.creator)}
-          <span className="text-[#3a3b44]">·</span>
+          <span>·</span>
           {timeAgo(token.createdAt)}
         </p>
       </div>

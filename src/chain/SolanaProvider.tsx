@@ -16,33 +16,20 @@ function networkFromCluster() {
   return WalletAdapterNetwork.Devnet
 }
 
-/**
- * Real Solana wallet stack.
- * Phantom is registered explicitly so connect works even when Wallet Standard
- * is slow/blocked; Solflare is optional secondary.
- */
 export function SolanaProvider({ children }: { children: ReactNode }) {
   const network = networkFromCluster()
-  const endpoint = RPC_URL
-
-  const wallets = useMemo(() => {
-    // Construct once per network — do not recreate on every render
-    return [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter({ network }),
-    ]
-  }, [network])
+  const wallets = useMemo(
+    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter({ network })],
+    [network],
+  )
 
   return (
-    <ConnectionProvider endpoint={endpoint} config={{ commitment: 'confirmed' }}>
+    <ConnectionProvider endpoint={RPC_URL} config={{ commitment: 'confirmed' }}>
       <WalletProvider
         wallets={wallets}
         autoConnect={false}
-        localStorageKey="pumpfun-phantom-wallet"
-        onError={(err) => {
-          // Surface adapter errors in console for debugging production issues
-          console.error('[wallet]', err?.message || err)
-        }}
+        localStorageKey="pumpfun-wallet-v2"
+        onError={(e) => console.error('[wallet]', e?.message || e)}
       >
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>

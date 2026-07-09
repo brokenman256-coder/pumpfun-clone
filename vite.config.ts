@@ -25,26 +25,9 @@ export default defineConfig({
       '@solana/wallet-adapter-phantom',
       '@solana/wallet-adapter-solflare',
     ],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-    },
   },
   build: {
     chunkSizeWarningLimit: 1600,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-  },
-  preview: {
-    host: '0.0.0.0',
-    port: 4173,
-    strictPort: true,
-    allowedHosts: ['.trycloudflare.com', '.loca.lt', 'localhost', '127.0.0.1'],
-  },
-  server: {
-    allowedHosts: ['.trycloudflare.com', '.loca.lt', 'localhost', '127.0.0.1'],
+    commonjsOptions: { transformMixedEsModules: true },
   },
 })
-

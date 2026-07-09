@@ -1,12 +1,5 @@
-/**
- * Unified wallet hook — real Solana via wallet-adapter + direct Phantom path.
- */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  useConnection,
-  useWallet as useSolWallet,
-} from '@solana/wallet-adapter-react'
-import { useWalletModal } from '@solana/wallet-adapter-react-ui'
+import { useConnection, useWallet as useSolWallet } from '@solana/wallet-adapter-react'
 import type { WalletName } from '@solana/wallet-adapter-base'
 import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
@@ -14,16 +7,16 @@ import { useStore } from '../store/useStore'
 import { paySolOnChain } from '../chain/pay'
 import { CLUSTER } from '../chain/config'
 
-const PHANTOM_NAME = 'Phantom' as WalletName
-const PHANTOM_INSTALL = 'https://phantom.app/download'
+const PHANTOM = 'Phantom' as WalletName
+const INSTALL = 'https://phantom.app/download'
 
 type PhantomProvider = {
   isPhantom?: boolean
-  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString(): string } }>
+  connect: () => Promise<{ publicKey: { toString(): string } }>
   disconnect: () => Promise<void>
 }
 
-function getPhantomProvider(): PhantomProvider | null {
+function getPhantom(): PhantomProvider | null {
   if (typeof window === 'undefined') return null
   const w = window as Window & {
     phantom?: { solana?: PhantomProvider }
@@ -33,22 +26,13 @@ function getPhantomProvider(): PhantomProvider | null {
   return p?.isPhantom ? p : null
 }
 
-function isMobileUa() {
-  if (typeof navigator === 'undefined') return false
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-}
-
-function openInPhantomBrowser() {
-  const url = encodeURIComponent(window.location.href)
-  const ref = encodeURIComponent(window.location.origin)
-  window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`
+function isMobile() {
+  return typeof navigator !== 'undefined' && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)
 }
 
 export function useWallet() {
   const sol = useSolWallet()
   const { connection } = useConnection()
-  const { setVisible } = useWalletModal()
-
   const setChainWallet = useStore((s) => s.setChainWallet)
   const setWalletModalOpen = useStore((s) => s.setWalletModalOpen)
   const walletModalOpen = useStore((s) => s.walletModalOpen)
@@ -59,9 +43,8 @@ export function useWallet() {
 
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const pendingName = useRef<WalletName | null>(null)
-
-  const phantomInstalled = !!getPhantomProvider()
+  const pending = useRef<WalletName | null>(null)
+  const phantomInstalled = !!getPhantom()
 
   const refreshBalance = useCallback(async () => {
     if (!sol.publicKey) {
@@ -72,52 +55,38 @@ export function useWallet() {
       const lamports = await connection.getBalance(sol.publicKey, 'confirmed')
       setSolBalance(lamports / LAMPORTS_PER_SOL)
     } catch {
-      /* keep last */
+      /* keep */
     }
   }, [connection, sol.publicKey, setSolBalance])
 
-  // Sync adapter → store
   useEffect(() => {
     if (sol.connected && sol.publicKey) {
       setChainWallet(true, sol.publicKey.toBase58())
       setWalletModalOpen(false)
       setError(null)
-      refreshBalance()
+      void refreshBalance()
     } else if (!sol.connecting) {
       setChainWallet(false, null)
     }
-  }, [
-    sol.connected,
-    sol.publicKey,
-    sol.connecting,
-    setChainWallet,
-    setWalletModalOpen,
-    refreshBalance,
-  ])
+  }, [sol.connected, sol.publicKey, sol.connecting, setChainWallet, setWalletModalOpen, refreshBalance])
 
-  // Poll balance
   useEffect(() => {
     if (!sol.publicKey) return
     const id = window.setInterval(refreshBalance, 12_000)
     return () => clearInterval(id)
   }, [sol.publicKey, refreshBalance])
 
-  // After select(), call connect once wallet is ready
   useEffect(() => {
-    if (!pendingName.current) return
-    if (!sol.wallet) return
-    if (sol.wallet.adapter.name !== pendingName.current) return
+    if (!pending.current || !sol.wallet) return
+    if (sol.wallet.adapter.name !== pending.current) return
     if (sol.connected || sol.connecting) return
-
-    const name = pendingName.current
-    pendingName.current = null
+    pending.current = null
     setBusy(true)
     sol
       .connect()
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : 'Failed to connect'
-        if (!/reject|cancel|denied|user/i.test(msg)) setError(msg)
-        else setError('Connection cancelled in wallet')
+        setError(/reject|cancel|denied|user/i.test(msg) ? 'Cancelled in wallet' : msg)
       })
       .finally(() => setBusy(false))
   }, [sol.wallet, sol.connected, sol.connecting, sol])
@@ -126,72 +95,56 @@ export function useWallet() {
     (name: WalletName) => {
       setError(null)
       setBusy(true)
-      try {
-        if (sol.wallet?.adapter.name === name) {
-          pendingName.current = null
-          sol
-            .connect()
-            .catch((e: unknown) => {
-              const msg = e instanceof Error ? e.message : 'Failed to connect'
-              if (!/reject|cancel|denied|user/i.test(msg)) setError(msg)
-              else setError('Connection cancelled in wallet')
-            })
-            .finally(() => setBusy(false))
-          return
-        }
-        pendingName.current = name
-        sol.select(name)
-        // connect effect runs when wallet becomes selected
-        window.setTimeout(() => setBusy(false), 4000)
-      } catch (e) {
-        setBusy(false)
-        setError(e instanceof Error ? e.message : 'Failed to select wallet')
+      if (sol.wallet?.adapter.name === name) {
+        pending.current = null
+        sol
+          .connect()
+          .catch((e: unknown) => {
+            const msg = e instanceof Error ? e.message : 'Failed'
+            setError(/reject|cancel|denied|user/i.test(msg) ? 'Cancelled in wallet' : msg)
+          })
+          .finally(() => setBusy(false))
+        return
       }
+      pending.current = name
+      sol.select(name)
+      window.setTimeout(() => setBusy(false), 5000)
     },
     [sol],
   )
 
-  /** Primary: connect Phantom (desktop extension or mobile deep link) */
   const connectPhantom = useCallback(async () => {
     setError(null)
-
-    // Mobile browser without extension → open site inside Phantom
-    if (!phantomInstalled && isMobileUa()) {
-      openInPhantomBrowser()
+    if (!phantomInstalled && isMobile()) {
+      const url = encodeURIComponent(window.location.href)
+      const ref = encodeURIComponent(window.location.origin)
+      window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`
       return
     }
-
     if (!phantomInstalled) {
       setWalletModalOpen(true)
-      setError('Phantom not found. Install the extension, then click Connect again.')
+      setError('Phantom not found. Install the extension, then try again.')
       return
     }
-
-    // Prefer wallet-adapter path (enables sendTransaction)
-    const listed = sol.wallets.find((w) => w.adapter.name === PHANTOM_NAME)
+    const listed = sol.wallets.find((w) => w.adapter.name === PHANTOM)
     if (listed) {
-      const ready = listed.readyState
+      const r = listed.readyState
       if (
-        ready === WalletReadyState.Installed ||
-        ready === WalletReadyState.Loadable ||
-        ready === WalletReadyState.NotDetected
+        r === WalletReadyState.Installed ||
+        r === WalletReadyState.Loadable ||
+        r === WalletReadyState.NotDetected
       ) {
-        selectAndConnect(PHANTOM_NAME)
+        selectAndConnect(PHANTOM)
         return
       }
     }
-
-    // Fallback: direct provider connect then adapter select
     try {
       setBusy(true)
-      const provider = getPhantomProvider()
-      if (!provider) throw new Error('Phantom not available')
-      await provider.connect()
-      selectAndConnect(PHANTOM_NAME)
+      await getPhantom()?.connect()
+      selectAndConnect(PHANTOM)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Phantom connect failed'
-      if (/reject|cancel|denied|user/i.test(msg)) setError('Connection cancelled in Phantom')
-      else setError(msg)
+      const msg = e instanceof Error ? e.message : 'Connect failed'
+      setError(/reject|cancel|denied|user/i.test(msg) ? 'Cancelled in Phantom' : msg)
     } finally {
       setBusy(false)
     }
@@ -202,46 +155,30 @@ export function useWallet() {
     setWalletModalOpen(true)
   }, [setWalletModalOpen])
 
-  const closeModal = useCallback(() => {
-    setWalletModalOpen(false)
-    setVisible(false)
-  }, [setWalletModalOpen, setVisible])
-
-  const connect = useCallback(
-    (_provider?: string) => {
-      // One-click Phantom when installed; otherwise open chooser
-      if (phantomInstalled) void connectPhantom()
-      else openModal()
-    },
-    [phantomInstalled, connectPhantom, openModal],
-  )
+  const closeModal = useCallback(() => setWalletModalOpen(false), [setWalletModalOpen])
 
   const disconnect = useCallback(async () => {
     try {
       await sol.disconnect()
     } catch {
-      /* ignore */
+      /* */
     }
     try {
-      await getPhantomProvider()?.disconnect()
+      await getPhantom()?.disconnect()
     } catch {
-      /* ignore */
+      /* */
     }
     setChainWallet(false, null)
   }, [sol, setChainWallet])
 
   const paySol = useCallback(
     async (amountSol: number, memo: string) => {
-      const sig = await paySolOnChain({ wallet: sol, amountSol, memo })
+      const s = await paySolOnChain({ wallet: sol, amountSol, memo })
       await refreshBalance()
-      return sig
+      return s
     },
     [sol, refreshBalance],
   )
-
-  const installPhantom = useCallback(() => {
-    window.open(PHANTOM_INSTALL, '_blank', 'noopener,noreferrer')
-  }, [])
 
   return {
     connected: sol.connected && !!sol.publicKey,
@@ -251,18 +188,16 @@ export function useWallet() {
     costBasis,
     connecting: sol.connecting || busy,
     cluster: CLUSTER,
-    isOnChain: true,
     phantomInstalled,
     error,
     clearError: () => setError(null),
-    connect,
     connectPhantom,
     selectAndConnect,
     disconnect,
     openModal,
     closeModal,
     modalOpen: walletModalOpen,
-    installPhantom,
+    installPhantom: () => window.open(INSTALL, '_blank', 'noopener,noreferrer'),
     refreshBalance,
     paySol,
     wallets: sol.wallets,

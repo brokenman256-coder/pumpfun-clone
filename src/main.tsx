@@ -3,10 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { Buffer } from 'buffer'
 import process from 'process'
 import './index.css'
-import App from './App.tsx'
+import App from './App'
 import { SolanaProvider } from './chain/SolanaProvider'
 
-// Solana web3 / wallet-adapter polyfills for browser
 const g = globalThis as typeof globalThis & {
   Buffer: typeof Buffer
   process: typeof process

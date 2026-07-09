@@ -4,7 +4,7 @@ import type { Token } from '../types'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { getBuyQuote, getSellQuote, TRADE_FEE_BPS } from '../engine/bondingCurve'
-import { formatSol } from '../lib/format'
+import { formatSol, formatTokens } from '../lib/format'
 import { CHAIN_LABEL, EXPLORER_TX, CLUSTER } from '../chain/config'
 
 const QUICK = [0.1, 0.5, 1]
@@ -14,7 +14,6 @@ export function TradePanel({ token }: { token: Token }) {
   const { connected, openModal, holdings, solBalance, paySol, refreshBalance } = useWallet()
   const [mode, setMode] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
-  const [slippage, setSlippage] = useState('1')
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
   const [txSig, setTxSig] = useState('')
@@ -25,10 +24,9 @@ export function TradePanel({ token }: { token: Token }) {
 
   const estimate = useMemo(() => {
     if (num <= 0) return null
-    if (mode === 'buy') {
-      return getBuyQuote(num, token.virtualSol, token.virtualTokens)
-    }
-    return getSellQuote(num, token.virtualSol, token.virtualTokens)
+    return mode === 'buy'
+      ? getBuyQuote(num, token.virtualSol, token.virtualTokens)
+      : getSellQuote(num, token.virtualSol, token.virtualTokens)
   }, [num, mode, token.virtualSol, token.virtualTokens])
 
   async function place(quick?: number) {
@@ -52,47 +50,33 @@ export function TradePanel({ token }: { token: Token }) {
     setLoading(true)
     try {
       let signature: string | undefined
-
       if (mode === 'buy') {
-        // REAL on-chain SOL payment
         setStatus(`Approve ${a} SOL in Phantom…`)
-        signature = await paySol(a, `buy:${token.symbol}:${token.id}:${a}`)
+        signature = await paySol(a, `buy:${token.symbol}:${token.id}`)
         setTxSig(signature)
-        setStatus('Confirmed on Solana · updating curve…')
+        setStatus('Confirmed · updating curve…')
       }
-
       const res = executeTrade(token.id, mode, a, undefined, false, signature)
       if (!res.ok) {
-        setError(res.error || 'Trade failed')
+        setError(res.error || 'Failed')
         return
       }
-
       setAmount('')
       await refreshBalance()
-      setStatus(mode === 'buy' ? 'Buy confirmed on-chain ✓' : 'Sell filled ✓')
-
+      setStatus(mode === 'buy' ? 'Buy confirmed ✓' : 'Sell filled ✓')
       if (mode === 'buy') {
-        confetti({
-          particleCount: 80,
-          spread: 60,
-          origin: { y: 0.7 },
-          colors: ['#86efac', '#4ade80', '#ffffff'],
-        })
-      }
-      if (res.graduated) {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } })
+        confetti({ particleCount: 70, spread: 55, origin: { y: 0.7 }, colors: ['#86efac', '#fff'] })
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Transaction failed'
-      if (/reject|cancel|denied/i.test(msg)) setError('Transaction cancelled in wallet')
-      else setError(msg)
+      setError(/reject|cancel|denied/i.test(msg) ? 'Cancelled in wallet' : msg)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="rounded-xl border border-[#26272e] bg-[#15161b] p-4">
+    <div className="rounded-2xl border border-[#1f2028] bg-[#14151b] p-4">
       <div className="mb-3 flex items-center justify-between text-[10px]">
         <span className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]">
           ⛓ {CHAIN_LABEL}
@@ -109,7 +93,6 @@ export function TradePanel({ token }: { token: Token }) {
               setMode(m)
               setAmount('')
               setError('')
-              setStatus('')
             }}
             className={`flex-1 rounded-md py-2.5 text-sm font-bold capitalize ${
               mode === m
@@ -127,12 +110,7 @@ export function TradePanel({ token }: { token: Token }) {
       {token.complete ? (
         <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-4 text-center">
           <p className="font-bold text-yellow-300">🎓 Graduated</p>
-          <a
-            href="https://raydium.io"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-block text-sm text-[#86efac] underline"
-          >
+          <a href="https://raydium.io" target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-[#86efac] underline">
             trade on Raydium →
           </a>
         </div>
@@ -145,32 +123,26 @@ export function TradePanel({ token }: { token: Token }) {
                   key={v}
                   type="button"
                   disabled={loading}
-                  onClick={() => place(v)}
-                  className="btn-press rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#86efac]/40 hover:text-[#86efac] disabled:opacity-40"
+                  onClick={() => void place(v)}
+                  className="rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#86efac]/40"
                 >
-                  {v} SOL
+                  {v}
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => setAmount(String(Math.max(0, solBalance - 0.01).toFixed(3)))}
-                className="btn-press rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#86efac]/40"
+                className="rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97]"
               >
                 max
               </button>
             </div>
           )}
-
           {mode === 'sell' && (
-            <button
-              type="button"
-              className="mb-2 text-xs text-[#86efac]"
-              onClick={() => setAmount(String(holding))}
-            >
-              balance: {holding.toLocaleString(undefined, { maximumFractionDigits: 0 })} · max
+            <button type="button" className="mb-2 text-xs text-[#86efac]" onClick={() => setAmount(String(holding))}>
+              balance: {formatTokens(holding)} · max
             </button>
           )}
-
           <div className="relative">
             <input
               type="number"
@@ -183,17 +155,13 @@ export function TradePanel({ token }: { token: Token }) {
               {mode === 'buy' ? 'SOL' : token.symbol}
             </span>
           </div>
-
           {estimate && (
             <p className="mt-2 text-xs text-[#8b8d97]">
               {mode === 'buy' ? (
                 <>
                   you get ≈{' '}
                   <span className="text-[#86efac]">
-                    {(estimate as { tokensOut: number }).tokensOut.toLocaleString(undefined, {
-                      maximumFractionDigits: 0,
-                    })}{' '}
-                    {token.symbol}
+                    {formatTokens((estimate as { tokensOut: number }).tokensOut)} {token.symbol}
                   </span>
                 </>
               ) : (
@@ -204,66 +172,39 @@ export function TradePanel({ token }: { token: Token }) {
                   </span>
                 </>
               )}
-              {' · '}fee {(TRADE_FEE_BPS / 100).toFixed(0)}% · slip {slippage}%
+              {' · '}fee {TRADE_FEE_BPS / 100}%
             </p>
           )}
-
-          <div className="mt-2 flex items-center gap-2 text-[11px] text-[#8b8d97]">
-            <span>slippage</span>
-            <input
-              value={slippage}
-              onChange={(e) => setSlippage(e.target.value)}
-              className="w-12 rounded border border-[#26272e] bg-[#0e0f13] px-1 py-0.5 text-center"
-            />
-            <span>%</span>
-          </div>
-
           {status && <p className="mt-2 text-xs text-[#86efac]">{status}</p>}
           {error && <p className="mt-2 text-xs text-[#f87171]">{error}</p>}
           {txSig && (
-            <a
-              href={EXPLORER_TX(txSig)}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1 block text-[10px] text-[#86efac] underline"
-            >
-              view tx on solscan →
+            <a href={EXPLORER_TX(txSig)} target="_blank" rel="noreferrer" className="mt-1 block text-[10px] text-[#86efac] underline">
+              view tx →
             </a>
           )}
-
           <button
             type="button"
             disabled={loading}
-            onClick={() => place()}
-            className={`btn-press relative mt-3 w-full overflow-hidden rounded-lg py-3.5 text-sm font-bold disabled:opacity-50 ${
-              mode === 'buy'
-                ? 'bg-[#86efac] text-black hover:bg-[#4ade80]'
-                : 'bg-[#f87171] text-white hover:bg-red-400'
+            onClick={() => void place()}
+            className={`btn-press mt-3 w-full rounded-lg py-3.5 text-sm font-bold disabled:opacity-50 ${
+              mode === 'buy' ? 'bg-[#86efac] text-black' : 'bg-[#f87171] text-white'
             }`}
           >
             {loading
               ? status || 'Confirm in wallet…'
               : !connected
-                ? 'connect wallet'
+                ? 'Sign in'
                 : mode === 'buy'
-                  ? `buy ${token.symbol} (on-chain)`
+                  ? `buy ${token.symbol}`
                   : `sell ${token.symbol}`}
           </button>
-
-          <p className="mt-3 text-center text-[10px] leading-relaxed text-[#555]">
-            Buys send real SOL on {CLUSTER} to the platform treasury. Phantom must be on{' '}
-            <span className="text-[#86efac]">{CLUSTER}</span>.
+          <p className="mt-3 text-center text-[10px] text-[#555]">
+            Buys send real SOL on {CLUSTER} to treasury.
             {CLUSTER === 'devnet' && (
               <>
                 {' '}
-                Free SOL:{' '}
-                <a
-                  href="https://faucet.solana.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#86efac] underline"
-                >
-                  faucet.solana.com
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-[#86efac] underline">
+                  faucet
                 </a>
               </>
             )}

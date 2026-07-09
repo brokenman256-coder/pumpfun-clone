@@ -1,7 +1,7 @@
 export type TradeSide = 'buy' | 'sell'
 
 export type Candle = {
-  time: number // unix seconds
+  time: number
   open: number
   high: number
   low: number
@@ -40,6 +40,9 @@ export type Token = {
   website?: string
   twitter?: string
   telegram?: string
+  /** on-chain mint if created as real SPL */
+  mint?: string
+  signature?: string
 }
 
 export type Trade = {
@@ -69,10 +72,9 @@ export type WalletState = {
   connected: boolean
   address: string | null
   solBalance: number
-  /** tokenId -> amount */
   holdings: Record<string, number>
-  /** avg cost basis in SOL for PnL */
   costBasis: Record<string, number>
 }
 
-export type SortTab = 'featured' | 'newest' | 'market_cap' | 'about_to_graduate'
+export type SortTab = 'movers' | 'mayhem' | 'featured' | 'graduate'
+export type HomeTab = 'board' | 'communities' | 'bounties'

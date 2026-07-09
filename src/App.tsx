@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Navbar } from './components/Navbar'
 import { MobileBanner } from './components/MobileBanner'
 import { BottomNav } from './components/BottomNav'
@@ -9,68 +9,38 @@ import { HowItWorksModal } from './components/HowItWorksModal'
 import { GraduationToast } from './components/GraduationToast'
 import { HomePage } from './pages/HomePage'
 import { TokenPage } from './pages/TokenPage'
-import { CreateCoinPage } from './pages/CreateCoinPage'
-import { CreateRealTokenPage } from './pages/CreateRealTokenPage'
-import { ChannelPage } from './pages/ChannelPage'
+import { CreatePage } from './pages/CreatePage'
 import { ProfilePage } from './pages/ProfilePage'
+import { ChannelPage } from './pages/ChannelPage'
 import { useSimulator } from './hooks/useSimulator'
 import { useStore } from './store/useStore'
 
-function PageTransition({ children }: { children: React.ReactNode }) {
-  const location = useLocation()
-  return (
-    <div key={location.pathname} className="fade-up">
-      {children}
-    </div>
-  )
-}
-
-function WelcomeGate() {
+export default function App() {
+  useSimulator()
   const setHowOpen = useStore((s) => s.setHowOpen)
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    // Show how-it-works once per session
     const g = globalThis as typeof globalThis & { __pumpWelcome?: boolean }
     if (!g.__pumpWelcome) {
       g.__pumpWelcome = true
-      // delay so cookie sheet doesn't stack instantly
-      window.setTimeout(() => setHowOpen(true), 1200)
+      window.setTimeout(() => setHowOpen(true), 900)
     }
-    setReady(true)
   }, [setHowOpen])
-
-  if (!ready) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="skeleton h-10 w-40 rounded-full" />
-      </div>
-    )
-  }
-
-  return null
-}
-
-export default function App() {
-  useSimulator()
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#0e0f13] text-[#e8e8ed]">
+      <div className="min-h-screen bg-[#0e0f13] text-[#e8e8ed] pb-16">
         <MobileBanner />
         <Navbar />
-        <WelcomeGate />
-        <main className="min-h-[70vh]">
-          <PageTransition>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/coin/:id" element={<TokenPage />} />
-              <Route path="/create" element={<CreateCoinPage />} />
-              <Route path="/create-real" element={<CreateRealTokenPage />} />
-              <Route path="/channel" element={<ChannelPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-            </Routes>
-          </PageTransition>
+        <main>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/coin/:id" element={<TokenPage />} />
+            <Route path="/create" element={<CreatePage />} />
+            <Route path="/create-real" element={<CreatePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/channel" element={<ChannelPage />} />
+          </Routes>
         </main>
         <BottomNav />
         <CookieConsent />

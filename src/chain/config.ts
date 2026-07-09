@@ -1,9 +1,3 @@
-/**
- * Solana chain config.
- * Set VITE_SOLANA_CLUSTER=mainnet-beta for mainnet.
- * VITE_FEE_RECIPIENT = treasury pubkey that receives create/buy SOL.
- */
-
 export type Cluster = 'devnet' | 'mainnet-beta' | 'testnet'
 
 export const CLUSTER: Cluster =
@@ -17,14 +11,12 @@ export const RPC_URL =
       ? 'https://api.testnet.solana.com'
       : 'https://api.devnet.solana.com')
 
-/** Platform treasury — receives create fee + buy SOL (your channel wallet) */
+/** Treasury — receives create fees + buy SOL */
 export const FEE_RECIPIENT =
   import.meta.env.VITE_FEE_RECIPIENT ||
   'ApuMe4AJTv7B7rLord3pxjGAAhmeuwR9ttaQVkJShUuh'
 
-/** Official channel wallet (same as fee recipient by default) */
 export const CHANNEL_WALLET = FEE_RECIPIENT
-
 export const CREATE_FEE_SOL_ONCHAIN = 0.02
 
 export const EXPLORER_TX = (sig: string) =>
@@ -38,4 +30,8 @@ export const EXPLORER_ADDR = (addr: string) =>
     : `https://solscan.io/account/${addr}?cluster=${CLUSTER}`
 
 export const CHAIN_LABEL =
-  CLUSTER === 'mainnet-beta' ? 'Solana Mainnet' : CLUSTER === 'testnet' ? 'Solana Testnet' : 'Solana Devnet'
+  CLUSTER === 'mainnet-beta'
+    ? 'Solana Mainnet'
+    : CLUSTER === 'testnet'
+      ? 'Solana Testnet'
+      : 'Solana Devnet'
