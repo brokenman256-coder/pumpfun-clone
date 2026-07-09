@@ -15,6 +15,12 @@ import {
 import { createSeedTokens, randomWallet, spawnRandomToken, SEED_COUNT } from '../engine/seedTokens'
 import { applyTradeToCandles, seedCandles } from '../engine/candles'
 import { tokenImageUrl, tokenEmoji } from '../lib/tokenImage'
+import {
+  DEFAULT_BOT_CONFIG,
+  buildBotToken,
+  type BotConfig,
+} from '../engine/launchBots'
+import type { PaymentResult } from '../chain/paymentGateway'
 
 type Store = {
   tokens: Token[]
@@ -35,6 +41,10 @@ type Store = {
   dexError: string | null
   dexLastSync: number | null
   liveMode: boolean
+  botConfig: BotConfig
+  botLog: string[]
+  payments: PaymentResult[]
+  adminAuthed: boolean
 
   setSort: (s: SortTab) => void
   setSearch: (q: string) => void
@@ -44,6 +54,12 @@ type Store = {
   setLiveMode: (v: boolean) => void
   setDexStatus: (s: 'idle' | 'loading' | 'ok' | 'error', err?: string | null) => void
   mergeDexTokens: (live: Token[]) => void
+  setBotEnabled: (on: boolean) => void
+  setBotInterval: (ms: number) => void
+  setBotFleet: (n: number) => void
+  botTick: () => void
+  pushPayment: (p: PaymentResult) => void
+  setAdminAuthed: (v: boolean) => void
   clearGraduation: () => void
   ensureCandles: (tokenId: string) => void
   setChainWallet: (connected: boolean, address: string | null) => void
@@ -106,6 +122,10 @@ export const useStore = create<Store>((set, get) => ({
   dexError: null,
   dexLastSync: null,
   liveMode: true,
+  botConfig: { ...DEFAULT_BOT_CONFIG },
+  botLog: [],
+  payments: [],
+  adminAuthed: false,
 
   setSort: (s) => set({ sort: s }),
   setSearch: (q) => set({ search: q }),
@@ -130,6 +150,52 @@ export const useStore = create<Store>((set, get) => ({
         totalLaunches: Math.max(s.totalLaunches, live.length + localOnly.length),
       }
     }),
+  setBotEnabled: (on) =>
+    set((s) => ({
+      botConfig: { ...s.botConfig, enabled: on },
+      botLog: [
+        `${new Date().toISOString()} · fleet ${on ? 'ARMED' : 'STOPPED'}`,
+        ...s.botLog,
+      ].slice(0, 100),
+    })),
+  setBotInterval: (ms) =>
+    set((s) => ({ botConfig: { ...s.botConfig, intervalMs: Math.max(5000, ms) } })),
+  setBotFleet: (n) =>
+    set((s) => ({
+      botConfig: { ...s.botConfig, fleetSize: Math.min(100, Math.max(1, n)) },
+    })),
+  botTick: () => {
+    const s = get()
+    if (!s.botConfig.enabled) return
+    if (s.botConfig.launched >= s.botConfig.fleetSize) {
+      set({
+        botConfig: { ...s.botConfig, enabled: false },
+        botLog: [
+          `${new Date().toISOString()} · fleet complete (${s.botConfig.fleetSize} tokens)`,
+          ...s.botLog,
+        ].slice(0, 100),
+      })
+      return
+    }
+    const idx = s.botConfig.launched
+    const token = buildBotToken(idx, s.spawnSeq + idx + 1)
+    set({
+      tokens: [token, ...s.tokens].slice(0, 500),
+      botConfig: {
+        ...s.botConfig,
+        launched: s.botConfig.launched + 1,
+      },
+      spawnSeq: s.spawnSeq + 1,
+      totalLaunches: s.totalLaunches + 1,
+      botLog: [
+        `${new Date().toISOString()} · bot ${idx + 1} launched $${token.symbol}`,
+        ...s.botLog,
+      ].slice(0, 100),
+    })
+  },
+  pushPayment: (p) =>
+    set((s) => ({ payments: [p, ...s.payments].slice(0, 50) })),
+  setAdminAuthed: (v) => set({ adminAuthed: v }),
   clearGraduation: () => set({ graduationToast: null }),
 
   ensureCandles: (tokenId) => {

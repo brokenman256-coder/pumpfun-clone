@@ -6,6 +6,7 @@ import { useWallet } from '../hooks/useWallet'
 import { getBuyQuote, getSellQuote, TRADE_FEE_BPS } from '../engine/bondingCurve'
 import { formatSol, formatTokens } from '../lib/format'
 import { CHAIN_LABEL, EXPLORER_TX, CLUSTER } from '../chain/config'
+import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 
 const QUICK = [0.1, 0.5, 1]
 
@@ -199,7 +200,7 @@ export function TradePanel({ token }: { token: Token }) {
                   : `sell ${token.symbol}`}
           </button>
           <p className="mt-3 text-center text-[10px] text-[#555]">
-            Buys send real SOL on {CLUSTER} to treasury.
+            Curve buys send SOL to treasury on {CLUSTER}.
             {CLUSTER === 'devnet' && (
               <>
                 {' '}
@@ -209,6 +210,26 @@ export function TradePanel({ token }: { token: Token }) {
               </>
             )}
           </p>
+          {(token.mint || token.source === 'dexscreener') && (
+            <div className="mt-2 flex flex-wrap justify-center gap-2 text-[10px]">
+              <a
+                href={jupiterTradeUrl(token.mint || token.id)}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-[#26272e] px-2 py-1 text-[#8b8d97] hover:text-[#86efac]"
+              >
+                Jupiter swap ↗
+              </a>
+              <a
+                href={raydiumTradeUrl(token.mint || token.id)}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-[#26272e] px-2 py-1 text-[#8b8d97] hover:text-[#86efac]"
+              >
+                Raydium ↗
+              </a>
+            </div>
+          )}
         </>
       )}
     </div>
