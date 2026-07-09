@@ -52,6 +52,12 @@ export type Token = {
   tags: string[]
   mint?: string
   signature?: string
+  /** Live feed from DexScreener */
+  source?: 'local' | 'dexscreener'
+  pairUrl?: string
+  pairAddress?: string
+  dexId?: string
+  liquidityUsd?: number
 }
 
 export type Trade = {

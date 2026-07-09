@@ -25,16 +25,23 @@ export function TokenCard({ token }: { token: Token }) {
           alt={token.name}
           className="h-full w-full object-cover"
         />
-        {token.complete && (
-          <span className="absolute right-2 top-2 rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
-            🎓 GRAD
-          </span>
-        )}
-        {!token.complete && progress > 70 && (
-          <span className="absolute right-2 top-2 rounded-md bg-[#86efac] px-1.5 py-0.5 text-[9px] font-bold text-black">
-            HOT
-          </span>
-        )}
+        <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+          {token.source === 'dexscreener' && (
+            <span className="rounded-md bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-bold text-white">
+              DEX
+            </span>
+          )}
+          {token.complete && (
+            <span className="rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
+              🎓 GRAD
+            </span>
+          )}
+          {!token.complete && progress > 70 && token.source !== 'dexscreener' && (
+            <span className="rounded-md bg-[#86efac] px-1.5 py-0.5 text-[9px] font-bold text-black">
+              HOT
+            </span>
+          )}
+        </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-8">
           <div className="h-1 overflow-hidden rounded-full bg-white/20">
             <div
@@ -84,15 +91,18 @@ export function TokenCard({ token }: { token: Token }) {
           )}
         </p>
 
-        {token.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-0.5">
-            {token.tags.slice(0, 2).map((t) => (
-              <span key={t} className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-[#8b8d97]">
-                #{t}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-1 pt-0.5">
+          {token.dexId && (
+            <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[9px] text-blue-300">
+              {token.dexId}
+            </span>
+          )}
+          {token.tags?.slice(0, 2).map((t) => (
+            <span key={t} className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-[#8b8d97]">
+              #{t}
+            </span>
+          ))}
+        </div>
       </div>
     </Link>
   )

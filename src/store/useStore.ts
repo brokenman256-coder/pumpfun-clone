@@ -30,12 +30,20 @@ type Store = {
   walletModalOpen: boolean
   spawnSeq: number
   totalLaunches: number
+  /** DexScreener live feed */
+  dexStatus: 'idle' | 'loading' | 'ok' | 'error'
+  dexError: string | null
+  dexLastSync: number | null
+  liveMode: boolean
 
   setSort: (s: SortTab) => void
   setSearch: (q: string) => void
   setHomeTab: (t: HomeTab) => void
   setHowOpen: (v: boolean) => void
   setWalletModalOpen: (v: boolean) => void
+  setLiveMode: (v: boolean) => void
+  setDexStatus: (s: 'idle' | 'loading' | 'ok' | 'error', err?: string | null) => void
+  mergeDexTokens: (live: Token[]) => void
   clearGraduation: () => void
   ensureCandles: (tokenId: string) => void
   setChainWallet: (connected: boolean, address: string | null) => void
@@ -94,12 +102,34 @@ export const useStore = create<Store>((set, get) => ({
   walletModalOpen: false,
   spawnSeq: 0,
   totalLaunches: SEED_COUNT + 1_248_200,
+  dexStatus: 'idle',
+  dexError: null,
+  dexLastSync: null,
+  liveMode: true,
 
   setSort: (s) => set({ sort: s }),
   setSearch: (q) => set({ search: q }),
   setHomeTab: (t) => set({ homeTab: t }),
   setHowOpen: (v) => set({ howOpen: v }),
   setWalletModalOpen: (v) => set({ walletModalOpen: v }),
+  setLiveMode: (v) => set({ liveMode: v }),
+  setDexStatus: (s, err = null) => set({ dexStatus: s, dexError: err }),
+  mergeDexTokens: (live) =>
+    set((s) => {
+      // Keep user-created / local coins that are not on DexScreener
+      const localOnly = s.tokens.filter(
+        (t) => t.source !== 'dexscreener' && !live.some((l) => l.id === t.id || l.mint === t.mint),
+      )
+      // Dex coins first (latest memes), then local
+      const merged = [...live, ...localOnly]
+      return {
+        tokens: merged,
+        dexStatus: 'ok',
+        dexError: null,
+        dexLastSync: Date.now(),
+        totalLaunches: Math.max(s.totalLaunches, live.length + localOnly.length),
+      }
+    }),
   clearGraduation: () => set({ graduationToast: null }),
 
   ensureCandles: (tokenId) => {

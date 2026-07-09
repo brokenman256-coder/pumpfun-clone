@@ -127,13 +127,28 @@ export function TokenPage() {
           </a>
         )}
         <a
-          href={EXPLORER_ADDR(token.creator)}
+          href={EXPLORER_ADDR(token.mint || token.creator)}
           target="_blank"
           rel="noreferrer"
           className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px] text-[#8b8d97]"
         >
-          Dev on Solscan
+          Solscan
         </a>
+        {token.pairUrl && (
+          <a
+            href={token.pairUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-[#3b82f6] px-3 py-1.5 text-[11px] font-bold text-white"
+          >
+            DexScreener ↗
+          </a>
+        )}
+        {token.liquidityUsd != null && token.liquidityUsd > 0 && (
+          <span className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px] text-[#8b8d97]">
+            Liq {formatUsd(token.liquidityUsd)}
+          </span>
+        )}
       </div>
 
       {/* Tags */}

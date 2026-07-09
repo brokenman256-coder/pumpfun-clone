@@ -4,6 +4,7 @@ import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
 import { BountiesStrip } from './BountiesStrip'
 import { KingOfHill } from './KingOfHill'
+import { DexLiveBar } from './DexLiveBar'
 import { useTokenFeed } from '../hooks/useTokenFeed'
 
 const CHIPS: { id: SortTab; label: string }[] = [
@@ -46,6 +47,8 @@ export function TokenBoard() {
 
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-5xl">
+      <DexLiveBar />
+
       <div className="no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto">
         {CHIPS.map((c) => (
           <button

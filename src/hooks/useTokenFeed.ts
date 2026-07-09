@@ -15,7 +15,9 @@ export function useTokenFeed() {
         (t) =>
           t.name.toLowerCase().includes(q) ||
           t.symbol.toLowerCase().includes(q) ||
-          t.id.toLowerCase().includes(q),
+          t.id.toLowerCase().includes(q) ||
+          (t.mint && t.mint.toLowerCase().includes(q)) ||
+          (t.dexId && t.dexId.toLowerCase().includes(q)),
       )
     }
     const copy = [...list]

@@ -13,10 +13,12 @@ import { CreatePage } from './pages/CreatePage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ChannelPage } from './pages/ChannelPage'
 import { useSimulator } from './hooks/useSimulator'
+import { useDexScreener } from './hooks/useDexScreener'
 import { useStore } from './store/useStore'
 
 export default function App() {
   useSimulator()
+  useDexScreener()
   const setHowOpen = useStore((s) => s.setHowOpen)
 
   useEffect(() => {
