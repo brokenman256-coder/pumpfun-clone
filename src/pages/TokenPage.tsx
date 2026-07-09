@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import { Chart } from '../components/Chart'
 import { TradePanel } from '../components/TradePanel'
 import { BondingProgress } from '../components/BondingProgress'
+import { TokenImage } from '../components/TokenImage'
 import { formatUsd, shortAddr, timeAgo, formatSol } from '../lib/format'
 import { useWallet } from '../hooks/useWallet'
 import { useState } from 'react'
@@ -39,7 +40,13 @@ export function TokenPage() {
       </Link>
 
       <div className="mt-3 flex items-start gap-3">
-        <img src={token.imageUrl} alt="" className="h-14 w-14 rounded-xl object-cover" />
+        <TokenImage
+          src={token.imageUrl}
+          seed={token.id}
+          emoji={token.emoji}
+          alt={token.name}
+          className="h-14 w-14 rounded-xl object-cover"
+        />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-black">
             {token.name}{' '}

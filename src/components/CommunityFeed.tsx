@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { timeAgo } from '../lib/format'
+import { TokenImage } from './TokenImage'
 
 const HANDLES = [
   'OrbitSignalLab',
@@ -71,7 +72,12 @@ export function CommunityFeed() {
           <article key={p.id} className="rounded-2xl border border-[#1f2028] bg-[#14151b] p-3.5">
             <div className="flex gap-2.5">
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#1a1b22]">
-                {p.imageUrl && <img src={p.imageUrl} alt="" className="h-full w-full object-cover" />}
+                <TokenImage
+                  src={p.imageUrl || ''}
+                  seed={p.tokenId}
+                  alt={p.symbol}
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
@@ -83,11 +89,14 @@ export function CommunityFeed() {
                 </div>
                 <p className="mt-0.5 text-[11px] text-[#6b6d78]">{timeAgo(p.createdAt)}</p>
                 <p className="mt-2 text-[14px] leading-relaxed">{p.text}</p>
-                {p.imageUrl && (
-                  <Link to={`/coin/${p.tokenId}`} className="mt-3 block overflow-hidden rounded-xl">
-                    <img src={p.imageUrl} alt="" className="max-h-56 w-full object-cover" loading="lazy" />
-                  </Link>
-                )}
+                <Link to={`/coin/${p.tokenId}`} className="mt-3 block overflow-hidden rounded-xl">
+                  <TokenImage
+                    src={p.imageUrl || ''}
+                    seed={p.tokenId}
+                    alt={p.symbol}
+                    className="max-h-56 w-full object-cover"
+                  />
+                </Link>
                 <p className="mt-2 text-[12px] text-[#6b6d78]">♡ {p.likes}</p>
               </div>
             </div>

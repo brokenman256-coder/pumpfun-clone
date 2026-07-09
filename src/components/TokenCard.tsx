@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Token } from '../types'
 import { formatUsd, shortAddr, timeAgo } from '../lib/format'
 import { useCountUp } from '../hooks/useCountUp'
+import { TokenImage } from './TokenImage'
 
 export function TokenCard({ token }: { token: Token }) {
   const mcap = useCountUp(token.marketCapUsd, 300)
@@ -11,12 +12,19 @@ export function TokenCard({ token }: { token: Token }) {
   return (
     <Link to={`/coin/${token.id}`} className={`block overflow-hidden rounded-2xl bg-[#14151b] ${shake}`}>
       <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
-        <img src={token.imageUrl} alt={token.name} className="h-full w-full object-cover" loading="lazy" />
+        <TokenImage
+          src={token.imageUrl}
+          seed={token.id}
+          emoji={token.emoji}
+          alt={token.name}
+          className="h-full w-full object-cover"
+        />
         {token.complete && (
           <span className="absolute right-2 top-2 rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
             GRAD
           </span>
         )}
+        <span className="absolute bottom-2 left-2 text-lg drop-shadow">{token.emoji}</span>
       </div>
       <div className="space-y-0.5 p-2.5">
         <p className="truncate text-[13px] font-semibold text-white">{token.name}</p>

@@ -13,6 +13,7 @@ import {
 } from '../engine/bondingCurve'
 import { createSeedTokens, randomWallet, spawnRandomToken, SEED_COUNT } from '../engine/seedTokens'
 import { applyTradeToCandles, seedCandles } from '../engine/candles'
+import { tokenImageUrl, tokenEmoji } from '../lib/tokenImage'
 
 type Store = {
   tokens: Token[]
@@ -272,15 +273,14 @@ export const useStore = create<Store>((set, get) => ({
     if (!state.wallet.connected || !state.wallet.address) return null
     const id = `user_${Date.now().toString(36)}`
     const symbol = input.symbol.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+    const emoji = input.emoji || tokenEmoji(id + symbol)
     const token: Token = {
       id,
       name: input.name.trim(),
       symbol,
-      emoji: input.emoji || '💊',
+      emoji,
       description: input.description || '',
-      imageUrl:
-        input.imageUrl ||
-        `https://api.dicebear.com/7.x/shapes/svg?seed=${symbol}&backgroundColor=86efac`,
+      imageUrl: input.imageUrl || tokenImageUrl(id + symbol, emoji),
       imageHue: Math.random() * 360,
       creator: state.wallet.address,
       virtualSol: VIRTUAL_SOL,

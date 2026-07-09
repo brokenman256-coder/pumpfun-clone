@@ -6,6 +6,7 @@ import {
   marketCapUsd,
   priceSol,
 } from './bondingCurve'
+import { tokenEmoji, tokenImageUrl } from '../lib/tokenImage'
 
 export const SEED_COUNT = 120
 
@@ -14,9 +15,8 @@ const NAMES = [
   'ChillGuy', 'Fartcoin', 'Neiro', 'Ai16z', 'Act', 'Zerebro', 'Virtual',
   'Pengu', 'Meow', 'Trump', 'Melania', 'Giga', 'Sigma', 'Based', 'Chad',
   'Frog', 'Cat', 'Dog', 'Moon', 'Rocket', 'Pump', 'Solana', 'Meme',
+  'Apu', 'Brett', 'Andy', 'Landwolf', 'Toshi', 'Mog', 'Spx', 'Fwoog',
 ]
-
-const EMOJIS = ['🐸', '🐕', '🚀', '💊', '🌙', '🔥', '💎', '🦍', '🐱', '👑', '⚡', '🟢']
 
 export function randomWallet() {
   const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -35,7 +35,9 @@ export function createSeedTokens(count = SEED_COUNT): Token[] {
   for (let i = 0; i < count; i++) {
     const nameBase = pick(NAMES)
     const name = `${nameBase} ${pick(['Coin', 'Inu', 'AI', 'Sol', 'Fun', ''])}`.trim()
-    const symbol = nameBase.slice(0, 6).toUpperCase() + (i % 9 || '')
+    const symbol = (nameBase.slice(0, 6) + (i % 9 || '')).toUpperCase().slice(0, 8)
+    const seed = `${symbol}_${i}_${nameBase}`
+    const emoji = tokenEmoji(seed)
     const progress = Math.random()
     const virtualSol = VIRTUAL_SOL + progress * 50
     const virtualTokens = VIRTUAL_TOKENS / (1 + progress * 2)
@@ -44,9 +46,10 @@ export function createSeedTokens(count = SEED_COUNT): Token[] {
       id: `mint_${i}_${symbol.toLowerCase()}`,
       name,
       symbol,
-      emoji: pick(EMOJIS),
+      emoji,
       description: `${name} — launched on the bonding curve. NFA.`,
-      imageUrl: `https://api.dicebear.com/7.x/shapes/svg?seed=${symbol}${i}&backgroundColor=0e0f13,15161b,86efac`,
+      // Always-on data URI — no external CDN (fixes blank token photos)
+      imageUrl: tokenImageUrl(seed, emoji),
       imageHue: (i * 47) % 360,
       creator: randomWallet(),
       virtualSol,
@@ -70,13 +73,15 @@ export function createSeedTokens(count = SEED_COUNT): Token[] {
 export function spawnRandomToken(seq: number): Token {
   const nameBase = pick(NAMES)
   const symbol = (nameBase.slice(0, 5) + seq).toUpperCase().slice(0, 8)
+  const seed = `live_${seq}_${symbol}`
+  const emoji = tokenEmoji(seed)
   return {
     id: `live_${seq}_${Date.now().toString(36)}`,
     name: `${nameBase} ${seq}`,
     symbol,
-    emoji: pick(EMOJIS),
+    emoji,
     description: `Fresh launch #${seq}`,
-    imageUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${symbol}&backgroundColor=86efac`,
+    imageUrl: tokenImageUrl(seed, emoji),
     imageHue: (seq * 31) % 360,
     creator: randomWallet(),
     virtualSol: VIRTUAL_SOL,
