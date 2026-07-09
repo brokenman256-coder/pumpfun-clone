@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Navbar } from './components/Navbar'
-import { TickerBar } from './components/TickerBar'
+import { MobileBanner } from './components/MobileBanner'
+import { BottomNav } from './components/BottomNav'
+import { CookieConsent } from './components/CookieConsent'
 import { WalletModal } from './components/WalletModal'
 import { HowItWorksModal } from './components/HowItWorksModal'
 import { GraduationToast } from './components/GraduationToast'
@@ -28,18 +30,19 @@ function WelcomeGate() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    // Show how-it-works once per session (in-memory only, no localStorage per spec)
+    // Show how-it-works once per session
     const g = globalThis as typeof globalThis & { __pumpWelcome?: boolean }
     if (!g.__pumpWelcome) {
       g.__pumpWelcome = true
-      setHowOpen(true)
+      // delay so cookie sheet doesn't stack instantly
+      window.setTimeout(() => setHowOpen(true), 1200)
     }
     setReady(true)
   }, [setHowOpen])
 
   if (!ready) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <div className="skeleton h-10 w-40 rounded-full" />
       </div>
     )
@@ -54,19 +57,23 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-[#0e0f13] text-[#e8e8ed]">
+        <MobileBanner />
         <Navbar />
-        <TickerBar />
         <WelcomeGate />
-        <PageTransition>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/coin/:id" element={<TokenPage />} />
-            <Route path="/create" element={<CreateCoinPage />} />
-            <Route path="/create-real" element={<CreateRealTokenPage />} />
-            <Route path="/channel" element={<ChannelPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
-        </PageTransition>
+        <main className="min-h-[70vh]">
+          <PageTransition>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/coin/:id" element={<TokenPage />} />
+              <Route path="/create" element={<CreateCoinPage />} />
+              <Route path="/create-real" element={<CreateRealTokenPage />} />
+              <Route path="/channel" element={<ChannelPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Routes>
+          </PageTransition>
+        </main>
+        <BottomNav />
+        <CookieConsent />
         <WalletModal />
         <HowItWorksModal />
         <GraduationToast />

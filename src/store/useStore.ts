@@ -27,6 +27,8 @@ type Store = {
   graduationToast: { symbol: string; id: string } | null
   howOpen: boolean
   walletModalOpen: boolean
+  /** home shell: coin board · communities feed · bounties */
+  homeTab: 'board' | 'communities' | 'bounties'
   flashIds: Flash[]
   launching: boolean
   /** monotonically increasing spawn counter for new launches */
@@ -38,6 +40,7 @@ type Store = {
   setSearch: (q: string) => void
   setHowOpen: (v: boolean) => void
   setWalletModalOpen: (v: boolean) => void
+  setHomeTab: (t: 'board' | 'communities' | 'bounties') => void
   clearGraduation: () => void
   ensureCandles: (tokenId: string) => void
   setChainWallet: (connected: boolean, address: string | null) => void
@@ -97,6 +100,7 @@ export const useStore = create<Store>((set, get) => ({
   graduationToast: null,
   howOpen: false,
   walletModalOpen: false,
+  homeTab: 'board',
   flashIds: [],
   launching: false,
   spawnSeq: 0,
@@ -106,6 +110,7 @@ export const useStore = create<Store>((set, get) => ({
   setSearch: (q) => set({ search: q }),
   setHowOpen: (v) => set({ howOpen: v }),
   setWalletModalOpen: (v) => set({ walletModalOpen: v }),
+  setHomeTab: (t) => set({ homeTab: t }),
   clearGraduation: () => set({ graduationToast: null }),
 
   ensureCandles: (tokenId) => {

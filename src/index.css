@@ -28,6 +28,15 @@ body {
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* room for fixed bottom nav on mobile */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Hide old ticker on mobile for pump.fun-like focus */
+@media (max-width: 640px) {
+  .ticker-bar-hide-mobile {
+    display: none;
+  }
 }
 
 .font-logo {

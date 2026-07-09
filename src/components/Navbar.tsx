@@ -3,92 +3,71 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { shortAddr, formatSol } from '../lib/format'
-import { CLUSTER, CHAIN_LABEL } from '../chain/config'
 
+/**
+ * pump.fun mobile header: pill logo · folder · search · Sign in
+ */
 export function Navbar() {
   const navigate = useNavigate()
   const search = useStore((s) => s.search)
   const setSearch = useStore((s) => s.setSearch)
-  const setHowOpen = useStore((s) => s.setHowOpen)
   const { connected, address, solBalance, openModal, connectPhantom, disconnect, connecting } =
     useWallet()
   const [menu, setMenu] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#26272e] bg-[#0e0f13]/95 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-3 sm:px-4">
-        <Link to="/" className="group flex shrink-0 items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#86efac] text-lg shadow-[0_0_16px_rgba(134,239,172,0.5)] transition group-hover:rotate-12 group-hover:scale-110">
-            <span className="inline-block animate-bounce">💊</span>
-          </span>
-          <span className="font-logo hidden text-[10px] leading-none text-white sm:block">
-            pump<span className="text-[#86efac]">.fun</span>
+    <header className="sticky top-0 z-40 bg-[#0e0f13]/95 backdrop-blur-md">
+      <div className="mx-auto flex h-12 max-w-lg items-center gap-2 px-3 sm:max-w-7xl sm:px-4">
+        <Link to="/" className="shrink-0" aria-label="pump.fun home">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#86efac] to-[#4ade80] text-base shadow-[0_0_12px_rgba(134,239,172,0.45)]">
+            💊
           </span>
         </Link>
 
-        <span
-          className="hidden rounded-full border border-[#86efac]/30 bg-[#86efac]/10 px-2 py-0.5 text-[10px] font-semibold text-[#86efac] md:inline"
-          title={CHAIN_LABEL}
-        >
-          ⛓ {CLUSTER}
-        </span>
-
-        <div className="relative mx-auto hidden max-w-md flex-1 sm:block">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="search for token"
-            className="w-full rounded-full border border-[#26272e] bg-[#15161b] py-2 pl-4 pr-3 text-sm text-white outline-none placeholder:text-[#8b8d97] focus:border-[#86efac]/50"
-          />
-        </div>
+        <div className="flex-1" />
 
         <button
           type="button"
+          aria-label="Channel"
           onClick={() => navigate('/channel')}
-          className="hidden text-xs text-[#8b8d97] hover:text-[#86efac] sm:inline"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[#9a9ba3] hover:bg-white/5 hover:text-white"
         >
-          channel
-        </button>
-        <button
-          type="button"
-          onClick={() => setHowOpen(true)}
-          className="hidden text-xs text-[#8b8d97] hover:text-white sm:inline"
-        >
-          how it works
+          <FolderIcon />
         </button>
 
         <button
           type="button"
-          onClick={() => navigate('/create-real')}
-          className="btn-press rounded-full bg-[#86efac] px-3 py-1.5 text-xs font-bold text-black hover:bg-[#4ade80] sm:px-4 sm:text-sm"
+          aria-label="Search"
+          onClick={() => setSearchOpen((v) => !v)}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[#9a9ba3] hover:bg-white/5 hover:text-white"
         >
-          create coin
+          <SearchIcon />
         </button>
 
         {!connected ? (
           <button
             type="button"
             onClick={() => {
-              // Open chooser + kick Phantom connect immediately when installed
               openModal()
               void connectPhantom()
             }}
-            className="btn-press rounded-full border border-[#86efac]/40 bg-[#86efac] px-3 py-1.5 text-xs font-bold text-black hover:bg-[#4ade80] sm:text-sm"
+            className="rounded-full bg-[#86efac] px-3.5 py-1.5 text-[13px] font-bold text-black hover:bg-[#4ade80]"
           >
-            {connecting ? 'connecting…' : 'connect Phantom'}
+            {connecting ? '…' : 'Sign in'}
           </button>
         ) : (
           <div className="relative">
             <button
               type="button"
               onClick={() => setMenu((m) => !m)}
-              className="flex items-center gap-2 rounded-full border border-[#26272e] bg-[#15161b] px-3 py-1.5 text-xs font-semibold text-[#86efac]"
+              className="rounded-full border border-[#2a2b33] bg-[#15161b] px-3 py-1.5 text-[12px] font-semibold text-[#86efac]"
             >
-              <span className="hidden text-[#8b8d97] sm:inline">{formatSol(solBalance)} SOL</span>
+              <span className="hidden sm:inline">{formatSol(solBalance)} · </span>
               {shortAddr(address!)}
             </button>
             {menu && (
-              <div className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-[#26272e] bg-[#15161b] py-1 shadow-xl">
+              <div className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border border-[#2a2b33] bg-[#15161b] py-1 shadow-xl">
                 <button
                   type="button"
                   className="block w-full px-3 py-2 text-left text-sm hover:bg-white/5"
@@ -114,14 +93,35 @@ export function Navbar() {
           </div>
         )}
       </div>
-      <div className="border-t border-[#1a1b22] px-3 py-2 sm:hidden">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="search for token"
-          className="w-full rounded-full border border-[#26272e] bg-[#15161b] py-2 px-4 text-sm outline-none"
-        />
-      </div>
+
+      {searchOpen && (
+        <div className="border-t border-[#1a1b22] px-3 py-2 sm:px-4">
+          <input
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="search for token"
+            className="w-full rounded-full border border-[#2a2b33] bg-[#15161b] px-4 py-2 text-sm outline-none placeholder:text-[#6b6d78] focus:border-[#86efac]/40"
+          />
+        </div>
+      )}
     </header>
+  )
+}
+
+function FolderIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.5-3.5" />
+    </svg>
   )
 }
