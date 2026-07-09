@@ -8,6 +8,8 @@ import { GraduationToast } from './components/GraduationToast'
 import { HomePage } from './pages/HomePage'
 import { TokenPage } from './pages/TokenPage'
 import { CreateCoinPage } from './pages/CreateCoinPage'
+import { CreateRealTokenPage } from './pages/CreateRealTokenPage'
+import { ChannelPage } from './pages/ChannelPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { useSimulator } from './hooks/useSimulator'
 import { useStore } from './store/useStore'
@@ -60,6 +62,8 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/coin/:id" element={<TokenPage />} />
             <Route path="/create" element={<CreateCoinPage />} />
+            <Route path="/create-real" element={<CreateRealTokenPage />} />
+            <Route path="/channel" element={<ChannelPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </PageTransition>

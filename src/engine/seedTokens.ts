@@ -8,112 +8,217 @@ import {
   priceSol,
 } from './bondingCurve'
 
-const SEEDS: {
-  name: string
-  symbol: string
-  emoji: string
-  description: string
-  imageHue: number
-}[] = [
-  { name: 'Pepe Supreme', symbol: 'PEPES', emoji: '🐸', description: 'the most memeable frog on solana', imageHue: 120 },
-  { name: 'Doge Moon', symbol: 'DMOON', emoji: '🐕', description: 'much wow very moon', imageHue: 40 },
-  { name: 'Wojak Tears', symbol: 'WOJAK', emoji: '😭', description: 'i know that feel bro', imageHue: 200 },
-  { name: 'Catwifhat', symbol: 'CWIF', emoji: '🐱', description: 'a cat. with a hat. obviously', imageHue: 330 },
-  { name: 'Bonk Army', symbol: 'BONKA', emoji: '🦴', description: 'bonk the competition', imageHue: 25 },
-  { name: 'Solana Sloth', symbol: 'SLOTH', emoji: '🦥', description: 'slow and steady rugs you last', imageHue: 80 },
-  { name: 'Giga Chad', symbol: 'GIGA', emoji: '💪', description: 'yes. just yes.', imageHue: 210 },
-  { name: 'NPC Coin', symbol: 'NPC', emoji: '🤖', description: 'wake up you are in a simulation', imageHue: 280 },
-  { name: 'Fartcoin Jr', symbol: 'FARTJ', emoji: '💨', description: 'silent but deadly', imageHue: 160 },
-  { name: 'Popcat Pop', symbol: 'POPP', emoji: '😺', description: 'pop pop pop', imageHue: 15 },
-  { name: 'AI Overlord', symbol: 'AIOL', emoji: '🧠', description: 'we are already in charge', imageHue: 260 },
-  { name: 'Laser Eyes', symbol: 'LASER', emoji: '👀', description: 'laser eyes never die', imageHue: 0 },
-  { name: 'Based Frog', symbol: 'BASED', emoji: '🐸', description: 'based and coin pilled', imageHue: 140 },
-  { name: 'Crypto Clown', symbol: 'CLOWN', emoji: '🤡', description: 'we are all clowns here', imageHue: 350 },
-  { name: 'Moon Bag', symbol: 'MBAG', emoji: '🎒', description: 'never selling the bag', imageHue: 190 },
-  { name: 'Pumpkin Spice', symbol: 'PSPICE', emoji: '🎃', description: 'seasonal degen energy', imageHue: 30 },
-  { name: 'Goblin Mode', symbol: 'GOBLIN', emoji: '👺', description: 'no thoughts just vibes', imageHue: 100 },
-  { name: 'Banana Zone', symbol: 'BNANA', emoji: '🍌', description: 'slip into the zone', imageHue: 50 },
-  { name: 'Rizzler', symbol: 'RIZZ', emoji: '😎', description: 'unspoken rizz on chain', imageHue: 220 },
-  { name: 'Skibidi Sol', symbol: 'SKBD', emoji: '🚽', description: 'skibidi bop yes yes', imageHue: 300 },
-  { name: 'ChadGPT', symbol: 'CGPT', emoji: '🤖', description: 'chatgpt but jacked', imageHue: 175 },
-  { name: 'Pixel Ape', symbol: 'PAPE', emoji: '🦍', description: '8-bit ape energy', imageHue: 10 },
-  { name: 'Trollface', symbol: 'TROLL', emoji: '😈', description: 'problem?', imageHue: 320 },
-  { name: 'Diamond Hands', symbol: 'DIAM', emoji: '💎', description: 'paper hands not allowed', imageHue: 195 },
-  { name: 'Rocket Rat', symbol: 'RRAT', emoji: '🐀', description: 'rats in the rocket', imageHue: 70 },
-  { name: 'Meme Lord', symbol: 'MLORD', emoji: '👑', description: 'bow to the meme economy', imageHue: 45 },
-  { name: 'Solana Salmon', symbol: 'SALM', emoji: '🐟', description: 'swimming upstream to ath', imageHue: 340 },
-  { name: 'Nyan Pump', symbol: 'NYAN', emoji: '🌈', description: 'nyan nyan nyan pump', imageHue: 290 },
+/** How many coins to seed on load (feels like a busy board) */
+export const SEED_COUNT = 500
+
+const ADJ = [
+  'Super', 'Mega', 'Giga', 'Ultra', 'Based', 'Chad', 'Degen', 'Turbo', 'Hyper', 'Neon',
+  'Pixel', 'Quantum', 'Cosmic', 'Solar', 'Lunar', 'Atomic', 'Baby', 'Mini', 'King', 'Queen',
+  'Dark', 'Golden', 'Silver', 'Cyber', 'Retro', 'Alpha', 'Beta', 'Sigma', 'Omega', 'Prime',
+  'Wild', 'Crazy', 'Lucky', 'Happy', 'Sad', 'Angry', 'Sleepy', 'Spicy', 'Salty', 'Sweet',
+  'Pump', 'Moon', 'Rocket', 'Laser', 'Turbo', 'Ninja', 'Shadow', 'Holy', 'Cursed', 'Blessed',
 ]
 
-function randAddr() {
+const NOUNS = [
+  'Pepe', 'Doge', 'Cat', 'Frog', 'Ape', 'Monkey', 'Rat', 'Pig', 'Duck', 'Goose',
+  'Whale', 'Shark', 'Fish', 'Bird', 'Owl', 'Fox', 'Wolf', 'Bear', 'Bull', 'Horse',
+  'Dragon', 'Goblin', 'Troll', 'Wizard', 'Ninja', 'Samurai', 'Pirate', 'Robot', 'Alien', 'Ghost',
+  'Banana', 'Pickle', 'Pizza', 'Burger', 'Taco', 'Sushi', 'Cookie', 'Cake', 'Coffee', 'Beer',
+  'Rocket', 'Moon', 'Star', 'Comet', 'Planet', 'Galaxy', 'Orbit', 'Laser', 'Sword', 'Shield',
+  'Hat', 'Shoe', 'Sock', 'Glove', 'Crown', 'Ring', 'Coin', 'Bag', 'Pump', 'Dump',
+  'Wojak', 'Chad', 'NPC', 'Boomer', 'Zoomer', 'Karen', 'Gigachad', 'Sigma', 'Meme', 'Clown',
+]
+
+const EMOJIS = [
+  '🐸', '🐕', '🐱', '🦍', '🐀', '🐷', '🦆', '🦢', '🐋', '🦈',
+  '🐟', '🐦', '🦉', '🦊', '🐺', '🐻', '🐂', '🐴', '🐉', '👺',
+  '😈', '🧙', '🥷', '🤖', '👽', '👻', '🍌', '🥒', '🍕', '🍔',
+  '🌮', '🍣', '🍪', '🎂', '☕', '🍺', '🚀', '🌙', '⭐', '☄️',
+  '🪐', '🌌', '💫', '🔫', '⚔️', '🛡️', '🎩', '👟', '🧦', '👑',
+  '💍', '🪙', '💰', '💎', '🔥', '💀', '🤡', '😎', '😭', '💪',
+]
+
+const DESCS = [
+  'the next 100x no cap',
+  'community first, devs last',
+  'just a vibe coin tbh',
+  'fair launch no team tokens',
+  'we are so back',
+  'this is the one fr fr',
+  'rugproof (probably)',
+  'born on the bonding curve',
+  'only on solana',
+  'touch grass after you moon',
+  'liquidity locked in our hearts',
+  'diamond hands only',
+  'paper hands will be liquidated',
+  'meme economy in full effect',
+  'wen raydium? soon™',
+  'dev is based and holding',
+  'ct is cooking rn',
+  'low mc high dreams',
+  'send it or regret it',
+  'the people\'s coin',
+]
+
+function randAddr(seed: number) {
   const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
   let s = ''
-  for (let i = 0; i < 44; i++) s += chars[Math.floor(Math.random() * chars.length)]
+  let x = seed * 1103515245 + 12345
+  for (let i = 0; i < 44; i++) {
+    x = (x * 1103515245 + 12345) >>> 0
+    s += chars[x % chars.length]
+  }
   return s
 }
 
 function imageUrl(seed: string, hue: number) {
-  return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${hue.toString(16).padStart(2, '0')}efac`
+  const bg = (hue % 360).toString(16).padStart(2, '0')
+  return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${bg}efac`
 }
 
-/** Build tokens with varied mcaps by applying synthetic buy pressure */
-export function createSeedTokens(): Token[] {
+function makeName(i: number) {
+  const a = ADJ[i % ADJ.length]
+  const b = NOUNS[(i * 7) % NOUNS.length]
+  const suffix = i > ADJ.length * NOUNS.length ? ` ${i % 99}` : ''
+  // occasionally reverse or combine differently
+  if (i % 5 === 0) return `${b} ${a}${suffix}`
+  if (i % 11 === 0) return `${a}${b}${suffix}`
+  return `${a} ${b}${suffix}`
+}
+
+function makeSymbol(name: string, i: number) {
+  const letters = name.replace(/[^A-Za-z]/g, '').toUpperCase()
+  let sym = (letters.slice(0, 4) + letters.slice(-2)).slice(0, 6)
+  if (sym.length < 3) sym = `TKN${i % 100}`
+  // ensure uniqueness-ish
+  if (i > 50) sym = `${sym.slice(0, 4)}${(i % 36).toString(36).toUpperCase()}`
+  return sym.slice(0, 8)
+}
+
+function buildToken(i: number, now: number): Token {
+  const name = makeName(i)
+  const symbol = makeSymbol(name, i)
+  const emoji = EMOJIS[i % EMOJIS.length]
+  const description = DESCS[i % DESCS.length]
+  const imageHue = (i * 47) % 360
+
+  // mcap spread: many small, some mid, few near graduation
+  let targetMcap: number
+  const roll = (i * 13) % 100
+  if (roll < 55) targetMcap = 800 + (i % 80) * 90 // $0.8k–$8k fresh
+  else if (roll < 85) targetMcap = 8000 + (i % 120) * 200 // $8k–$32k
+  else if (roll < 97) targetMcap = 32000 + (i % 100) * 300 // $32k–$62k
+  else targetMcap = 62000 + (i % 20) * 200 // near graduate
+
+  let virtualSol = VIRTUAL_SOL
+  let virtualTokens = VIRTUAL_TOKENS
+  let realSol = 0
+  let realTokens = REAL_TOKEN_RESERVES
+
+  // Fast approximate curve push using fewer iterations
+  // price * supply * 150 = mcap => need virtualSol/virtualTokens ratio
+  // Use closed-form-ish stepping
+  let guard = 0
+  while (marketCapUsd(virtualSol, virtualTokens) < targetMcap && guard < 120) {
+    const buy = 0.15 + (i % 7) * 0.08
+    const fee = buy * 0.01
+    const solAfter = buy - fee
+    const tokensOut = (virtualTokens * solAfter) / (virtualSol + solAfter)
+    virtualSol += solAfter
+    virtualTokens -= tokensOut
+    realSol += buy
+    realTokens -= tokensOut
+    guard++
+  }
+
+  const mcap = marketCapUsd(virtualSol, virtualTokens)
+  const complete = mcap >= GRADUATION_MCAP_USD
+  const id = `tok_${i}_${symbol}`
+
+  // age: mix of seconds to hours old
+  const ageMs =
+    roll < 40
+      ? (i % 120) * 1000 // last 2 min
+      : roll < 70
+        ? (i % 60) * 60_000 // last hour
+        : (i % 48) * 3600_000 // last 2 days
+
+  return {
+    id,
+    name,
+    symbol,
+    emoji,
+    description,
+    imageUrl: imageUrl(`${symbol}_${i}`, imageHue),
+    imageHue,
+    creator: randAddr(i + 99),
+    virtualSol,
+    virtualTokens,
+    realSol,
+    realTokens,
+    priceSol: priceSol(virtualSol, virtualTokens),
+    marketCapUsd: mcap,
+    volumeSol: realSol * (0.8 + (i % 10) * 0.15),
+    replies: Math.floor((i * 17) % 400),
+    complete,
+    createdAt: now - ageMs,
+    candles: [],
+    holders: [
+      { wallet: 'bonding-curve', amount: Math.max(0, realTokens), isCurve: true },
+      { wallet: randAddr(i + 1).slice(0, 12) + 'dev', amount: 40_000_000 + (i % 20) * 1_000_000, isCreator: true },
+      { wallet: randAddr(i + 2), amount: 5_000_000 + (i % 50) * 100_000 },
+      { wallet: randAddr(i + 3), amount: 2_000_000 + (i % 30) * 50_000 },
+    ],
+    shake: null,
+  }
+}
+
+/** Build a large board of meme coins */
+export function createSeedTokens(count = SEED_COUNT): Token[] {
   const now = Date.now()
-  return SEEDS.map((s, i) => {
-    // distribute mcaps roughly $4k–$62k
-    const targetMcap = 4000 + ((i * 7919) % 58000)
-    let virtualSol = VIRTUAL_SOL
-    let virtualTokens = VIRTUAL_TOKENS
-    let realSol = 0
-    let realTokens = REAL_TOKEN_RESERVES
+  const tokens: Token[] = []
+  const usedSym = new Set<string>()
 
-    // approximate buys until near target mcap
-    let guard = 0
-    while (marketCapUsd(virtualSol, virtualTokens) < targetMcap && guard < 80) {
-      const buy = 0.3 + (i % 5) * 0.15
-      const fee = buy * 0.01
-      const solAfter = buy - fee
-      const tokensOut = (virtualTokens * solAfter) / (virtualSol + solAfter)
-      virtualSol += solAfter
-      virtualTokens -= tokensOut
-      realSol += buy
-      realTokens -= tokensOut
-      guard++
+  for (let i = 0; i < count; i++) {
+    let t = buildToken(i, now)
+    // unique symbols
+    let n = 0
+    while (usedSym.has(t.symbol) && n < 20) {
+      t = buildToken(i + count * (n + 1), now)
+      t.symbol = `${t.symbol.slice(0, 5)}${n}`
+      n++
     }
+    usedSym.add(t.symbol)
+    tokens.push(t)
+  }
 
-    const mcap = marketCapUsd(virtualSol, virtualTokens)
-    const complete = mcap >= GRADUATION_MCAP_USD
+  // sort newest-first-ish mixed with volume so board feels alive
+  tokens.sort((a, b) => b.createdAt - a.createdAt)
+  return tokens
+}
 
-    const id = `tok_${i}_${s.symbol}`
-    return {
-      id,
-      name: s.name,
-      symbol: s.symbol,
-      emoji: s.emoji,
-      description: s.description,
-      imageUrl: imageUrl(s.symbol + i, s.imageHue),
-      imageHue: s.imageHue,
-      creator: randAddr(),
-      virtualSol,
-      virtualTokens,
-      realSol,
-      realTokens,
-      priceSol: priceSol(virtualSol, virtualTokens),
-      marketCapUsd: mcap,
-      volumeSol: realSol * 1.4,
-      replies: Math.floor(Math.random() * 120),
-      complete,
-      createdAt: now - (SEEDS.length - i) * 45_000 - Math.random() * 60_000,
-      candles: [],
-      holders: [
-        { wallet: 'bonding-curve', amount: realTokens, isCurve: true },
-        { wallet: randAddr().slice(0, 8) + 'creator', amount: 50_000_000, isCreator: true },
-      ],
-      shake: null,
-    } as Token
-  })
+/** Spawn one brand-new coin (for continuous launch simulation) */
+export function spawnRandomToken(seq: number): Token {
+  const now = Date.now()
+  const t = buildToken(10_000 + seq * 97, now)
+  t.createdAt = now
+  t.virtualSol = VIRTUAL_SOL
+  t.virtualTokens = VIRTUAL_TOKENS
+  t.realSol = 0
+  t.realTokens = REAL_TOKEN_RESERVES
+  t.priceSol = priceSol(VIRTUAL_SOL, VIRTUAL_TOKENS)
+  t.marketCapUsd = marketCapUsd(VIRTUAL_SOL, VIRTUAL_TOKENS)
+  t.volumeSol = 0
+  t.replies = 0
+  t.complete = false
+  t.id = `tok_live_${seq}_${Date.now().toString(36)}`
+  t.symbol = `${t.symbol.slice(0, 5)}${(seq % 36).toString(36).toUpperCase()}`.slice(0, 8)
+  t.name = `${ADJ[seq % ADJ.length]} ${NOUNS[(seq * 3) % NOUNS.length]}`
+  t.candles = []
+  return t
 }
 
 export function randomWallet() {
-  return randAddr()
+  return randAddr(Math.floor(Math.random() * 1e9))
 }

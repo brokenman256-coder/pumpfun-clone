@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { Chart } from '../components/Chart'
@@ -12,9 +12,14 @@ import { shortAddr, formatUsd } from '../lib/format'
 export function TokenPage() {
   const { id } = useParams()
   const token = useStore((s) => s.tokens.find((t) => t.id === id))
+  const ensureCandles = useStore((s) => s.ensureCandles)
   const trades = useStore((s) => s.trades.filter((t) => t.tokenId === id).slice(0, 50))
   const [tab, setTab] = useState<'trades' | 'thread' | 'holders'>('trades')
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (id) ensureCandles(id)
+  }, [id, ensureCandles])
 
   if (!token) {
     return (

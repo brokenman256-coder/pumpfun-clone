@@ -5,17 +5,20 @@ import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { getBuyQuote, getSellQuote, TRADE_FEE_BPS } from '../engine/bondingCurve'
 import { formatSol } from '../lib/format'
+import { CHAIN_LABEL, EXPLORER_TX, CLUSTER } from '../chain/config'
 
 const QUICK = [0.1, 0.5, 1]
 
 export function TradePanel({ token }: { token: Token }) {
   const executeTrade = useStore((s) => s.executeTrade)
-  const { connected, openModal, holdings, solBalance } = useWallet()
+  const { connected, openModal, holdings, solBalance, paySol, refreshBalance } = useWallet()
   const [mode, setMode] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
   const [slippage, setSlippage] = useState('1')
   const [error, setError] = useState('')
-  const [rippling, setRippling] = useState(false)
+  const [status, setStatus] = useState('')
+  const [txSig, setTxSig] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const holding = holdings[token.id] ?? 0
   const num = parseFloat(amount) || 0
@@ -28,8 +31,10 @@ export function TradePanel({ token }: { token: Token }) {
     return getSellQuote(num, token.virtualSol, token.virtualTokens)
   }, [num, mode, token.virtualSol, token.virtualTokens])
 
-  function place(quick?: number) {
+  async function place(quick?: number) {
     setError('')
+    setStatus('')
+    setTxSig('')
     if (!connected) {
       openModal()
       return
@@ -44,30 +49,57 @@ export function TradePanel({ token }: { token: Token }) {
       return
     }
 
-    setRippling(true)
-    setTimeout(() => setRippling(false), 500)
+    setLoading(true)
+    try {
+      let signature: string | undefined
 
-    const res = executeTrade(token.id, mode, a)
-    if (!res.ok) {
-      setError(res.error || 'Trade failed')
-      return
-    }
-    setAmount('')
-    if (mode === 'buy') {
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.7 },
-        colors: ['#86efac', '#4ade80', '#ffffff'],
-      })
-    }
-    if (res.graduated) {
-      confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } })
+      if (mode === 'buy') {
+        // REAL on-chain SOL payment
+        setStatus(`Approve ${a} SOL in Phantom…`)
+        signature = await paySol(a, `buy:${token.symbol}:${token.id}:${a}`)
+        setTxSig(signature)
+        setStatus('Confirmed on Solana · updating curve…')
+      }
+
+      const res = executeTrade(token.id, mode, a, undefined, false, signature)
+      if (!res.ok) {
+        setError(res.error || 'Trade failed')
+        return
+      }
+
+      setAmount('')
+      await refreshBalance()
+      setStatus(mode === 'buy' ? 'Buy confirmed on-chain ✓' : 'Sell filled ✓')
+
+      if (mode === 'buy') {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ['#86efac', '#4ade80', '#ffffff'],
+        })
+      }
+      if (res.graduated) {
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } })
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Transaction failed'
+      if (/reject|cancel|denied/i.test(msg)) setError('Transaction cancelled in wallet')
+      else setError(msg)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <div className="rounded-xl border border-[#26272e] bg-[#15161b] p-4">
+      <div className="mb-3 flex items-center justify-between text-[10px]">
+        <span className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]">
+          ⛓ {CHAIN_LABEL}
+        </span>
+        <span className="text-[#8b8d97]">bal {formatSol(solBalance)} SOL</span>
+      </div>
+
       <div className="mb-3 flex rounded-lg bg-[#0e0f13] p-1">
         {(['buy', 'sell'] as const).map((m) => (
           <button
@@ -77,6 +109,7 @@ export function TradePanel({ token }: { token: Token }) {
               setMode(m)
               setAmount('')
               setError('')
+              setStatus('')
             }}
             className={`flex-1 rounded-md py-2.5 text-sm font-bold capitalize ${
               mode === m
@@ -111,8 +144,9 @@ export function TradePanel({ token }: { token: Token }) {
                 <button
                   key={v}
                   type="button"
+                  disabled={loading}
                   onClick={() => place(v)}
-                  className="btn-press rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#86efac]/40 hover:text-[#86efac]"
+                  className="btn-press rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#86efac]/40 hover:text-[#86efac] disabled:opacity-40"
                 >
                   {v} SOL
                 </button>
@@ -184,28 +218,56 @@ export function TradePanel({ token }: { token: Token }) {
             <span>%</span>
           </div>
 
+          {status && <p className="mt-2 text-xs text-[#86efac]">{status}</p>}
           {error && <p className="mt-2 text-xs text-[#f87171]">{error}</p>}
+          {txSig && (
+            <a
+              href={EXPLORER_TX(txSig)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 block text-[10px] text-[#86efac] underline"
+            >
+              view tx on solscan →
+            </a>
+          )}
 
           <button
             type="button"
+            disabled={loading}
             onClick={() => place()}
-            className={`btn-press relative mt-3 w-full overflow-hidden rounded-lg py-3.5 text-sm font-bold ${
+            className={`btn-press relative mt-3 w-full overflow-hidden rounded-lg py-3.5 text-sm font-bold disabled:opacity-50 ${
               mode === 'buy'
                 ? 'bg-[#86efac] text-black hover:bg-[#4ade80]'
                 : 'bg-[#f87171] text-white hover:bg-red-400'
             }`}
           >
-            {rippling && (
-              <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="h-4 w-4 animate-ping rounded-full bg-white/40" />
-              </span>
-            )}
-            {!connected
-              ? 'connect wallet'
-              : mode === 'buy'
-                ? `buy ${token.symbol}`
-                : `sell ${token.symbol}`}
+            {loading
+              ? status || 'Confirm in wallet…'
+              : !connected
+                ? 'connect wallet'
+                : mode === 'buy'
+                  ? `buy ${token.symbol} (on-chain)`
+                  : `sell ${token.symbol}`}
           </button>
+
+          <p className="mt-3 text-center text-[10px] leading-relaxed text-[#555]">
+            Buys send real SOL on {CLUSTER} to the platform treasury. Phantom must be on{' '}
+            <span className="text-[#86efac]">{CLUSTER}</span>.
+            {CLUSTER === 'devnet' && (
+              <>
+                {' '}
+                Free SOL:{' '}
+                <a
+                  href="https://faucet.solana.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#86efac] underline"
+                >
+                  faucet.solana.com
+                </a>
+              </>
+            )}
+          </p>
         </>
       )}
     </div>

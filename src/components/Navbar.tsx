@@ -3,13 +3,15 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { shortAddr, formatSol } from '../lib/format'
+import { CLUSTER, CHAIN_LABEL } from '../chain/config'
 
 export function Navbar() {
   const navigate = useNavigate()
   const search = useStore((s) => s.search)
   const setSearch = useStore((s) => s.setSearch)
   const setHowOpen = useStore((s) => s.setHowOpen)
-  const { connected, address, solBalance, openModal, disconnect } = useWallet()
+  const { connected, address, solBalance, openModal, connectPhantom, disconnect, connecting } =
+    useWallet()
   const [menu, setMenu] = useState(false)
 
   return (
@@ -24,6 +26,13 @@ export function Navbar() {
           </span>
         </Link>
 
+        <span
+          className="hidden rounded-full border border-[#86efac]/30 bg-[#86efac]/10 px-2 py-0.5 text-[10px] font-semibold text-[#86efac] md:inline"
+          title={CHAIN_LABEL}
+        >
+          ⛓ {CLUSTER}
+        </span>
+
         <div className="relative mx-auto hidden max-w-md flex-1 sm:block">
           <input
             value={search}
@@ -35,6 +44,13 @@ export function Navbar() {
 
         <button
           type="button"
+          onClick={() => navigate('/channel')}
+          className="hidden text-xs text-[#8b8d97] hover:text-[#86efac] sm:inline"
+        >
+          channel
+        </button>
+        <button
+          type="button"
           onClick={() => setHowOpen(true)}
           className="hidden text-xs text-[#8b8d97] hover:text-white sm:inline"
         >
@@ -43,7 +59,7 @@ export function Navbar() {
 
         <button
           type="button"
-          onClick={() => navigate('/create')}
+          onClick={() => navigate('/create-real')}
           className="btn-press rounded-full bg-[#86efac] px-3 py-1.5 text-xs font-bold text-black hover:bg-[#4ade80] sm:px-4 sm:text-sm"
         >
           create coin
@@ -52,10 +68,14 @@ export function Navbar() {
         {!connected ? (
           <button
             type="button"
-            onClick={openModal}
-            className="btn-press rounded-full border border-[#26272e] bg-[#15161b] px-3 py-1.5 text-xs font-semibold text-white hover:border-[#86efac]/40 sm:text-sm"
+            onClick={() => {
+              // Open chooser + kick Phantom connect immediately when installed
+              openModal()
+              void connectPhantom()
+            }}
+            className="btn-press rounded-full border border-[#86efac]/40 bg-[#86efac] px-3 py-1.5 text-xs font-bold text-black hover:bg-[#4ade80] sm:text-sm"
           >
-            connect wallet
+            {connecting ? 'connecting…' : 'connect Phantom'}
           </button>
         ) : (
           <div className="relative">

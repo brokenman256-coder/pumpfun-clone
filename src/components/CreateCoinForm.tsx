@@ -4,11 +4,12 @@ import confetti from 'canvas-confetti'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { CREATE_FEE_SOL } from '../engine/bondingCurve'
+import { CHAIN_LABEL, CLUSTER } from '../chain/config'
 
 export function CreateCoinForm() {
   const navigate = useNavigate()
   const createToken = useStore((s) => s.createToken)
-  const { connected, openModal, solBalance } = useWallet()
+  const { connected, openModal, solBalance, paySol, refreshBalance } = useWallet()
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
   const [description, setDescription] = useState('')
@@ -18,6 +19,7 @@ export function CreateCoinForm() {
   const [telegram, setTelegram] = useState('')
   const [website, setWebsite] = useState('')
   const [error, setError] = useState('')
+  const [status, setStatus] = useState('')
   const [launching, setLaunching] = useState(false)
 
   function onFile(file?: File) {
@@ -34,6 +36,7 @@ export function CreateCoinForm() {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setStatus('')
     if (!connected) {
       openModal()
       return
@@ -43,39 +46,58 @@ export function CreateCoinForm() {
       return
     }
     if (solBalance < CREATE_FEE_SOL) {
-      setError(`need ${CREATE_FEE_SOL} SOL to deploy`)
+      setError(
+        `need ${CREATE_FEE_SOL} SOL on-chain (have ${solBalance.toFixed(3)}). ${CLUSTER === 'devnet' ? 'Fund wallet via faucet.solana.com' : ''}`,
+      )
       return
     }
 
     setLaunching(true)
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.85 },
-      colors: ['#86efac', '#4ade80', '#ffffff'],
-    })
+    try {
+      // 1) Real SOL payment on Solana
+      setStatus(`Pay ${CREATE_FEE_SOL} SOL create fee in wallet…`)
+      const signature = await paySol(
+        CREATE_FEE_SOL,
+        `create:${symbol.toUpperCase()}:${name.trim()}`,
+      )
+      setStatus('Fee confirmed · launching…')
 
-    await new Promise((r) => setTimeout(r, 1700))
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.85 },
+        colors: ['#86efac', '#4ade80', '#ffffff'],
+      })
 
-    // TODO: replace createToken with real Solana program create_token IX (devnet)
-    const id = createToken({
-      name: name.trim(),
-      symbol: symbol.trim(),
-      description: description.trim(),
-      imageUrl: imageUrl || undefined,
-      twitter: twitter || undefined,
-      telegram: telegram || undefined,
-      website: website || undefined,
-    })
+      await new Promise((r) => setTimeout(r, 900))
 
-    if (!id) {
+      const id = createToken({
+        name: name.trim(),
+        symbol: symbol.trim(),
+        description: description.trim(),
+        imageUrl: imageUrl || undefined,
+        twitter: twitter || undefined,
+        telegram: telegram || undefined,
+        website: website || undefined,
+        signature,
+      })
+
+      if (!id) {
+        setLaunching(false)
+        setError('launch failed after payment')
+        return
+      }
+
+      await refreshBalance()
+      confetti({ particleCount: 160, spread: 100, origin: { y: 0.45 } })
+      navigate(`/coin/${id}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Launch failed'
+      if (/reject|cancel|denied/i.test(msg)) setError('Payment cancelled in wallet')
+      else setError(msg)
       setLaunching(false)
-      setError('launch failed')
-      return
+      setStatus('')
     }
-
-    confetti({ particleCount: 160, spread: 100, origin: { y: 0.45 } })
-    navigate(`/coin/${id}`)
   }
 
   return (
@@ -84,10 +106,30 @@ export function CreateCoinForm() {
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/65">
           <div className="text-center">
             <div className="rocket-anim text-7xl">🚀</div>
-            <p className="mt-4 font-bold text-[#86efac]">launching to the moon…</p>
+            <p className="mt-4 font-bold text-[#86efac]">{status || 'launching…'}</p>
           </div>
         </div>
       )}
+
+      <div className="mb-4 rounded-xl border border-[#86efac]/25 bg-[#86efac]/5 px-4 py-3 text-center text-xs text-[#aaa]">
+        Full chain · <span className="font-semibold text-[#86efac]">{CHAIN_LABEL}</span>
+        <br />
+        Create fee is a real SOL transfer. Phantom must be on{' '}
+        <span className="text-[#86efac]">{CLUSTER}</span>.
+        {CLUSTER === 'devnet' && (
+          <>
+            {' '}
+            <a
+              href="https://faucet.solana.com"
+              className="text-[#86efac] underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get free devnet SOL
+            </a>
+          </>
+        )}
+      </div>
 
       <form
         onSubmit={submit}
@@ -145,7 +187,9 @@ export function CreateCoinForm() {
         <p className="text-center text-sm text-[#8b8d97]">
           cost to deploy:{' '}
           <span className="font-bold text-[#86efac]">~{CREATE_FEE_SOL} SOL</span>
+          <span className="text-[#555]"> (on-chain)</span>
         </p>
+        {status && !launching && <p className="text-center text-sm text-[#86efac]">{status}</p>}
         {error && <p className="text-center text-sm text-[#f87171]">{error}</p>}
 
         <button
@@ -153,7 +197,11 @@ export function CreateCoinForm() {
           disabled={launching}
           className="btn-press w-full rounded-full bg-[#86efac] py-3 text-sm font-bold text-black hover:bg-[#4ade80] disabled:opacity-60"
         >
-          {launching ? 'launching…' : connected ? 'create coin 🚀' : 'connect wallet to create'}
+          {launching
+            ? status || 'launching…'
+            : connected
+              ? `pay ${CREATE_FEE_SOL} SOL & create 🚀`
+              : 'connect wallet to create'}
         </button>
       </form>
     </div>

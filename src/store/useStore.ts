@@ -11,7 +11,7 @@ import {
   VIRTUAL_TOKENS,
   REAL_TOKEN_RESERVES,
 } from '../engine/bondingCurve'
-import { createSeedTokens, randomWallet } from '../engine/seedTokens'
+import { createSeedTokens, randomWallet, spawnRandomToken, SEED_COUNT } from '../engine/seedTokens'
 import { applyTradeToCandles, seedCandles } from '../engine/candles'
 
 type Flash = { id: string; side: TradeSide; at: number }
@@ -29,12 +29,19 @@ type Store = {
   walletModalOpen: boolean
   flashIds: Flash[]
   launching: boolean
+  /** monotonically increasing spawn counter for new launches */
+  spawnSeq: number
+  /** display total (grows as new coins spawn) */
+  totalLaunches: number
 
   setSort: (s: SortTab) => void
   setSearch: (q: string) => void
   setHowOpen: (v: boolean) => void
   setWalletModalOpen: (v: boolean) => void
   clearGraduation: () => void
+  ensureCandles: (tokenId: string) => void
+  setChainWallet: (connected: boolean, address: string | null) => void
+  setSolBalance: (bal: number) => void
 
   connectWallet: (provider?: string) => void
   disconnectWallet: () => void
@@ -45,7 +52,8 @@ type Store = {
     amount: number,
     wallet?: string,
     isSim?: boolean,
-  ) => { ok: boolean; error?: string; graduated?: boolean }
+    signature?: string,
+  ) => { ok: boolean; error?: string; graduated?: boolean; signature?: string }
   createToken: (input: {
     name: string
     symbol: string
@@ -55,6 +63,7 @@ type Store = {
     website?: string
     twitter?: string
     telegram?: string
+    signature?: string
   }) => string | null
   addComment: (tokenId: string, text: string, imageUrl?: string) => void
   likeComment: (id: string) => void
@@ -67,10 +76,8 @@ function sig() {
 }
 
 function initTokens(): Token[] {
-  return createSeedTokens().map((t) => ({
-    ...t,
-    candles: seedCandles(t.marketCapUsd),
-  }))
+  // Candles generated lazily on first open (500 coins would freeze if all charted now)
+  return createSeedTokens(SEED_COUNT)
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -92,6 +99,8 @@ export const useStore = create<Store>((set, get) => ({
   walletModalOpen: false,
   flashIds: [],
   launching: false,
+  spawnSeq: 0,
+  totalLaunches: SEED_COUNT + 1_248_200, // board + “all-time” feel like pump.fun scale
 
   setSort: (s) => set({ sort: s }),
   setSearch: (q) => set({ search: q }),
@@ -99,34 +108,50 @@ export const useStore = create<Store>((set, get) => ({
   setWalletModalOpen: (v) => set({ walletModalOpen: v }),
   clearGraduation: () => set({ graduationToast: null }),
 
-  connectWallet: (_provider) => {
-    // TODO(solana-devnet): replace with real @solana/wallet-adapter connect + getBalance
-    const address = randomWallet()
-    set({
+  ensureCandles: (tokenId) => {
+    set((s) => ({
+      tokens: s.tokens.map((t) => {
+        if (t.id !== tokenId || t.candles.length > 0) return t
+        return { ...t, candles: seedCandles(t.marketCapUsd, 36) }
+      }),
+    }))
+  },
+
+  setChainWallet: (connected, address) =>
+    set((s) => ({
       wallet: {
-        connected: true,
+        ...s.wallet,
+        connected,
         address,
-        solBalance: 10,
-        holdings: {},
-        costBasis: {},
+        // keep holdings across reconnects for same session
+        solBalance: connected ? s.wallet.solBalance : 0,
       },
       walletModalOpen: false,
-    })
+    })),
+
+  setSolBalance: (bal) =>
+    set((s) => ({
+      wallet: { ...s.wallet, solBalance: bal },
+    })),
+
+  connectWallet: () => {
+    // Real connect is handled by wallet-adapter modal via useWallet().openModal()
+    set({ walletModalOpen: true })
   },
 
   disconnectWallet: () =>
-    set({
+    set((s) => ({
       wallet: {
+        ...s.wallet,
         connected: false,
         address: null,
         solBalance: 0,
-        holdings: {},
-        costBasis: {},
       },
-    }),
+    })),
 
-  executeTrade: (tokenId, side, amount, walletOverride, isSim = false) => {
-    // TODO(solana-devnet): build + sign bonding-curve buy/sell IX, then apply fills from confirmed logs
+  executeTrade: (tokenId, side, amount, walletOverride, isSim = false, signature) => {
+    // On-chain path: UI pays SOL first, then calls this with signature.
+    // Curve math stays in-app until a custom program is deployed.
     const state = get()
     const token = state.tokens.find((t) => t.id === tokenId)
     if (!token) return { ok: false, error: 'Token not found' }
@@ -170,7 +195,7 @@ export const useStore = create<Store>((set, get) => ({
         marketCapUsd: next.marketCapUsd,
         priceSol: next.priceSol,
         createdAt: Date.now(),
-        signature: sig(),
+        signature: signature || (isSim ? sig() : sig()),
       }
 
       next = {
@@ -190,10 +215,13 @@ export const useStore = create<Store>((set, get) => ({
           s.tokens.map((t) => (t.id === tokenId ? next : t)),
           tokenId,
         )
+        // On-chain buys already deducted SOL on Solana — only adjust if sim
         const walletState = isUser
           ? {
               ...s.wallet,
-              solBalance: s.wallet.solBalance - amount,
+              solBalance: isSim || signature
+                ? s.wallet.solBalance // chain paid or sim uses separate path
+                : s.wallet.solBalance - amount,
               holdings: {
                 ...s.wallet.holdings,
                 [tokenId]: (s.wallet.holdings[tokenId] ?? 0) + q.tokensOut,
@@ -204,6 +232,11 @@ export const useStore = create<Store>((set, get) => ({
               },
             }
           : s.wallet
+
+        // Fix: sim should still deduct simulated SOL
+        if (isUser && isSim) {
+          walletState.solBalance = s.wallet.solBalance - amount
+        }
 
         return {
           tokens,
@@ -221,10 +254,10 @@ export const useStore = create<Store>((set, get) => ({
       })
 
       setTimeout(() => get().clearShake(tokenId), 1000)
-      return { ok: true, graduated }
+      return { ok: true, graduated, signature: trade.signature }
     }
 
-    // sell
+    // sell — credits SOL in local balance; full program would pay from curve vault
     const bal = isUser
       ? state.wallet.holdings[tokenId] ?? 0
       : amount // sim sells use amount as token amount
@@ -255,7 +288,7 @@ export const useStore = create<Store>((set, get) => ({
       marketCapUsd: next.marketCapUsd,
       priceSol: next.priceSol,
       createdAt: Date.now(),
-      signature: sig(),
+      signature: signature || sig(),
     }
 
     next = {
@@ -299,7 +332,8 @@ export const useStore = create<Store>((set, get) => ({
   createToken: (input) => {
     const w = get().wallet
     if (!w.connected || !w.address) return null
-    if (w.solBalance < CREATE_FEE_SOL) return null
+    // On-chain create: fee already paid (signature present). Sim: check balance.
+    if (!input.signature && w.solBalance < CREATE_FEE_SOL) return null
 
     const id = `tok_${Date.now()}`
     const symbol = input.symbol.toUpperCase().slice(0, 8)
@@ -337,7 +371,14 @@ export const useStore = create<Store>((set, get) => ({
 
     set((s) => ({
       tokens: [token, ...s.tokens],
-      wallet: { ...s.wallet, solBalance: s.wallet.solBalance - CREATE_FEE_SOL },
+      wallet: {
+        ...s.wallet,
+        // only deduct local if fee wasn't already on-chain
+        solBalance: input.signature
+          ? s.wallet.solBalance
+          : s.wallet.solBalance - CREATE_FEE_SOL,
+      },
+      totalLaunches: s.totalLaunches + 1,
     }))
     return id
   },
@@ -370,18 +411,35 @@ export const useStore = create<Store>((set, get) => ({
     })),
 
   simTick: () => {
-    const { tokens, executeTrade } = get()
-    const live = tokens.filter((t) => !t.complete)
+    const state = get()
+    // ~18% of ticks: launch a brand-new coin (board keeps growing)
+    if (Math.random() < 0.18) {
+      const seq = state.spawnSeq + 1
+      const fresh = spawnRandomToken(seq)
+      fresh.candles = seedCandles(fresh.marketCapUsd, 8)
+      set({
+        tokens: [fresh, ...state.tokens].slice(0, 2000), // hard cap memory
+        spawnSeq: seq,
+        totalLaunches: state.totalLaunches + 1,
+      })
+      return
+    }
+
+    const live = state.tokens.filter((t) => !t.complete)
     if (!live.length) return
-    const token = live[Math.floor(Math.random() * live.length)]
+    // Prefer newer / hotter coins for trades (more activity at top)
+    const pool =
+      Math.random() < 0.55
+        ? live.slice(0, Math.min(80, live.length))
+        : live
+    const token = pool[Math.floor(Math.random() * pool.length)]
     const side: TradeSide = Math.random() > 0.32 ? 'buy' : 'sell'
     if (side === 'buy') {
       const sol = [0.05, 0.1, 0.25, 0.5, 1, 2][Math.floor(Math.random() * 6)]
-      executeTrade(token.id, 'buy', sol, randomWallet(), true)
+      state.executeTrade(token.id, 'buy', sol, randomWallet(), true)
     } else {
-      // sell small token amount
       const tokAmt = token.virtualTokens * (0.00001 + Math.random() * 0.0002)
-      executeTrade(token.id, 'sell', tokAmt, randomWallet(), true)
+      state.executeTrade(token.id, 'sell', tokAmt, randomWallet(), true)
     }
   },
 
