@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
 import { BountiesStrip } from './BountiesStrip'
+import { KingOfHill } from './KingOfHill'
 import { useTokenFeed } from '../hooks/useTokenFeed'
 
 const CHIPS: { id: SortTab; label: string }[] = [
@@ -60,6 +61,7 @@ export function TokenBoard() {
         ))}
       </div>
 
+      <KingOfHill />
       <BountiesStrip />
 
       <section className="mb-5">

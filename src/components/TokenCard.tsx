@@ -1,16 +1,22 @@
 import { Link } from 'react-router-dom'
 import type { Token } from '../types'
-import { formatUsd, shortAddr, timeAgo } from '../lib/format'
+import { formatUsd, shortAddr, timeAgo, formatSol } from '../lib/format'
 import { useCountUp } from '../hooks/useCountUp'
 import { TokenImage } from './TokenImage'
+import { progressToGraduation } from '../engine/bondingCurve'
 
 export function TokenCard({ token }: { token: Token }) {
   const mcap = useCountUp(token.marketCapUsd, 300)
+  const progress = progressToGraduation(token.marketCapUsd)
   const shake =
     token.shake === 'buy' ? 'shake-buy' : token.shake === 'sell' ? 'shake-sell' : ''
+  const up = token.change24h >= 0
 
   return (
-    <Link to={`/coin/${token.id}`} className={`block overflow-hidden rounded-2xl bg-[#14151b] ${shake}`}>
+    <Link
+      to={`/coin/${token.id}`}
+      className={`block overflow-hidden rounded-2xl border border-[#1a1b22] bg-[#14151b] transition hover:border-[#86efac]/35 ${shake}`}
+    >
       <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
         <TokenImage
           src={token.imageUrl}
@@ -21,21 +27,72 @@ export function TokenCard({ token }: { token: Token }) {
         />
         {token.complete && (
           <span className="absolute right-2 top-2 rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
-            GRAD
+            🎓 GRAD
           </span>
         )}
-        <span className="absolute bottom-2 left-2 text-lg drop-shadow">{token.emoji}</span>
+        {!token.complete && progress > 70 && (
+          <span className="absolute right-2 top-2 rounded-md bg-[#86efac] px-1.5 py-0.5 text-[9px] font-bold text-black">
+            HOT
+          </span>
+        )}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-8">
+          <div className="h-1 overflow-hidden rounded-full bg-white/20">
+            <div
+              className={`h-full rounded-full ${token.complete ? 'bg-yellow-400' : 'bg-[#86efac]'}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[10px] font-medium text-white/80">
+            {progress.toFixed(0)}% to Raydium
+          </p>
+        </div>
       </div>
-      <div className="space-y-0.5 p-2.5">
-        <p className="truncate text-[13px] font-semibold text-white">{token.name}</p>
-        <p className="truncate text-[12px] text-[#8b8d97]">${token.symbol}</p>
-        <p className="text-[13px] font-bold text-[#86efac]">{formatUsd(mcap)} MC</p>
+
+      <div className="space-y-1 p-2.5">
+        <div className="flex items-start justify-between gap-1">
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-bold text-white">
+              {token.emoji} {token.name}
+            </p>
+            <p className="truncate text-[12px] text-[#8b8d97]">${token.symbol}</p>
+          </div>
+          <span className={`shrink-0 text-[11px] font-bold ${up ? 'text-[#86efac]' : 'text-[#f87171]'}`}>
+            {up ? '▲' : '▼'}
+            {Math.abs(token.change24h).toFixed(1)}%
+          </span>
+        </div>
+
+        <p className="text-[14px] font-black text-[#86efac]">{formatUsd(mcap)} MC</p>
+
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#6b6d78]">
+          <span>vol {formatUsd(token.volumeUsd)}</span>
+          <span>·</span>
+          <span>
+            🟢{token.buyCount} 🔴{token.sellCount}
+          </span>
+          <span>·</span>
+          <span>💬 {token.replies}</span>
+        </div>
+
         <p className="flex items-center gap-1 truncate text-[11px] text-[#6b6d78]">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#86efac]" />
-          {shortAddr(token.creator)}
+          @{token.creatorName || shortAddr(token.creator)}
           <span>·</span>
           {timeAgo(token.createdAt)}
+          {token.lastTradeAt > Date.now() - 15_000 && (
+            <span className="ml-1 font-semibold text-[#86efac]">LIVE</span>
+          )}
         </p>
+
+        {token.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {token.tags.slice(0, 2).map((t) => (
+              <span key={t} className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-[#8b8d97]">
+                #{t}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   )

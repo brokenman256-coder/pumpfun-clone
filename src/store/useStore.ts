@@ -10,6 +10,7 @@ import {
   VIRTUAL_SOL,
   VIRTUAL_TOKENS,
   REAL_TOKEN_RESERVES,
+  SOL_PRICE_USD,
 } from '../engine/bondingCurve'
 import { createSeedTokens, randomWallet, spawnRandomToken, SEED_COUNT } from '../engine/seedTokens'
 import { applyTradeToCandles, seedCandles } from '../engine/candles'
@@ -67,6 +68,10 @@ type Store = {
 
 function sig() {
   return 'tx' + Math.random().toString(36).slice(2, 14)
+}
+
+function shortCreator(a: string) {
+  return 'dev' + a.slice(0, 4).toLowerCase()
 }
 
 export const useStore = create<Store>((set, get) => ({
@@ -176,7 +181,11 @@ export const useStore = create<Store>((set, get) => ({
                   realSol: t.realSol + amount,
                   priceSol: newPrice,
                   marketCapUsd: newMcap,
+                  athUsd: Math.max(t.athUsd || 0, newMcap),
                   volumeSol: t.volumeSol + amount,
+                  volumeUsd: t.volumeUsd + amount * SOL_PRICE_USD,
+                  buyCount: t.buyCount + 1,
+                  lastTradeAt: Date.now(),
                   complete: graduated || t.complete,
                   shake: 'buy' as const,
                   candles: applyTradeToCandles(t.candles, newPrice, 'buy'),
@@ -247,6 +256,9 @@ export const useStore = create<Store>((set, get) => ({
                 priceSol: newPrice,
                 marketCapUsd: newMcap,
                 volumeSol: t.volumeSol + q.solOut,
+                volumeUsd: t.volumeUsd + q.solOut * SOL_PRICE_USD,
+                sellCount: t.sellCount + 1,
+                lastTradeAt: Date.now(),
                 shake: 'sell' as const,
                 candles: applyTradeToCandles(t.candles, newPrice, 'sell'),
               },
@@ -274,31 +286,53 @@ export const useStore = create<Store>((set, get) => ({
     const id = `user_${Date.now().toString(36)}`
     const symbol = input.symbol.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
     const emoji = input.emoji || tokenEmoji(id + symbol)
+    const mcap = marketCapUsd(VIRTUAL_SOL, VIRTUAL_TOKENS)
     const token: Token = {
       id,
       name: input.name.trim(),
       symbol,
       emoji,
-      description: input.description || '',
-      imageUrl: input.imageUrl || tokenImageUrl(id + symbol, emoji),
+      description: input.description || `${input.name.trim()} launched on the curve.`,
+      imageUrl: input.imageUrl || tokenImageUrl(id + symbol, emoji, symbol),
       imageHue: Math.random() * 360,
       creator: state.wallet.address,
+      creatorName: shortCreator(state.wallet.address),
       virtualSol: VIRTUAL_SOL,
       virtualTokens: VIRTUAL_TOKENS,
       realSol: CREATE_FEE_SOL,
       realTokens: REAL_TOKEN_RESERVES,
       priceSol: priceSol(VIRTUAL_SOL, VIRTUAL_TOKENS),
-      marketCapUsd: marketCapUsd(VIRTUAL_SOL, VIRTUAL_TOKENS),
+      marketCapUsd: mcap,
+      change24h: 0,
+      athUsd: mcap,
       volumeSol: 0,
+      volumeUsd: 0,
+      buyCount: 0,
+      sellCount: 0,
       replies: 0,
       complete: false,
       createdAt: Date.now(),
+      lastTradeAt: Date.now(),
       candles: [],
-      holders: [],
+      holders: [
+        {
+          wallet: 'bonding-curve',
+          amount: REAL_TOKEN_RESERVES * 0.8,
+          pct: 80,
+          isCurve: true,
+        },
+        {
+          wallet: state.wallet.address,
+          amount: REAL_TOKEN_RESERVES * 0.2,
+          pct: 20,
+          isCreator: true,
+        },
+      ],
       shake: null,
       website: input.website,
       twitter: input.twitter,
       telegram: input.telegram,
+      tags: ['new', 'meme'],
       mint: input.mint,
       signature: input.signature,
     }

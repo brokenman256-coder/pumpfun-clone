@@ -11,6 +11,7 @@ export type Candle = {
 export type Holder = {
   wallet: string
   amount: number
+  pct: number
   isCurve?: boolean
   isCreator?: boolean
 }
@@ -24,23 +25,31 @@ export type Token = {
   imageUrl: string
   imageHue: number
   creator: string
+  creatorName: string
   virtualSol: number
   virtualTokens: number
   realSol: number
   realTokens: number
   priceSol: number
   marketCapUsd: number
+  /** 24h price change % */
+  change24h: number
+  athUsd: number
   volumeSol: number
+  volumeUsd: number
+  buyCount: number
+  sellCount: number
   replies: number
   complete: boolean
   createdAt: number
+  lastTradeAt: number
   candles: Candle[]
   holders: Holder[]
   shake: TradeSide | null
   website?: string
   twitter?: string
   telegram?: string
-  /** on-chain mint if created as real SPL */
+  tags: string[]
   mint?: string
   signature?: string
 }
