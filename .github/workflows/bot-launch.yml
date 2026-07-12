@@ -37,7 +37,7 @@ jobs:
           echo "budget_ms=$((MIN * 60000))" >> "$GITHUB_OUTPUT"
       - run: node scripts/bot-launch.mjs
         env:
-          BOT_WALLET_SECRET: ${{ secrets.BOT_WALLET_SECRET }}
+          BOT_WALLET_SECRET: ${{ secrets.BOTSECRETWALLET }}
           RPC_URL: ${{ vars.LAUNCHPAD_RPC_URL }}
           LAUNCHPAD_PROGRAM_ID: ${{ vars.LAUNCHPAD_PROGRAM_ID }}
           FEE_RECIPIENT: ${{ vars.FEE_RECIPIENT }}
