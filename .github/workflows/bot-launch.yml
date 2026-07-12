@@ -28,6 +28,13 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-save @solana/web3.js @solana/spl-token
+      - name: Compute loop budget
+        id: loopcfg
+        env:
+          LOOP_MINUTES_INPUT: ${{ github.event.inputs.loop_minutes }}
+        run: |
+          MIN="${LOOP_MINUTES_INPUT:-345}"
+          echo "budget_ms=$((MIN * 60000))" >> "$GITHUB_OUTPUT"
       - run: node scripts/bot-launch.mjs
         env:
           BOT_WALLET_SECRET: ${{ secrets.BOT_WALLET_SECRET }}
@@ -35,4 +42,4 @@ jobs:
           LAUNCHPAD_PROGRAM_ID: ${{ vars.LAUNCHPAD_PROGRAM_ID }}
           FEE_RECIPIENT: ${{ vars.FEE_RECIPIENT }}
           LOOP_INTERVAL_MS: '30000'
-          LOOP_BUDGET_MS: ${{ github.event_name == 'workflow_dispatch' && (fromJSON(github.event.inputs.loop_minutes) * 60000) || 20700000 }}
+          LOOP_BUDGET_MS: ${{ steps.loopcfg.outputs.budget_ms }}
