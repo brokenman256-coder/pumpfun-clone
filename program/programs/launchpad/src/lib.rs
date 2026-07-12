@@ -5,6 +5,12 @@ use anchor_spl::token::{self, Mint, MintTo, SetAuthority, Token, TokenAccount, T
 
 declare_id!("AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8");
 
+/// The only wallet allowed to call `initialize`. Without this, `initialize` is
+/// a permissionless one-shot PDA init — whoever calls it first would
+/// permanently become the fee recipient/authority for the program's entire
+/// lifetime, since there's no instruction to change it afterward.
+pub const EXPECTED_AUTHORITY: Pubkey = pubkey!("E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw");
+
 /// Real pump.fun-style tokenomics constants (lamports / raw token units use each mint's decimals).
 pub const VIRTUAL_SOL_LAMPORTS: u64 = 30_000_000_000; // 30 SOL
 pub const TOTAL_SUPPLY_UI: u64 = 1_000_000_000;
@@ -343,7 +349,7 @@ impl BondingCurve {
 pub struct Initialize<'info> {
     #[account(init, payer = authority, space = Global::SPACE, seeds = [b"global"], bump)]
     pub global: Account<'info, Global>,
-    #[account(mut)]
+    #[account(mut, address = EXPECTED_AUTHORITY @ LaunchpadError::UnauthorizedInitializer)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
@@ -450,4 +456,6 @@ pub enum LaunchpadError {
     MintMismatch,
     #[msg("Math overflow")]
     MathOverflow,
+    #[msg("Only the platform authority can initialize the global config")]
+    UnauthorizedInitializer,
 }

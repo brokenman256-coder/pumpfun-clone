@@ -31,3 +31,14 @@ export function formatTokens(n: number) {
   if (n >= 1_000) return `${(n / 1e3).toFixed(1)}K`
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 })
 }
+
+/**
+ * Only allow http(s) URLs through to an `<a href>` — third-party sources
+ * (e.g. DexScreener token profiles) aren't sanitized upstream, so a
+ * malicious `javascript:`/`data:` link could otherwise render as a
+ * clickable button on the page.
+ */
+export function safeHref(url: string | undefined | null): string | undefined {
+  if (!url) return undefined
+  return /^https?:\/\//i.test(url) ? url : undefined
+}

@@ -6,7 +6,7 @@ import { TradePanel } from '../components/TradePanel'
 import { BondingProgress } from '../components/BondingProgress'
 import { HoldersList } from '../components/HoldersList'
 import { TokenImage } from '../components/TokenImage'
-import { formatUsd, shortAddr, timeAgo, formatSol } from '../lib/format'
+import { formatUsd, shortAddr, timeAgo, formatSol, safeHref } from '../lib/format'
 import { useWallet } from '../hooks/useWallet'
 import { EXPLORER_ADDR, CLUSTER } from '../chain/config'
 import { progressToGraduation, SOL_PRICE_USD } from '../engine/bondingCurve'
@@ -111,18 +111,18 @@ export function TokenPage() {
         >
           {copied ? 'copied ✓' : `CA ${shortAddr(ca, 6)}`}
         </button>
-        {token.twitter && (
-          <a href={token.twitter} target="_blank" rel="noreferrer" className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px]">
+        {safeHref(token.twitter) && (
+          <a href={safeHref(token.twitter)} target="_blank" rel="noreferrer" className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px]">
             𝕏 Twitter
           </a>
         )}
-        {token.telegram && (
-          <a href={token.telegram} target="_blank" rel="noreferrer" className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px]">
+        {safeHref(token.telegram) && (
+          <a href={safeHref(token.telegram)} target="_blank" rel="noreferrer" className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px]">
             Telegram
           </a>
         )}
-        {token.website && (
-          <a href={token.website} target="_blank" rel="noreferrer" className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px]">
+        {safeHref(token.website) && (
+          <a href={safeHref(token.website)} target="_blank" rel="noreferrer" className="rounded-full border border-[#26272e] px-3 py-1.5 text-[11px]">
             Website
           </a>
         )}
@@ -134,9 +134,9 @@ export function TokenPage() {
         >
           Solscan
         </a>
-        {token.pairUrl && (
+        {safeHref(token.pairUrl) && (
           <a
-            href={token.pairUrl}
+            href={safeHref(token.pairUrl)}
             target="_blank"
             rel="noreferrer"
             className="rounded-full bg-[#3b82f6] px-3 py-1.5 text-[11px] font-bold text-white"
