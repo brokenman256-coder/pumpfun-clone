@@ -4,6 +4,13 @@
  * nsfw/spoiler by the source API). Meant to run on a schedule (see
  * .github/workflows/bot-launch.yml) — every run is a real transaction that
  * costs real SOL (create fee + rent) from BOT_WALLET_SECRET.
+ *
+ * Never repeats a meme image: before picking one, it reads every existing
+ * on-chain BondingCurve account and treats every image URL already used by
+ * a prior coin (bot- or user-created) as off-limits, then pulls a wide,
+ * shuffled pool across all safe subreddits and picks a fresh one from
+ * whatever's left. If every fetched candidate has already been used, it
+ * skips the run rather than launching a duplicate.
  */
 import { createHash } from 'node:crypto'
 import {
@@ -32,6 +39,7 @@ const FEE_RECIPIENT = new PublicKey(
 // Only wholesome/crypto-culture subreddits — never the generic "memes" pool,
 // to keep unattended, unmoderated posting low-risk.
 const SAFE_SUBREDDITS = ['wholesomememes', 'cryptocurrencymemes', 'dogecoin', 'ProgrammerHumor']
+const MEMES_PER_SUBREDDIT = 50
 
 const THEMES = [
   ['Based Frog', 'BFROG'],
@@ -88,16 +96,93 @@ function loadKeypairFromEnv() {
   return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(raw)))
 }
 
-async function fetchSafeMeme() {
-  const subreddit = SAFE_SUBREDDITS[Math.floor(Math.random() * SAFE_SUBREDDITS.length)]
-  const res = await fetch(`https://meme-api.com/gimme/${subreddit}/20`)
-  if (!res.ok) throw new Error(`meme-api ${res.status}`)
+function shuffled(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function readString(buf, offset) {
+  const len = buf.readUInt32LE(offset)
+  const value = buf.subarray(offset + 4, offset + 4 + len).toString('utf8')
+  return [value, offset + 4 + len]
+}
+
+/** Pulls just the `uri` field out of a BondingCurve account (see program/lib.rs for the layout). */
+function decodeUri(data) {
+  let o = 8 + 32 + 32 + 1 + 8 + 8 + 8 + 8 + 1 + 2 + 1
+  const [, o2] = readString(data, o) // name
+  o = o2
+  const [, o3] = readString(data, o) // symbol
+  o = o3
+  const [uri] = readString(data, o)
+  return uri
+}
+
+/** Same uri encoding the frontend uses: a plain http(s) URL, or packed {"i":...,"t":...} JSON. */
+function imageUrlFromUri(uri) {
+  if (!uri) return null
+  if (/^https?:\/\//i.test(uri)) return uri
+  try {
+    const parsed = JSON.parse(uri)
+    return parsed.i || null
+  } catch {
+    return null
+  }
+}
+
+/** Every meme image URL already used by any coin (bot- or user-created) already on-chain. */
+async function fetchUsedImageUrls(connection) {
+  const BONDING_CURVE_SIZE = 363
+  const accounts = await connection.getProgramAccounts(PROGRAM_ID, {
+    filters: [{ dataSize: BONDING_CURVE_SIZE }],
+    commitment: 'confirmed',
+  })
+  const used = new Set()
+  for (const { account } of accounts) {
+    try {
+      const url = imageUrlFromUri(decodeUri(account.data))
+      if (url) used.add(url)
+    } catch {
+      // skip anything that doesn't decode cleanly
+    }
+  }
+  return used
+}
+
+async function fetchSafeCandidates(subreddit) {
+  const res = await fetch(`https://meme-api.com/gimme/${subreddit}/${MEMES_PER_SUBREDDIT}`)
+  if (!res.ok) throw new Error(`meme-api ${res.status} for r/${subreddit}`)
   const data = await res.json()
-  const candidates = (data.memes || []).filter(
-    (m) => !m.nsfw && !m.spoiler && /^https:\/\/i\.redd\.it\//.test(m.url) && m.url.length <= 180,
+  return (data.memes || []).filter(
+    (m) =>
+      !m.nsfw &&
+      !m.spoiler &&
+      /^https:\/\/i\.redd\.it\/.+\.(png|jpe?g|webp)$/i.test(m.url) &&
+      m.url.length <= 180,
   )
-  if (candidates.length === 0) throw new Error('no safe memes found')
-  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+/** Picks a fresh (never-used-on-chain), safe meme — sweeping every safe subreddit before giving up. */
+async function pickFreshMeme(connection) {
+  const used = await fetchUsedImageUrls(connection)
+  console.log(`${used.size} meme image(s) already used on-chain — excluding those.`)
+
+  const pool = []
+  for (const subreddit of shuffled(SAFE_SUBREDDITS)) {
+    try {
+      const candidates = await fetchSafeCandidates(subreddit)
+      const fresh = candidates.filter((m) => !used.has(m.url))
+      pool.push(...fresh)
+    } catch (e) {
+      console.warn(`Skipping r/${subreddit}:`, e.message)
+    }
+  }
+  if (pool.length === 0) return null
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 async function main() {
@@ -107,10 +192,17 @@ async function main() {
   let imageUrl = ''
   let memeTitle = ''
   try {
-    const meme = await fetchSafeMeme()
+    const meme = await pickFreshMeme(connection)
+    if (!meme) {
+      console.log(
+        'Every fetched meme across all safe subreddits has already been used on-chain — ' +
+          'skipping this run instead of launching a duplicate.',
+      )
+      return
+    }
     imageUrl = meme.url
     memeTitle = meme.title
-    console.log('Using meme:', meme.title, '—', meme.url)
+    console.log('Using fresh meme:', meme.title, '—', meme.url)
   } catch (e) {
     console.warn('Meme fetch failed, launching without a real image this run:', e.message)
   }
