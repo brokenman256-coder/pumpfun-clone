@@ -7,7 +7,7 @@
  * Two modes, controlled by LOOP_BUDGET_MS:
  *  - Unset/0: single-shot — create one coin and exit (used by
  *    `workflow_dispatch` / manual runs).
- *  - Set: loop mode — create one coin every LOOP_INTERVAL_MS (default 10s)
+ *  - Set: loop mode — create one coin every LOOP_INTERVAL_MS (default 30s)
  *    for up to LOOP_BUDGET_MS of wall-clock time, then exit cleanly. See
  *    .github/workflows/bot-launch.yml, which re-triggers a fresh run before
  *    the budget runs out so it's effectively continuous.
@@ -51,10 +51,10 @@ const FEE_RECIPIENT = new PublicKey(
 const SAFE_SUBREDDITS = ['wholesomememes', 'cryptocurrencymemes', 'dogecoin', 'ProgrammerHumor']
 const MEMES_PER_SUBREDDIT = 50
 
-const LOOP_INTERVAL_MS = Number(process.env.LOOP_INTERVAL_MS || 10_000)
+const LOOP_INTERVAL_MS = Number(process.env.LOOP_INTERVAL_MS || 30_000)
 const LOOP_BUDGET_MS = Number(process.env.LOOP_BUDGET_MS || 0)
 // Re-fetch the full on-chain used-image set every ~5 minutes of loop time
-// instead of every 10s tick, so a long-running loop doesn't hammer the RPC
+// instead of every tick, so a long-running loop doesn't hammer the RPC
 // with a full getProgramAccounts scan every single iteration.
 const RESYNC_EVERY_MS = 5 * 60_000
 
