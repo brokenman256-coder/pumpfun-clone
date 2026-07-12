@@ -6,7 +6,14 @@ import {
   isAdminSessionValid,
   signBotCommand,
 } from '../lib/adminAuth'
-import { FEE_RECIPIENT, CLUSTER, CHAIN_LABEL, LAUNCHPAD_PROGRAM_ID, EXPLORER_ADDR } from '../chain/config'
+import {
+  FEE_RECIPIENT,
+  CLUSTER,
+  CHAIN_LABEL,
+  LAUNCHPAD_PROGRAM_ID,
+  EXPLORER_ADDR,
+  BOT_WALLET_ADDRESS,
+} from '../chain/config'
 import { getConnection } from '../chain/launchpadClient'
 import { formatUsd, formatSol } from '../lib/format'
 import { PublicKey } from '@solana/web3.js'
@@ -28,10 +35,14 @@ export function AdminPage() {
   const dexStatus = useStore((s) => s.dexStatus)
   const dexLastSync = useStore((s) => s.dexLastSync)
 
+  const removeToken = useStore((s) => s.removeToken)
+
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [cmdSig, setCmdSig] = useState('')
   const [treasuryBalance, setTreasuryBalance] = useState<number | null>(null)
+  const [botWalletBalance, setBotWalletBalance] = useState<number | null>(null)
+  const [tokenSearch, setTokenSearch] = useState('')
 
   useEffect(() => {
     if (isAdminSessionValid()) setAdminAuthed(true)
@@ -47,6 +58,15 @@ export function AdminPage() {
         if (!cancelled) setTreasuryBalance(lamports / 1e9)
       } catch {
         if (!cancelled) setTreasuryBalance(null)
+      }
+      if (BOT_WALLET_ADDRESS) {
+        try {
+          const connection = getConnection()
+          const lamports = await connection.getBalance(new PublicKey(BOT_WALLET_ADDRESS), 'confirmed')
+          if (!cancelled) setBotWalletBalance(lamports / 1e9)
+        } catch {
+          if (!cancelled) setBotWalletBalance(null)
+        }
       }
     }
     void poll()
@@ -120,6 +140,14 @@ export function AdminPage() {
   const payVol = payments.reduce((a, p) => a + p.amountSol, 0)
   const onChainTokens = tokens.filter((t) => t.mint && t.curvePda).length
   const simulatedTokens = tokens.length - onChainTokens
+  const botLaunchedCount = BOT_WALLET_ADDRESS
+    ? tokens.filter((t) => t.creator === BOT_WALLET_ADDRESS).length
+    : 0
+  const filteredTokens = tokens.filter((t) => {
+    const q = tokenSearch.trim().toLowerCase()
+    if (!q) return true
+    return t.name.toLowerCase().includes(q) || t.symbol.toLowerCase().includes(q)
+  })
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-6 pb-10">
@@ -194,6 +222,51 @@ export function AdminPage() {
           </p>
           <p>Network: {CHAIN_LABEL}</p>
         </div>
+      </section>
+
+      {/* Real scheduled bot launcher (GitHub Actions) */}
+      <section className="mt-6 rounded-2xl border border-[#86efac]/30 bg-[#0c1f14] p-5">
+        <h2 className="text-lg font-bold text-[#86efac]">🤖 Scheduled bot launcher</h2>
+        <p className="mt-1 text-xs text-[#8b8d97]">
+          Runs outside this browser via a GitHub Actions workflow (
+          <code className="text-[#86efac]">.github/workflows/bot-launch.yml</code>, every 5 minutes) —
+          creates one real on-chain coin per run using a real internet meme image (safe/curated
+          subreddits only), signed by a dedicated bot wallet. Anyone can trade the coins it creates;
+          this dashboard can't override their price or curve — only turn the schedule itself off (via
+          the GitHub Actions tab) or adjust its cron in the workflow file.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <Kpi label="Bot-launched coins seen" value={String(botLaunchedCount)} />
+          <Kpi
+            label="Bot wallet balance"
+            value={
+              !BOT_WALLET_ADDRESS
+                ? 'not configured'
+                : botWalletBalance === null
+                  ? '—'
+                  : `${botWalletBalance.toFixed(4)} SOL`
+            }
+          />
+          <Kpi label="Schedule" value="every 5 min" />
+        </div>
+        {BOT_WALLET_ADDRESS ? (
+          <p className="mt-3 text-xs text-[#8b8d97]">
+            Bot wallet:{' '}
+            <a
+              href={EXPLORER_ADDR(BOT_WALLET_ADDRESS)}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-[#86efac] underline"
+            >
+              {BOT_WALLET_ADDRESS}
+            </a>{' '}
+            — keep it funded or the scheduled workflow starts failing.
+          </p>
+        ) : (
+          <p className="mt-3 text-xs text-yellow-300">
+            Set <code>VITE_BOT_WALLET_ADDRESS</code> to monitor the bot wallet's balance here.
+          </p>
+        )}
       </section>
 
       {/* Master bot */}
@@ -284,6 +357,55 @@ export function AdminPage() {
           <li>Treasury {FEE_RECIPIENT} receives gateway fees only via user-signed txs</li>
           <li>Network: {CLUSTER}</li>
         </ul>
+      </section>
+
+      {/* Manage tokens */}
+      <section className="mt-6 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-bold">Manage tokens ({tokens.length})</h2>
+          <input
+            value={tokenSearch}
+            onChange={(e) => setTokenSearch(e.target.value)}
+            placeholder="search name or ticker"
+            className="w-40 rounded-lg border border-[#26272e] bg-[#0e0f13] px-2.5 py-1.5 text-xs outline-none focus:border-[#86efac]/40"
+          />
+        </div>
+        <div className="mt-3 max-h-96 space-y-1 overflow-y-auto text-xs">
+          {filteredTokens.length === 0 && <p className="text-[#6b6d78]">No tokens match</p>}
+          {filteredTokens.slice(0, 200).map((t) => {
+            const onChain = Boolean(t.mint && t.curvePda)
+            return (
+              <div
+                key={t.id}
+                className="flex items-center justify-between gap-2 border-b border-[#1a1b22] py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-white">
+                    {t.name} <span className="text-[#8b8d97]">${t.symbol}</span>
+                  </p>
+                  <p className="truncate text-[10px] text-[#6b6d78]">
+                    {formatUsd(t.marketCapUsd)} mcap ·{' '}
+                    {onChain ? 'on-chain' : t.source === 'dexscreener' ? 'dexscreener' : 'simulated'} ·
+                    creator {t.creator.slice(0, 6)}…
+                  </p>
+                </div>
+                {!onChain && t.source !== 'dexscreener' && (
+                  <button
+                    type="button"
+                    onClick={() => removeToken(t.id)}
+                    className="shrink-0 rounded-full border border-red-500/30 px-2.5 py-1 text-[10px] text-red-300 hover:bg-red-500/10"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <p className="mt-2 text-[10px] text-[#555]">
+          On-chain and DexScreener coins reflect real external state and reappear on the next sync —
+          only local/simulated board entries can be removed here.
+        </p>
       </section>
 
       {/* Recent payments */}

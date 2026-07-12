@@ -13,7 +13,7 @@ export function ChannelPage() {
           ⛓ OFFICIAL CHANNEL · {CHAIN_LABEL}
         </span>
         <h1 className="mt-3 text-2xl font-black">
-          Pump Channel <span className="text-[#86efac]">$PCHAN</span>
+          Ignite Channel <span className="text-[#86efac]">$IGNT</span>
         </h1>
         <p className="mt-2 text-sm text-[#8b8d97]">
           Platform treasury for create fees and buy volume.

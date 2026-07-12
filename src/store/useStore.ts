@@ -58,6 +58,8 @@ type Store = {
   setBotInterval: (ms: number) => void
   setBotFleet: (n: number) => void
   botTick: () => void
+  mergeOnChainTokens: (onChain: Token[]) => void
+  removeToken: (tokenId: string) => void
   pushPayment: (p: PaymentResult) => void
   setAdminAuthed: (v: boolean) => void
   clearGraduation: () => void
@@ -162,6 +164,25 @@ export const useStore = create<Store>((set, get) => ({
         totalLaunches: Math.max(s.totalLaunches, live.length + localOnly.length),
       }
     }),
+  mergeOnChainTokens: (onChain) =>
+    set((s) => {
+      const byMint = new Map(s.tokens.filter((t) => t.mint).map((t) => [t.mint, t]))
+      const merged = onChain.map((fresh) => {
+        const existing = fresh.mint ? byMint.get(fresh.mint) : undefined
+        // Keep locally-known extras (replies count, richer description) but
+        // let on-chain fields (price/reserves/complete) always win — they're
+        // the source of truth.
+        return existing ? { ...existing, ...fresh, replies: existing.replies } : fresh
+      })
+      const onChainMints = new Set(onChain.map((t) => t.mint).filter(Boolean))
+      const rest = s.tokens.filter((t) => !t.mint || !onChainMints.has(t.mint))
+      return {
+        tokens: [...merged, ...rest],
+        totalLaunches: Math.max(s.totalLaunches, merged.length + rest.length),
+      }
+    }),
+  removeToken: (tokenId) =>
+    set((s) => ({ tokens: s.tokens.filter((t) => t.id !== tokenId) })),
   setBotEnabled: (on) =>
     set((s) => ({
       botConfig: { ...s.botConfig, enabled: on },

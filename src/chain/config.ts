@@ -29,6 +29,10 @@ export const LAUNCHPAD_PROGRAM_ID = new PublicKey(
     'AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8',
 )
 
+/** Wallet the scheduled GitHub Actions bot launcher signs with (see scripts/bot-launch.mjs). */
+export const BOT_WALLET_ADDRESS: string | null =
+  import.meta.env.VITE_BOT_WALLET_ADDRESS || null
+
 export const EXPLORER_TX = (sig: string) =>
   CLUSTER === 'mainnet-beta'
     ? `https://solscan.io/tx/${sig}`
