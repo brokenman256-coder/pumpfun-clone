@@ -17,6 +17,23 @@ function isHttpUrl(s: string) {
   return /^https?:\/\//i.test(s)
 }
 
+/**
+ * The on-chain `uri` field is either: empty, a plain image URL, or compact
+ * JSON `{"i": imageUrl, "t": blurb}` packed by the bot launcher (see
+ * scripts/bot-launch.mjs) to carry a real description alongside the image
+ * within the 200-byte on-chain limit.
+ */
+function parseUri(uri: string): { image?: string; blurb?: string } {
+  if (!uri) return {}
+  if (isHttpUrl(uri)) return { image: uri }
+  try {
+    const parsed = JSON.parse(uri) as { i?: string; t?: string }
+    return { image: parsed.i, blurb: parsed.t }
+  } catch {
+    return {}
+  }
+}
+
 function toToken(curve: OnChainCurve, curvePda: string): Token {
   const scale = 10 ** curve.decimals
   const virtualSol = Number(curve.virtualSolReserves) / 1e9
@@ -26,14 +43,15 @@ function toToken(curve: OnChainCurve, curvePda: string): Token {
   const mcap = marketCapUsd(virtualSol, virtualTokens)
   const seed = curve.mint
   const emoji = tokenEmoji(seed)
-  const image = isHttpUrl(curve.uri) ? curve.uri : tokenImageUrl(seed, emoji, curve.symbol)
+  const { image: parsedImage, blurb } = parseUri(curve.uri)
+  const image = parsedImage && isHttpUrl(parsedImage) ? parsedImage : tokenImageUrl(seed, emoji, curve.symbol)
 
   return {
     id: curve.mint,
     name: curve.name || curve.symbol,
     symbol: curve.symbol,
     emoji,
-    description: `Live on-chain bonding curve coin.`,
+    description: blurb || 'Live on-chain bonding curve coin.',
     imageUrl: image,
     imageHue: Math.random() * 360,
     creator: curve.creator,

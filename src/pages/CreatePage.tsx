@@ -8,6 +8,7 @@ import { createSplTokenOnChain } from '../chain/createSplToken'
 import { createTokenOnChain } from '../chain/launchpadClient'
 import { CREATE_FEE_SOL } from '../engine/bondingCurve'
 import { CHAIN_LABEL, CLUSTER, EXPLORER_TX } from '../chain/config'
+import { fetchSafeMeme } from '../lib/memeApi'
 
 type Mode = 'board' | 'spl'
 
@@ -27,11 +28,26 @@ export function CreatePage() {
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
   const [description, setDescription] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [memeLoading, setMemeLoading] = useState(false)
   const [supply, setSupply] = useState('1000000000')
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ mint: string; signature: string } | null>(null)
+
+  async function fillRandomMeme() {
+    setMemeLoading(true)
+    try {
+      const meme = await fetchSafeMeme()
+      if (meme) {
+        setImageUrl(meme.url)
+        if (!name.trim()) setName(meme.title.slice(0, 32))
+      }
+    } finally {
+      setMemeLoading(false)
+    }
+  }
 
   async function submit() {
     setError('')
@@ -58,18 +74,21 @@ export function CreatePage() {
         const mintKeypair = Keypair.generate()
         // `uri` is on-chain (200-byte cap) and used as an image URL by other
         // visitors' clients — descriptions stay local/off-chain only for now.
+        const trimmedImage = imageUrl.trim()
+        const onChainUri = /^https?:\/\//i.test(trimmedImage) && trimmedImage.length <= 200 ? trimmedImage : ''
         const { mint, curve, signature } = await createTokenOnChain({
           wallet: adapter,
           mintKeypair,
           name: name.trim(),
           symbol: symbol.trim(),
-          uri: '',
+          uri: onChainUri,
         })
         setStatus('Launching on board…')
         const id = createToken({
           name: name.trim(),
           symbol: symbol.trim(),
           description: description.trim(),
+          imageUrl: onChainUri || undefined,
           signature,
           mint,
           curvePda: curve,
@@ -167,6 +186,36 @@ export function CreatePage() {
             className="w-full resize-none rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2 text-sm outline-none focus:border-[#86efac]/40"
           />
         </div>
+
+        {mode === 'board' && (
+          <div>
+            <label className="mb-1 flex items-center justify-between text-xs text-[#8b8d97]">
+              <span>image (paste any image link)</span>
+              <button
+                type="button"
+                onClick={() => void fillRandomMeme()}
+                disabled={memeLoading}
+                className="text-[10px] font-semibold text-[#86efac] hover:underline disabled:opacity-50"
+              >
+                {memeLoading ? 'fetching…' : '🎲 random meme'}
+              </button>
+            </label>
+            <input
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://... (leave blank for a generated avatar)"
+              className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2.5 text-sm outline-none focus:border-[#86efac]/40"
+            />
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="preview"
+                className="mt-2 h-20 w-20 rounded-lg object-cover"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
+            )}
+          </div>
+        )}
 
         <div className="rounded-lg border border-[#26272e] bg-[#0e0f13] p-3 text-xs text-[#8b8d97]">
           <p>

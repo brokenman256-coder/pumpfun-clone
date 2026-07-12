@@ -44,6 +44,30 @@ const THEMES = [
   ['Pixel Pepe', 'PXPE'],
 ]
 
+/** Turns a real meme title into a coin name, e.g. "Which one are you bringing to the table?" -> "Bringing To The Table". */
+function nameFromTitle(title) {
+  const words = title
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !/^(a|an|the|is|are|to|of|in|on|for|and|or)$/i.test(w))
+  const picked = words.slice(0, 4).join(' ')
+  return picked.length >= 4 ? picked.slice(0, 28) : null
+}
+
+function symbolFromName(name) {
+  const letters = name.replace(/[^a-zA-Z0-9]/g, '')
+  return letters.slice(0, 8).toUpperCase() || 'MEME'
+}
+
+/** Packs image + a short blurb into the on-chain 200-byte uri field as compact JSON. */
+function packUri(imageUrl, blurb) {
+  if (!imageUrl) return ''
+  const withBlurb = JSON.stringify({ i: imageUrl, t: blurb })
+  if (withBlurb.length <= 200) return withBlurb
+  const imageOnly = JSON.stringify({ i: imageUrl })
+  return imageOnly.length <= 200 ? imageOnly : imageUrl.slice(0, 200)
+}
+
 function disc(name) {
   return createHash('sha256').update(`global:${name}`).digest().subarray(0, 8)
 }
@@ -91,10 +115,23 @@ async function main() {
     console.warn('Meme fetch failed, launching without a real image this run:', e.message)
   }
 
-  const [themeName, themeSymbol] = THEMES[Math.floor(Math.random() * THEMES.length)]
+  // Name the coin after the actual meme so the art and name match — a random
+  // unrelated theme name next to someone else's meme reads as low-effort spam.
   const seq = Math.floor(Math.random() * 10_000)
-  const name = `${themeName} #${seq}`
-  const symbol = `${themeSymbol}${seq % 100}`.slice(0, 8).toUpperCase()
+  const titleName = memeTitle ? nameFromTitle(memeTitle) : null
+  let name, symbol
+  if (titleName) {
+    name = titleName
+    symbol = symbolFromName(titleName)
+  } else {
+    const [themeName, themeSymbol] = THEMES[Math.floor(Math.random() * THEMES.length)]
+    name = `${themeName} #${seq}`
+    symbol = `${themeSymbol}${seq % 100}`.slice(0, 8).toUpperCase()
+  }
+  const blurb = memeTitle
+    ? `Community coin inspired by a trending meme: "${memeTitle}"`.slice(0, 140)
+    : ''
+  const uri = packUri(imageUrl, blurb)
 
   const mintKeypair = Keypair.generate()
   const mint = mintKeypair.publicKey
@@ -106,7 +143,7 @@ async function main() {
   const vaultAta = getAssociatedTokenAddressSync(mint, curvePda, true)
   const creatorAta = getAssociatedTokenAddressSync(mint, bot.publicKey)
 
-  const data = Buffer.concat([disc('create_token'), str(name), str(symbol), str(imageUrl)])
+  const data = Buffer.concat([disc('create_token'), str(name), str(symbol), str(uri)])
   const ix = new TransactionInstruction({
     programId: PROGRAM_ID,
     keys: [
