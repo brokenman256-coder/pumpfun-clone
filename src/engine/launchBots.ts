@@ -5,7 +5,8 @@
  */
 import type { Token } from '../types'
 import { spawnRandomToken } from './seedTokens'
-import { tokenImageUrl, tokenEmoji } from '../lib/tokenImage'
+import { hash, tokenEmoji } from '../lib/tokenImage'
+import { curatedMemeFor } from '../lib/curatedMemes'
 import {
   VIRTUAL_SOL,
   VIRTUAL_TOKENS,
@@ -96,8 +97,8 @@ export function buildBotToken(botIndex: number, seq: number): Token {
     name,
     symbol,
     emoji,
-    description: `${theme.desc} · Auto-launched by fleet bot ${botIndex + 1}/${100}. Animated meme art included.`,
-    imageUrl: tokenImageUrl(seed, emoji, symbol),
+    description: `${theme.desc} · Auto-launched by fleet bot ${botIndex + 1}/${100}. Real meme art included.`,
+    imageUrl: curatedMemeFor(seed, hash).url,
     imageHue: (botIndex * 37) % 360,
     creator: `BotFleet${String(botIndex).padStart(3, '0')}`,
     creatorName: `bot${botIndex + 1}`,
@@ -133,7 +134,7 @@ export function buildBotToken(botIndex: number, seq: number): Token {
       },
     ],
     shake: null,
-    tags: [...theme.tags, 'bot-launch', 'animated'],
+    tags: [...theme.tags, 'bot-launch', 'meme'],
     source: 'local',
     twitter: `https://x.com/search?q=${symbol}`,
   }

@@ -8,7 +8,8 @@ import {
   priceSol,
   SOL_PRICE_USD,
 } from './bondingCurve'
-import { hash, tokenEmoji, tokenImageUrl } from '../lib/tokenImage'
+import { hash, tokenEmoji } from '../lib/tokenImage'
+import { curatedMemeFor } from '../lib/curatedMemes'
 
 export const SEED_COUNT = 120
 
@@ -87,7 +88,7 @@ export function createSeedTokens(count = SEED_COUNT): Token[] {
       symbol,
       emoji,
       description: `${name} ($${symbol}) is a community-driven memecoin on Solana. Bonding curve live · NFA · DYOR.`,
-      imageUrl: tokenImageUrl(seed, emoji, symbol),
+      imageUrl: curatedMemeFor(seed, hash).url,
       imageHue: h % 360,
       creator,
       creatorName: `${pick(HANDLES)}${(h % 900) + 100}`,
@@ -134,7 +135,7 @@ export function spawnRandomToken(seq: number): Token {
     symbol,
     emoji,
     description: `Fresh launch #${seq} — just deployed on the curve.`,
-    imageUrl: tokenImageUrl(seed, emoji, symbol),
+    imageUrl: curatedMemeFor(seed, hash).url,
     imageHue: (seq * 31) % 360,
     creator,
     creatorName: `dev${seq}`,
