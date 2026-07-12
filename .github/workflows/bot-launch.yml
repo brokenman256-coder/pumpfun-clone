@@ -1,14 +1,27 @@
-name: Bot launch (real on-chain coin)
+name: Bot launch (real on-chain coin, continuous)
 
+# One job creates a coin every 10s in a loop for ~5h45m, then exits cleanly;
+# the next scheduled run picks up right after so it's effectively continuous.
+# Requires the repo to be public — GitHub Actions minutes on a private repo
+# are billed past the free monthly quota, and this job runs near round-the-clock.
 on:
   schedule:
-    # GitHub's practical minimum for scheduled workflows.
-    - cron: '*/5 * * * *'
-  workflow_dispatch: {}
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      loop_minutes:
+        description: 'Minutes to run the loop for (0 = single coin then exit)'
+        required: false
+        default: '345'
+
+concurrency:
+  group: bot-launch
+  cancel-in-progress: false
 
 jobs:
   launch:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,3 +34,5 @@ jobs:
           RPC_URL: ${{ vars.LAUNCHPAD_RPC_URL }}
           LAUNCHPAD_PROGRAM_ID: ${{ vars.LAUNCHPAD_PROGRAM_ID }}
           FEE_RECIPIENT: ${{ vars.FEE_RECIPIENT }}
+          LOOP_INTERVAL_MS: '10000'
+          LOOP_BUDGET_MS: ${{ github.event_name == 'workflow_dispatch' && (fromJSON(github.event.inputs.loop_minutes) * 60000) || 20700000 }}

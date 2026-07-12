@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import type { Token } from '../types'
+import { isDisplayable } from '../lib/tokenFilters'
 
 export function useTokenFeed() {
   const tokens = useStore((s) => s.tokens)
@@ -9,7 +10,9 @@ export function useTokenFeed() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    let list: Token[] = tokens
+    // Simulated/demo tokens without a real meme image are made-up placeholders
+    // — never hide real on-chain or DexScreener coins, image or not.
+    let list: Token[] = tokens.filter(isDisplayable)
     if (q) {
       list = list.filter(
         (t) =>

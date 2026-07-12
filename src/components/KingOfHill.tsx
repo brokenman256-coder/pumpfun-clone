@@ -3,12 +3,13 @@ import { useStore } from '../store/useStore'
 import { TokenImage } from './TokenImage'
 import { formatUsd } from '../lib/format'
 import { progressToGraduation } from '../engine/bondingCurve'
+import { isDisplayable } from '../lib/tokenFilters'
 
 /** Highest market-cap incomplete coin — pump.fun "king of the hill" */
 export function KingOfHill() {
   const tokens = useStore((s) => s.tokens)
   const king = [...tokens]
-    .filter((t) => !t.complete)
+    .filter((t) => !t.complete && isDisplayable(t))
     .sort((a, b) => b.marketCapUsd - a.marketCapUsd)[0]
 
   if (!king) return null

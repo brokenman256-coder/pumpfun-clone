@@ -1,16 +1,26 @@
 /**
- * Creates one real on-chain bonding-curve coin using a real internet meme
- * image, pulled from safe/curated subreddits (never posts anything flagged
- * nsfw/spoiler by the source API). Meant to run on a schedule (see
- * .github/workflows/bot-launch.yml) — every run is a real transaction that
+ * Creates real on-chain bonding-curve coins using real internet meme
+ * images, pulled from safe/curated subreddits (never posts anything flagged
+ * nsfw/spoiler by the source API). Every launch is a real transaction that
  * costs real SOL (create fee + rent) from BOT_WALLET_SECRET.
+ *
+ * Two modes, controlled by LOOP_BUDGET_MS:
+ *  - Unset/0: single-shot — create one coin and exit (used by
+ *    `workflow_dispatch` / manual runs).
+ *  - Set: loop mode — create one coin every LOOP_INTERVAL_MS (default 10s)
+ *    for up to LOOP_BUDGET_MS of wall-clock time, then exit cleanly. See
+ *    .github/workflows/bot-launch.yml, which re-triggers a fresh run before
+ *    the budget runs out so it's effectively continuous.
  *
  * Never repeats a meme image: before picking one, it reads every existing
  * on-chain BondingCurve account and treats every image URL already used by
  * a prior coin (bot- or user-created) as off-limits, then pulls a wide,
  * shuffled pool across all safe subreddits and picks a fresh one from
  * whatever's left. If every fetched candidate has already been used, it
- * skips the run rather than launching a duplicate.
+ * skips that launch rather than posting a duplicate. In loop mode the
+ * used-image set is cached in memory (refreshed periodically, not on every
+ * single 10-second tick) so it doesn't re-fetch and re-decode every
+ * on-chain account every 10 seconds.
  */
 import { createHash } from 'node:crypto'
 import {
@@ -40,6 +50,13 @@ const FEE_RECIPIENT = new PublicKey(
 // to keep unattended, unmoderated posting low-risk.
 const SAFE_SUBREDDITS = ['wholesomememes', 'cryptocurrencymemes', 'dogecoin', 'ProgrammerHumor']
 const MEMES_PER_SUBREDDIT = 50
+
+const LOOP_INTERVAL_MS = Number(process.env.LOOP_INTERVAL_MS || 10_000)
+const LOOP_BUDGET_MS = Number(process.env.LOOP_BUDGET_MS || 0)
+// Re-fetch the full on-chain used-image set every ~5 minutes of loop time
+// instead of every 10s tick, so a long-running loop doesn't hammer the RPC
+// with a full getProgramAccounts scan every single iteration.
+const RESYNC_EVERY_MS = 5 * 60_000
 
 const THEMES = [
   ['Based Frog', 'BFROG'],
@@ -94,6 +111,10 @@ function loadKeypairFromEnv() {
   const raw = process.env.BOT_WALLET_SECRET
   if (!raw) throw new Error('BOT_WALLET_SECRET env var is not set')
   return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(raw)))
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function shuffled(arr) {
@@ -166,11 +187,8 @@ async function fetchSafeCandidates(subreddit) {
   )
 }
 
-/** Picks a fresh (never-used-on-chain), safe meme — sweeping every safe subreddit before giving up. */
-async function pickFreshMeme(connection) {
-  const used = await fetchUsedImageUrls(connection)
-  console.log(`${used.size} meme image(s) already used on-chain — excluding those.`)
-
+/** Picks a fresh (never-used) safe meme given an already-known used-image set. */
+async function pickFreshMeme(used) {
   const pool = []
   for (const subreddit of shuffled(SAFE_SUBREDDITS)) {
     try {
@@ -185,32 +203,26 @@ async function pickFreshMeme(connection) {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-async function main() {
-  const connection = new Connection(RPC_URL, 'confirmed')
-  const bot = loadKeypairFromEnv()
-
+/** Creates exactly one coin. `used` is mutated with the newly-picked image on success. */
+async function launchOnce(connection, bot, used) {
   let imageUrl = ''
   let memeTitle = ''
-  try {
-    const meme = await pickFreshMeme(connection)
-    if (!meme) {
-      console.log(
-        'Every fetched meme across all safe subreddits has already been used on-chain — ' +
-          'skipping this run instead of launching a duplicate.',
-      )
-      return
-    }
-    imageUrl = meme.url
-    memeTitle = meme.title
-    console.log('Using fresh meme:', meme.title, '—', meme.url)
-  } catch (e) {
-    console.warn('Meme fetch failed, launching without a real image this run:', e.message)
+  const meme = await pickFreshMeme(used)
+  if (!meme) {
+    console.log(
+      `${used.size} meme image(s) already used on-chain — every fetched candidate across all ` +
+        'safe subreddits has already been used. Skipping this launch instead of posting a duplicate.',
+    )
+    return { launched: false }
   }
+  imageUrl = meme.url
+  memeTitle = meme.title
+  console.log('Using fresh meme:', meme.title, '—', meme.url)
 
   // Name the coin after the actual meme so the art and name match — a random
   // unrelated theme name next to someone else's meme reads as low-effort spam.
   const seq = Math.floor(Math.random() * 10_000)
-  const titleName = memeTitle ? nameFromTitle(memeTitle) : null
+  const titleName = nameFromTitle(memeTitle)
   let name, symbol
   if (titleName) {
     name = titleName
@@ -220,9 +232,7 @@ async function main() {
     name = `${themeName} #${seq}`
     symbol = `${themeSymbol}${seq % 100}`.slice(0, 8).toUpperCase()
   }
-  const blurb = memeTitle
-    ? `Community coin inspired by a trending meme: "${memeTitle}"`.slice(0, 140)
-    : ''
+  const blurb = `Community coin inspired by a trending meme: "${memeTitle}"`.slice(0, 140)
   const uri = packUri(imageUrl, blurb)
 
   const mintKeypair = Keypair.generate()
@@ -273,7 +283,57 @@ async function main() {
   console.log('Mint:', mint.toBase58())
   console.log('Curve:', curvePda.toBase58())
   console.log('Signature:', sig)
-  if (memeTitle) console.log('Meme title:', memeTitle)
+  console.log('Meme title:', memeTitle)
+
+  used.add(imageUrl)
+  return { launched: true, imageUrl }
+}
+
+async function main() {
+  const connection = new Connection(RPC_URL, 'confirmed')
+  const bot = loadKeypairFromEnv()
+
+  if (!LOOP_BUDGET_MS) {
+    const used = await fetchUsedImageUrls(connection)
+    console.log(`${used.size} meme image(s) already used on-chain — excluding those.`)
+    await launchOnce(connection, bot, used)
+    return
+  }
+
+  console.log(
+    `Loop mode: creating a coin every ${LOOP_INTERVAL_MS / 1000}s for up to ` +
+      `${(LOOP_BUDGET_MS / 60_000).toFixed(0)} minutes.`,
+  )
+  const start = Date.now()
+  let used = await fetchUsedImageUrls(connection)
+  let lastResync = Date.now()
+  let iter = 0
+  let launchedCount = 0
+
+  while (Date.now() - start < LOOP_BUDGET_MS) {
+    iter++
+    if (Date.now() - lastResync > RESYNC_EVERY_MS) {
+      try {
+        used = await fetchUsedImageUrls(connection)
+        lastResync = Date.now()
+        console.log(`[iter ${iter}] resynced used-image set from chain: ${used.size} known`)
+      } catch (e) {
+        console.warn(`[iter ${iter}] resync failed, keeping cached set:`, e.message)
+      }
+    }
+    try {
+      const result = await launchOnce(connection, bot, used)
+      if (result.launched) launchedCount++
+    } catch (e) {
+      console.error(`[iter ${iter}] launch attempt failed (continuing loop):`, e.message)
+      if (/balance too low|BOT_WALLET_SECRET/.test(e.message)) {
+        console.error('Fatal for this run — stopping loop early.')
+        break
+      }
+    }
+    await sleep(LOOP_INTERVAL_MS)
+  }
+  console.log(`Loop finished: ${launchedCount} coin(s) launched across ${iter} attempt(s).`)
 }
 
 main().catch((e) => {
