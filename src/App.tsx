@@ -19,12 +19,14 @@ import { AdminPage } from './pages/AdminPage'
 import { useSimulator } from './hooks/useSimulator'
 import { useDexScreener } from './hooks/useDexScreener'
 import { useLaunchBots } from './hooks/useLaunchBots'
+import { useOnChainTokens } from './hooks/useOnChainTokens'
 import { useStore } from './store/useStore'
 
 export default function App() {
   useSimulator()
   useDexScreener()
   useLaunchBots()
+  useOnChainTokens()
   const setHowOpen = useStore((s) => s.setHowOpen)
 
   useEffect(() => {

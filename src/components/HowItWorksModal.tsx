@@ -20,7 +20,7 @@ export function HowItWorksModal() {
         </div>
         <div className="p-6">
           <h2 className="text-center font-logo text-sm text-white">
-            pump<span className="text-[#86efac]">.fun</span>
+            IGN<span className="text-[#86efac]">ITE</span>
           </h2>
           <p className="mt-3 text-center text-sm text-[#8b8d97]">how it works</p>
           <ol className="mt-5 space-y-3">
@@ -38,7 +38,7 @@ export function HowItWorksModal() {
             onClick={() => setHowOpen(false)}
             className="btn-press mt-6 w-full rounded-full bg-[#86efac] py-3 text-sm font-bold text-black"
           >
-            I&apos;m ready to pump 🚀
+            I&apos;m ready to ignite 🚀
           </button>
         </div>
       </div>

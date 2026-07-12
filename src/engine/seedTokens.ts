@@ -110,7 +110,7 @@ export function createSeedTokens(count = SEED_COUNT): Token[] {
       candles: [],
       holders: makeHolders(creator, REAL_TOKEN_RESERVES),
       shake: null,
-      website: h % 3 === 0 ? 'https://pump.fun' : undefined,
+      website: undefined,
       twitter: h % 2 === 0 ? `https://x.com/${symbol.toLowerCase()}` : undefined,
       telegram: h % 4 === 0 ? `https://t.me/${symbol.toLowerCase()}` : undefined,
       tags: [TAGS[h % TAGS.length], TAGS[(h + 3) % TAGS.length]],

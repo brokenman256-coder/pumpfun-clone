@@ -135,7 +135,6 @@ export function buildBotToken(botIndex: number, seq: number): Token {
     shake: null,
     tags: [...theme.tags, 'bot-launch', 'animated'],
     source: 'local',
-    website: 'https://pump.fun',
     twitter: `https://x.com/search?q=${symbol}`,
   }
 }

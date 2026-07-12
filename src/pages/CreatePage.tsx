@@ -56,12 +56,14 @@ export function CreatePage() {
         }
         setStatus('Approve token + curve creation in wallet…')
         const mintKeypair = Keypair.generate()
+        // `uri` is on-chain (200-byte cap) and used as an image URL by other
+        // visitors' clients — descriptions stay local/off-chain only for now.
         const { mint, curve, signature } = await createTokenOnChain({
           wallet: adapter,
           mintKeypair,
           name: name.trim(),
           symbol: symbol.trim(),
-          uri: description.trim() || `${name.trim()} launched on the curve.`,
+          uri: '',
         })
         setStatus('Launching on board…')
         const id = createToken({

@@ -18,7 +18,7 @@ export function Navbar() {
       <div className="mx-auto flex h-12 max-w-lg items-center gap-2 px-3 sm:max-w-5xl">
         <Link to="/" aria-label="Home" className="shrink-0">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#86efac] to-[#4ade80] text-base shadow-[0_0_12px_rgba(134,239,172,0.45)]">
-            💊
+            🔥
           </span>
         </Link>
         <div className="flex-1" />
