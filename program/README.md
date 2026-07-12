@@ -72,7 +72,7 @@ Every deployment needs a `Global` config account created once (sets the fee
 rate and treasury/fee-recipient address other instructions check against):
 
 ```bash
-FEE_RECIPIENT=ApuMe4AJTv7B7rLord3pxjGAAhmeuwR9ttaQVkJShUuh \
+FEE_RECIPIENT=E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw \
 RPC_URL=https://api.devnet.solana.com \
 LAUNCHPAD_PROGRAM_ID=AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8 \
 node scripts/initialize-global.mjs

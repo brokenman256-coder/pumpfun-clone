@@ -26,7 +26,7 @@ const PROGRAM_ID = new PublicKey(
   process.env.LAUNCHPAD_PROGRAM_ID || 'AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8',
 )
 const FEE_RECIPIENT = new PublicKey(
-  process.env.FEE_RECIPIENT || 'ApuMe4AJTv7B7rLord3pxjGAAhmeuwR9ttaQVkJShUuh',
+  process.env.FEE_RECIPIENT || 'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw',
 )
 
 // Only wholesome/crypto-culture subreddits — never the generic "memes" pool,

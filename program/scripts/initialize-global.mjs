@@ -13,7 +13,7 @@ import {
 
 const PROGRAM_ID = new PublicKey(process.env.LAUNCHPAD_PROGRAM_ID || 'AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8')
 const RPC_URL = process.env.RPC_URL || 'http://127.0.0.1:8899'
-const FEE_RECIPIENT = new PublicKey(process.env.FEE_RECIPIENT || 'ApuMe4AJTv7B7rLord3pxjGAAhmeuwR9ttaQVkJShUuh')
+const FEE_RECIPIENT = new PublicKey(process.env.FEE_RECIPIENT || 'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw')
 const FEE_BPS = Number(process.env.FEE_BPS || 100)
 
 function disc(name) {

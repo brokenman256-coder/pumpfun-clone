@@ -18,7 +18,7 @@ export const RPC_URL =
 /** Treasury — receives create fees + buy SOL */
 export const FEE_RECIPIENT =
   import.meta.env.VITE_FEE_RECIPIENT ||
-  'ApuMe4AJTv7B7rLord3pxjGAAhmeuwR9ttaQVkJShUuh'
+  'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw'
 
 export const CHANNEL_WALLET = FEE_RECIPIENT
 export const CREATE_FEE_SOL_ONCHAIN = 0.02

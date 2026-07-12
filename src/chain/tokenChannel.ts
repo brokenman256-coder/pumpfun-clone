@@ -1,5 +1,5 @@
 export const PLATFORM_CHANNEL = {
-  treasury: 'ApuMe4AJTv7B7rLord3pxjGAAhmeuwR9ttaQVkJShUuh',
+  treasury: 'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw',
   name: 'Ignite Channel',
   symbol: 'IGNT',
   description: 'Official channel treasury for platform fees.',
