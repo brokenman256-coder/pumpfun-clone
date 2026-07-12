@@ -6,8 +6,10 @@ import {
   isAdminSessionValid,
   signBotCommand,
 } from '../lib/adminAuth'
-import { FEE_RECIPIENT, CLUSTER, CHAIN_LABEL } from '../chain/config'
+import { FEE_RECIPIENT, CLUSTER, CHAIN_LABEL, LAUNCHPAD_PROGRAM_ID, EXPLORER_ADDR } from '../chain/config'
+import { getConnection } from '../chain/launchpadClient'
 import { formatUsd, formatSol } from '../lib/format'
+import { PublicKey } from '@solana/web3.js'
 
 /**
  * Secure admin dashboard + master bot controls
@@ -29,10 +31,31 @@ export function AdminPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [cmdSig, setCmdSig] = useState('')
+  const [treasuryBalance, setTreasuryBalance] = useState<number | null>(null)
 
   useEffect(() => {
     if (isAdminSessionValid()) setAdminAuthed(true)
   }, [setAdminAuthed])
+
+  useEffect(() => {
+    if (!adminAuthed) return
+    let cancelled = false
+    async function poll() {
+      try {
+        const connection = getConnection()
+        const lamports = await connection.getBalance(new PublicKey(FEE_RECIPIENT), 'confirmed')
+        if (!cancelled) setTreasuryBalance(lamports / 1e9)
+      } catch {
+        if (!cancelled) setTreasuryBalance(null)
+      }
+    }
+    void poll()
+    const id = window.setInterval(poll, 15_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [adminAuthed])
 
   function login() {
     const r = adminLogin(password)
@@ -95,6 +118,8 @@ export function AdminPage() {
   const bots = tokens.filter((t) => t.tags?.includes('bot-launch')).length
   const vol = tokens.reduce((a, t) => a + (t.volumeUsd || 0), 0)
   const payVol = payments.reduce((a, p) => a + p.amountSol, 0)
+  const onChainTokens = tokens.filter((t) => t.mint && t.curvePda).length
+  const simulatedTokens = tokens.length - onChainTokens
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-6 pb-10">
@@ -128,6 +153,48 @@ export function AdminPage() {
           value={dexLastSync ? new Date(dexLastSync).toLocaleTimeString() : '—'}
         />
       </div>
+
+      {/* Real on-chain program */}
+      <section className="mt-6 rounded-2xl border border-[#86efac]/30 bg-[#0c1f14] p-5">
+        <h2 className="text-lg font-bold text-[#86efac]">🔒 On-chain bonding-curve program</h2>
+        <p className="mt-1 text-xs text-[#8b8d97]">
+          Real deployed Solana program — create/buy/sell instructions move real SOL and real SPL
+          tokens through an on-chain PDA vault. Not a simulation.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <Kpi label="On-chain coins" value={String(onChainTokens)} />
+          <Kpi label="Simulated / dex coins" value={String(simulatedTokens)} />
+          <Kpi
+            label="Treasury balance"
+            value={treasuryBalance === null ? '—' : `${treasuryBalance.toFixed(4)} SOL`}
+          />
+        </div>
+        <div className="mt-3 space-y-1 text-xs text-[#8b8d97]">
+          <p>
+            Program:{' '}
+            <a
+              href={EXPLORER_ADDR(LAUNCHPAD_PROGRAM_ID.toBase58())}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-[#86efac] underline"
+            >
+              {LAUNCHPAD_PROGRAM_ID.toBase58()}
+            </a>
+          </p>
+          <p>
+            Treasury:{' '}
+            <a
+              href={EXPLORER_ADDR(FEE_RECIPIENT)}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-[#86efac] underline"
+            >
+              {FEE_RECIPIENT}
+            </a>
+          </p>
+          <p>Network: {CHAIN_LABEL}</p>
+        </div>
+      </section>
 
       {/* Master bot */}
       <section className="mt-6 rounded-2xl border border-yellow-400/30 bg-[#1a1508] p-5">

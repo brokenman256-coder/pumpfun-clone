@@ -1,0 +1,45 @@
+[package]
+name = "launchpad"
+version = "0.1.0"
+description = "Real on-chain bonding-curve launchpad for the pumpfun-clone frontend"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "launchpad"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "=0.31.0", features = ["init-if-needed"] }
+anchor-spl = "=0.31.0"
+# Pinned: the SBF build container bundles cargo 1.79, which predates the
+# edition2024 Cargo feature. Newer releases of these low-level crates require
+# it, so we pin them to the last edition2021-compatible versions to keep the
+# dependency resolver away from them.
+blake3 = "=1.5.4"
+digest = "=0.10.7"
+crypto-common = "=0.1.7"
+block-buffer = "=0.10.4"
+generic-array = "=0.14.7"
+ahash = "=0.8.11"
+toml = "=0.7.8"
+toml_edit = "=0.21.1"
+zerocopy = "=0.7.35"
+zeroize = "=1.8.2"
+zeroize_derive = "=1.4.3"
+toml_datetime = "=0.6.11"
+winnow = "=0.5.40"
+# borsh-derive pulls in proc-macro-crate >= 3, which pulls in a toml_edit
+# release requiring edition2024.
+borsh = "=1.5.1"
+borsh-derive = "=1.5.1"
+proc-macro-crate = "=3.1.0"
+indexmap = "=2.2.6"
+unicode-segmentation = "=1.12.0"

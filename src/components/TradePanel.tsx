@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import confetti from 'canvas-confetti'
+import { PublicKey } from '@solana/web3.js'
 import type { Token } from '../types'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
@@ -7,12 +8,17 @@ import { getBuyQuote, getSellQuote, TRADE_FEE_BPS } from '../engine/bondingCurve
 import { formatSol, formatTokens } from '../lib/format'
 import { CHAIN_LABEL, EXPLORER_TX, CLUSTER } from '../chain/config'
 import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
+import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
+
+const MINT_DECIMALS = 9
 
 const QUICK = [0.1, 0.5, 1]
 
 export function TradePanel({ token }: { token: Token }) {
   const executeTrade = useStore((s) => s.executeTrade)
-  const { connected, openModal, holdings, solBalance, paySol, refreshBalance } = useWallet()
+  const syncTokenFromChain = useStore((s) => s.syncTokenFromChain)
+  const { connected, openModal, holdings, solBalance, paySol, refreshBalance, adapter } = useWallet()
+  const onChain = Boolean(token.mint && token.curvePda)
   const [mode, setMode] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
@@ -51,17 +57,54 @@ export function TradePanel({ token }: { token: Token }) {
     setLoading(true)
     try {
       let signature: string | undefined
-      if (mode === 'buy') {
-        setStatus(`Approve ${a} SOL in Phantom…`)
-        signature = await paySol(a, `buy:${token.symbol}:${token.id}`)
+
+      if (onChain && token.mint) {
+        const mint = new PublicKey(token.mint)
+        setStatus(`Confirm ${mode} in wallet…`)
+        if (mode === 'buy') {
+          signature = await buyOnChain({
+            wallet: adapter,
+            mint,
+            solLamports: BigInt(Math.round(a * 1e9)),
+          })
+        } else {
+          signature = await sellOnChain({
+            wallet: adapter,
+            mint,
+            tokenAmountRaw: BigInt(Math.round(a * 10 ** MINT_DECIMALS)),
+          })
+        }
         setTxSig(signature)
-        setStatus('Confirmed · updating curve…')
+        setStatus('Confirmed · syncing curve…')
+
+        const curve = await fetchBondingCurve(getConnection(), mint)
+        if (curve) {
+          syncTokenFromChain(token.id, {
+            virtualSolLamports: curve.virtualSolReserves,
+            virtualTokenRaw: curve.virtualTokenReserves,
+            realSolLamports: curve.realSolReserves,
+            realTokenRaw: curve.realTokenReserves,
+            complete: curve.complete,
+            decimals: curve.decimals,
+          })
+        }
+        // Local holdings/SOL-balance bookkeeping only — the trade itself
+        // already executed for real above.
+        executeTrade(token.id, mode, a, undefined, false, signature)
+      } else {
+        if (mode === 'buy') {
+          setStatus(`Approve ${a} SOL in Phantom…`)
+          signature = await paySol(a, `buy:${token.symbol}:${token.id}`)
+          setTxSig(signature)
+          setStatus('Confirmed · updating curve…')
+        }
+        const res = executeTrade(token.id, mode, a, undefined, false, signature)
+        if (!res.ok) {
+          setError(res.error || 'Failed')
+          return
+        }
       }
-      const res = executeTrade(token.id, mode, a, undefined, false, signature)
-      if (!res.ok) {
-        setError(res.error || 'Failed')
-        return
-      }
+
       setAmount('')
       await refreshBalance()
       setStatus(mode === 'buy' ? 'Buy confirmed ✓' : 'Sell filled ✓')
@@ -82,6 +125,21 @@ export function TradePanel({ token }: { token: Token }) {
         <span className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]">
           ⛓ {CHAIN_LABEL}
         </span>
+        {onChain ? (
+          <span
+            className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]"
+            title="Trades execute on a real deployed program — every buy/sell moves real SOL and real SPL tokens."
+          >
+            🔒 on-chain curve
+          </span>
+        ) : (
+          <span
+            className="rounded-full bg-yellow-400/10 px-2 py-0.5 font-semibold text-yellow-300"
+            title="This coin isn't backed by the on-chain program — trades here are simulated board activity."
+          >
+            simulated
+          </span>
+        )}
         <span className="text-[#8b8d97]">bal {formatSol(solBalance)} SOL</span>
       </div>
 

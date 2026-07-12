@@ -51,6 +51,7 @@ export type Token = {
   telegram?: string
   tags: string[]
   mint?: string
+  curvePda?: string
   signature?: string
   /** Live feed from DexScreener */
   source?: 'local' | 'dexscreener'

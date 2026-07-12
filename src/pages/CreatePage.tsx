@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import confetti from 'canvas-confetti'
+import { Keypair } from '@solana/web3.js'
 import { useWallet } from '../hooks/useWallet'
 import { useStore } from '../store/useStore'
 import { createSplTokenOnChain } from '../chain/createSplToken'
+import { createTokenOnChain } from '../chain/launchpadClient'
 import { CREATE_FEE_SOL } from '../engine/bondingCurve'
 import { CHAIN_LABEL, CLUSTER, EXPLORER_TX } from '../chain/config'
 
@@ -16,7 +18,6 @@ export function CreatePage() {
     connected,
     openModal,
     solBalance,
-    paySol,
     refreshBalance,
     adapter,
     address,
@@ -48,19 +49,28 @@ export function CreatePage() {
     setLoading(true)
     try {
       if (mode === 'board') {
-        if (solBalance < CREATE_FEE_SOL) {
-          setError(`Need ${CREATE_FEE_SOL} SOL for create fee`)
+        if (solBalance < CREATE_FEE_SOL + 0.01) {
+          setError(`Need ~${CREATE_FEE_SOL + 0.01} SOL for create fee + rent`)
           setLoading(false)
           return
         }
-        setStatus(`Pay ${CREATE_FEE_SOL} SOL create fee…`)
-        const signature = await paySol(CREATE_FEE_SOL, `create:${symbol}:${name}`)
+        setStatus('Approve token + curve creation in wallet…')
+        const mintKeypair = Keypair.generate()
+        const { mint, curve, signature } = await createTokenOnChain({
+          wallet: adapter,
+          mintKeypair,
+          name: name.trim(),
+          symbol: symbol.trim(),
+          uri: description.trim() || `${name.trim()} launched on the curve.`,
+        })
         setStatus('Launching on board…')
         const id = createToken({
           name: name.trim(),
           symbol: symbol.trim(),
           description: description.trim(),
           signature,
+          mint,
+          curvePda: curve,
         })
         if (!id) throw new Error('Launch failed')
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#86efac', '#fff'] })
@@ -115,7 +125,7 @@ export function CreatePage() {
       </div>
       <h1 className="text-center text-2xl font-black">Create coin</h1>
       <p className="mt-2 text-center text-sm text-[#8b8d97]">
-        Mint a real SPL token or launch on the board with on-chain SOL fee.
+        Mint a standalone SPL token, or launch on a real on-chain bonding curve.
       </p>
 
       <div className="mt-4 flex rounded-xl bg-[#14151b] p-1">
@@ -131,7 +141,7 @@ export function CreatePage() {
           onClick={() => setMode('board')}
           className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'board' ? 'bg-[#86efac] text-black' : 'text-[#8b8d97]'}`}
         >
-          Board launch
+          Bonding curve
         </button>
       </div>
 

@@ -83,7 +83,19 @@ type Store = {
     telegram?: string
     signature?: string
     mint?: string
+    curvePda?: string
   }) => string | null
+  syncTokenFromChain: (
+    tokenId: string,
+    curve: {
+      virtualSolLamports: bigint
+      virtualTokenRaw: bigint
+      realSolLamports: bigint
+      realTokenRaw: bigint
+      complete: boolean
+      decimals: number
+    },
+  ) => void
   addComment: (tokenId: string, text: string, imageUrl?: string) => void
   likeComment: (id: string) => void
   simTick: () => void
@@ -430,6 +442,7 @@ export const useStore = create<Store>((set, get) => ({
       telegram: input.telegram,
       tags: ['new', 'meme'],
       mint: input.mint,
+      curvePda: input.curvePda,
       signature: input.signature,
     }
     set((s) => ({
@@ -441,6 +454,31 @@ export const useStore = create<Store>((set, get) => ({
       },
     }))
     return id
+  },
+
+  syncTokenFromChain: (tokenId, curve) => {
+    set((s) => ({
+      tokens: s.tokens.map((t) => {
+        if (t.id !== tokenId) return t
+        const scale = 10 ** curve.decimals
+        const virtualSol = Number(curve.virtualSolLamports) / 1e9
+        const virtualTokens = Number(curve.virtualTokenRaw) / scale
+        const newPrice = priceSol(virtualSol, virtualTokens)
+        const newMcap = marketCapUsd(virtualSol, virtualTokens)
+        return {
+          ...t,
+          virtualSol,
+          virtualTokens,
+          realSol: Number(curve.realSolLamports) / 1e9,
+          realTokens: Number(curve.realTokenRaw) / scale,
+          priceSol: newPrice,
+          marketCapUsd: newMcap,
+          athUsd: Math.max(t.athUsd || 0, newMcap),
+          complete: curve.complete,
+          candles: applyTradeToCandles(t.candles, newPrice, 'buy'),
+        }
+      }),
+    }))
   },
 
   addComment: (tokenId, text, imageUrl) => {
