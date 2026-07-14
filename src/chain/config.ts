@@ -1,22 +1,22 @@
 import { PublicKey } from '@solana/web3.js'
 
-export type Cluster = 'devnet' | 'mainnet-beta' | 'testnet' | 'localnet' | 'personal'
+export type Cluster = 'devnet' | 'mainnet-beta' | 'testnet' | 'localnet'
 
 /**
- * PERSONAL MODE (default): fully self-contained market.
- * - No real chain, no gas, no Phantom payments required
- * - Bots create coins + buy/sell with free virtual accounts
- * - You trade with virtual SOL; system owns price/chart/supply
+ * Self-managed market engine (default ON):
+ * - System owns price, supply, charts
+ * - Coin bots + trader bots = free, zero gas
+ * - Real humans can still connect Phantom and trade with real SOL
  *
- * Set VITE_PERSONAL_MODE=false to re-enable real Solana paths.
+ * Set VITE_PERSONAL_MODE=false only if you want a pure on-chain product.
  */
 export const PERSONAL_MODE =
   import.meta.env.VITE_PERSONAL_MODE !== 'false' &&
   import.meta.env.VITE_PERSONAL_MODE !== '0'
 
-export const CLUSTER: Cluster = PERSONAL_MODE
-  ? 'personal'
-  : (import.meta.env.VITE_SOLANA_CLUSTER as Cluster) || 'devnet'
+/** Real Solana cluster for Phantom trades (never "personal") */
+export const CLUSTER: Cluster =
+  (import.meta.env.VITE_SOLANA_CLUSTER as Cluster) || 'devnet'
 
 export const RPC_URL =
   import.meta.env.VITE_SOLANA_RPC ||
@@ -28,7 +28,7 @@ export const RPC_URL =
         ? 'http://127.0.0.1:8899'
         : 'https://api.devnet.solana.com')
 
-/** Treasury — receives create fees + buy SOL */
+/** Treasury — receives real Phantom buy SOL + fees */
 export const FEE_RECIPIENT =
   import.meta.env.VITE_FEE_RECIPIENT ||
   'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw'
@@ -36,13 +36,12 @@ export const FEE_RECIPIENT =
 export const CHANNEL_WALLET = FEE_RECIPIENT
 export const CREATE_FEE_SOL_ONCHAIN = 0.02
 
-/** Real on-chain bonding-curve launchpad program (program/programs/launchpad). */
+/** Real on-chain bonding-curve launchpad program (optional). */
 export const LAUNCHPAD_PROGRAM_ID = new PublicKey(
   import.meta.env.VITE_LAUNCHPAD_PROGRAM_ID ||
     'AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8',
 )
 
-/** Wallet the scheduled GitHub Actions bot launcher signs with (see scripts/bot-launch.mjs). */
 export const BOT_WALLET_ADDRESS: string | null =
   import.meta.env.VITE_BOT_WALLET_ADDRESS || null
 
@@ -61,7 +60,13 @@ export const EXPLORER_ADDR = (addr: string) =>
       : `https://solscan.io/account/${addr}?cluster=${CLUSTER}`
 
 export const CHAIN_LABEL = PERSONAL_MODE
-  ? 'Personal Market · zero gas'
+  ? CLUSTER === 'mainnet-beta'
+    ? 'Managed market · Phantom Mainnet'
+    : CLUSTER === 'testnet'
+      ? 'Managed market · Phantom Testnet'
+      : CLUSTER === 'localnet'
+        ? 'Managed market · Localnet'
+        : 'Managed market · Phantom Devnet'
   : CLUSTER === 'mainnet-beta'
     ? 'Solana Mainnet'
     : CLUSTER === 'testnet'
@@ -70,5 +75,5 @@ export const CHAIN_LABEL = PERSONAL_MODE
         ? 'Solana Localnet'
         : 'Solana Devnet'
 
-/** Starting virtual SOL for the human trader in personal mode */
+/** Virtual SOL for demo browsing (bots always free; traders use Phantom for real $) */
 export const PERSONAL_START_SOL = Number(import.meta.env.VITE_PERSONAL_START_SOL || 100)

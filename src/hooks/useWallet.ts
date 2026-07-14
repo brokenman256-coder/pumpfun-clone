@@ -40,45 +40,54 @@ export function useWallet() {
   const costBasis = useStore((s) => s.wallet.costBasis)
   const solBalance = useStore((s) => s.wallet.solBalance)
   const setSolBalance = useStore((s) => s.setSolBalance)
+  const enterPersonalSession = useStore((s) => s.enterPersonalSession)
+  const storeConnected = useStore((s) => s.wallet.connected)
+  const storeAddress = useStore((s) => s.wallet.address)
 
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const pending = useRef<WalletName | null>(null)
   const phantomInstalled = !!getPhantom()
 
-  const enterPersonalSession = useStore((s) => s.enterPersonalSession)
-  const personalConnected = useStore((s) => s.wallet.connected)
-  const personalAddress = useStore((s) => s.wallet.address)
+  /** Real Phantom session → real SOL trades */
+  const isRealTrader = !!(sol.connected && sol.publicKey)
 
   const refreshBalance = useCallback(async () => {
-    if (PERSONAL_MODE) {
-      // Virtual bankroll — never wipe with chain 0
-      return
-    }
     if (!sol.publicKey) {
-      setSolBalance(0)
+      // Demo / personal session keeps virtual bankroll
+      if (PERSONAL_MODE && storeConnected && !isRealTrader) {
+        return
+      }
       return
     }
     try {
       const lamports = await connection.getBalance(sol.publicKey, 'confirmed')
       setSolBalance(lamports / LAMPORTS_PER_SOL)
     } catch {
-      /* keep */
+      /* keep last */
     }
-  }, [connection, sol.publicKey, setSolBalance])
+  }, [connection, sol.publicKey, setSolBalance, storeConnected, isRealTrader])
 
+  // Phantom connect / disconnect
   useEffect(() => {
-    if (PERSONAL_MODE) {
-      // Auto-enter personal session once
-      if (!personalConnected) enterPersonalSession()
-      return
-    }
     if (sol.connected && sol.publicKey) {
       setChainWallet(true, sol.publicKey.toBase58())
       setWalletModalOpen(false)
       setError(null)
       void refreshBalance()
-    } else if (!sol.connecting) {
+      return
+    }
+    if (sol.connecting) return
+    // Phantom disconnected
+    if (PERSONAL_MODE) {
+      const wasPhantom =
+        storeAddress &&
+        storeAddress !== 'personal_trader' &&
+        !storeAddress.startsWith('personal')
+      if (wasPhantom || !storeConnected) {
+        enterPersonalSession()
+      }
+    } else {
       setChainWallet(false, null)
     }
   }, [
@@ -88,9 +97,17 @@ export function useWallet() {
     setChainWallet,
     setWalletModalOpen,
     refreshBalance,
-    personalConnected,
+    storeConnected,
+    storeAddress,
     enterPersonalSession,
   ])
+
+  // Auto demo session so board is usable before Phantom
+  useEffect(() => {
+    if (PERSONAL_MODE && !storeConnected && !sol.connected) {
+      enterPersonalSession()
+    }
+  }, [storeConnected, sol.connected, enterPersonalSession])
 
   useEffect(() => {
     if (!sol.publicKey) return
@@ -190,11 +207,18 @@ export function useWallet() {
     } catch {
       /* */
     }
-    setChainWallet(false, null)
-  }, [sol, setChainWallet])
+    if (PERSONAL_MODE) {
+      enterPersonalSession()
+    } else {
+      setChainWallet(false, null)
+    }
+  }, [sol, setChainWallet, enterPersonalSession])
 
   const paySol = useCallback(
     async (amountSol: number, memo: string) => {
+      if (!sol.publicKey || !sol.sendTransaction) {
+        throw new Error('Connect Phantom to trade with real SOL')
+      }
       const s = await paySolOnChain({ wallet: sol, amountSol, memo })
       await refreshBalance()
       return s
@@ -208,24 +232,27 @@ export function useWallet() {
   }, [enterPersonalSession])
 
   return {
-    connected: PERSONAL_MODE
-      ? personalConnected
-      : sol.connected && !!sol.publicKey,
-    address: PERSONAL_MODE
-      ? personalAddress
-      : sol.publicKey?.toBase58() ?? null,
-    solBalance: PERSONAL_MODE
-      ? solBalance || PERSONAL_START_SOL
-      : solBalance,
+    connected: isRealTrader || storeConnected,
+    /** True when Phantom is live — real SOL path */
+    isRealTrader,
+    address: isRealTrader
+      ? sol.publicKey!.toBase58()
+      : storeAddress,
+    solBalance: isRealTrader
+      ? solBalance
+      : PERSONAL_MODE
+        ? solBalance || PERSONAL_START_SOL
+        : solBalance,
     holdings,
     costBasis,
     connecting: sol.connecting || busy,
     cluster: CLUSTER,
     phantomInstalled,
-    personalMode: PERSONAL_MODE,
+    personalMode: PERSONAL_MODE && !isRealTrader,
+    marketPersonal: PERSONAL_MODE,
     error,
     clearError: () => setError(null),
-    connectPhantom: PERSONAL_MODE ? connectPersonal : connectPhantom,
+    connectPhantom,
     connectPersonal,
     selectAndConnect,
     disconnect,

@@ -1,5 +1,11 @@
 import { useWallet } from '../hooks/useWallet'
-import { CHAIN_LABEL, CLUSTER, PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
+import {
+  CHAIN_LABEL,
+  CLUSTER,
+  PERSONAL_MODE,
+  PERSONAL_START_SOL,
+  FEE_RECIPIENT,
+} from '../chain/config'
 import type { WalletName } from '@solana/wallet-adapter-base'
 
 export function WalletModal() {
@@ -15,7 +21,7 @@ export function WalletModal() {
     clearError,
     installPhantom,
     wallets,
-    personalMode,
+    isRealTrader,
   } = useWallet()
 
   if (!modalOpen) return null
@@ -35,9 +41,7 @@ export function WalletModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#26272e] px-5 py-4">
-          <h2 className="text-sm font-bold text-white">
-            {PERSONAL_MODE || personalMode ? 'Start trading' : 'Connect wallet'}
-          </h2>
+          <h2 className="text-sm font-bold text-white">Connect to trade</h2>
           <button type="button" onClick={closeModal} className="text-[#8b8d97]">
             ✕
           </button>
@@ -47,41 +51,19 @@ export function WalletModal() {
             Network:{' '}
             <span className="font-semibold text-[#86efac]">{CHAIN_LABEL}</span> ({CLUSTER})
           </p>
-          {(PERSONAL_MODE || personalMode) && (
-            <>
-              <p className="text-[11px] leading-relaxed text-[#8b8d97]">
-                Personal market: bots create coins and trade with free virtual accounts.
-                No gas, no Phantom required. You get {PERSONAL_START_SOL} virtual SOL.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  connectPersonal?.()
-                  closeModal()
-                }}
-                className="btn-press flex w-full items-center gap-3 rounded-xl border border-violet-400/40 bg-violet-400/10 px-4 py-3 text-left hover:bg-violet-400/20"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/30 text-lg">
-                  ⚡
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-bold text-white">Enter personal market</span>
-                  <span className="block text-[11px] text-[#8b8d97]">
-                    Zero gas · instant fills · bot traders live
-                  </span>
-                </span>
-              </button>
-            </>
-          )}
-          {!(PERSONAL_MODE || personalMode) && (
+
+          {/* Primary: real Phantom */}
           <p className="text-[11px] leading-relaxed text-[#8b8d97]">
-            Phantom will ask you to approve. We never see your seed phrase — only your public address.
+            <strong className="text-white">Traders:</strong> connect Phantom to buy/sell with
+            real SOL. Buys go to treasury{' '}
+            <span className="font-mono text-[10px] text-[#86efac]">
+              {FEE_RECIPIENT.slice(0, 4)}…{FEE_RECIPIENT.slice(-4)}
+            </span>
+            . Bots never use your wallet and never pay gas.
           </p>
-          )}
-          {!(PERSONAL_MODE || personalMode) && (
           <button
             type="button"
-            disabled={connecting}
+            disabled={connecting || isRealTrader}
             onClick={() => void connectPhantom()}
             className="btn-press flex w-full items-center gap-3 rounded-xl border border-[#86efac]/40 bg-[#86efac]/10 px-4 py-3 text-left hover:bg-[#86efac]/20 disabled:opacity-60"
           >
@@ -89,18 +71,21 @@ export function WalletModal() {
               👻
             </span>
             <span className="flex-1">
-              <span className="block text-sm font-bold text-white">Phantom</span>
+              <span className="block text-sm font-bold text-white">
+                {isRealTrader ? 'Phantom connected' : 'Phantom — real SOL'}
+              </span>
               <span className="block text-[11px] text-[#8b8d97]">
-                {phantomInstalled
-                  ? connecting
-                    ? 'Approve in Phantom…'
-                    : 'Detected — click to connect'
-                  : 'Not installed'}
+                {isRealTrader
+                  ? 'You are trading with real SOL'
+                  : phantomInstalled
+                    ? connecting
+                      ? 'Approve in Phantom…'
+                      : 'Recommended for live trading'
+                    : 'Not installed'}
               </span>
             </span>
           </button>
-          )}
-          {!(PERSONAL_MODE || personalMode) && !phantomInstalled && (
+          {!phantomInstalled && (
             <button
               type="button"
               onClick={installPhantom}
@@ -109,8 +94,8 @@ export function WalletModal() {
               Install Phantom →
             </button>
           )}
-          {!(PERSONAL_MODE || personalMode) &&
-          others.map((w) => (
+
+          {others.map((w) => (
             <button
               key={w.adapter.name}
               type="button"
@@ -126,6 +111,34 @@ export function WalletModal() {
               <span className="text-sm font-semibold">{w.adapter.name}</span>
             </button>
           ))}
+
+          {/* Secondary: demo only */}
+          {PERSONAL_MODE && (
+            <>
+              <div className="relative py-1 text-center text-[10px] uppercase tracking-wide text-[#555]">
+                or browse without wallet
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  connectPersonal?.()
+                  closeModal()
+                }}
+                className="flex w-full items-center gap-3 rounded-xl border border-[#26272e] bg-[#0e0f13] px-4 py-3 text-left hover:border-violet-400/30"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20 text-lg">
+                  ⚡
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-bold text-white">Demo session</span>
+                  <span className="block text-[11px] text-[#8b8d97]">
+                    {PERSONAL_START_SOL} virtual SOL · bots still live · not real money
+                  </span>
+                </span>
+              </button>
+            </>
+          )}
+
           {error && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
               {error}

@@ -363,15 +363,27 @@ export const useStore = create<Store>((set, get) => ({
         createdAt: Date.now(),
         signature: signature || sig(),
       }
+      // For real Phantom: buy already spent on-chain; sell SOL comes from payout tx.
+      // Only adjust local solBalance for demo/personal_trader.
+      const isDemo =
+        s.wallet.address === 'personal_trader' ||
+        s.wallet.address.startsWith('personal')
+      let nextSol = s.wallet.solBalance
+      if (isDemo) {
+        nextSol =
+          side === 'buy'
+            ? Math.max(0, s.wallet.solBalance - solAmount)
+            : s.wallet.solBalance + solAmount
+      } else if (side === 'buy') {
+        // optimistic — refreshBalance will correct from RPC
+        nextSol = Math.max(0, s.wallet.solBalance - solAmount)
+      }
       return {
         wallet: {
           ...s.wallet,
           holdings,
           costBasis,
-          solBalance:
-            side === 'buy'
-              ? Math.max(0, s.wallet.solBalance - solAmount)
-              : s.wallet.solBalance,
+          solBalance: nextSol,
         },
         trades: [trade, ...s.trades].slice(0, 500),
         tickerTrades: [trade, ...s.tickerTrades].slice(0, 20),
@@ -467,8 +479,12 @@ export const useStore = create<Store>((set, get) => ({
 
   setSolBalance: (bal) =>
     set((s) => {
-      // Don't let RPC overwrite personal virtual balance with 0
-      if (PERSONAL_MODE && bal === 0 && s.wallet.solBalance > 0) return s
+      // Don't let a failed RPC wipe virtual demo bankroll
+      const isDemo =
+        !s.wallet.address ||
+        s.wallet.address === 'personal_trader' ||
+        s.wallet.address.startsWith('personal')
+      if (PERSONAL_MODE && isDemo && bal === 0 && s.wallet.solBalance > 0) return s
       return { wallet: { ...s.wallet, solBalance: bal } }
     }),
 
