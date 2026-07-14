@@ -1,5 +1,5 @@
 import { useWallet } from '../hooks/useWallet'
-import { CHAIN_LABEL, CLUSTER } from '../chain/config'
+import { CHAIN_LABEL, CLUSTER, PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
 import type { WalletName } from '@solana/wallet-adapter-base'
 
 export function WalletModal() {
@@ -7,6 +7,7 @@ export function WalletModal() {
     modalOpen,
     closeModal,
     connectPhantom,
+    connectPersonal,
     selectAndConnect,
     connecting,
     phantomInstalled,
@@ -14,6 +15,7 @@ export function WalletModal() {
     clearError,
     installPhantom,
     wallets,
+    personalMode,
   } = useWallet()
 
   if (!modalOpen) return null
@@ -33,18 +35,50 @@ export function WalletModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#26272e] px-5 py-4">
-          <h2 className="text-sm font-bold text-white">Connect wallet</h2>
+          <h2 className="text-sm font-bold text-white">
+            {PERSONAL_MODE || personalMode ? 'Start trading' : 'Connect wallet'}
+          </h2>
           <button type="button" onClick={closeModal} className="text-[#8b8d97]">
             ✕
           </button>
         </div>
         <div className="space-y-3 p-5">
           <p className="text-xs text-[#8b8d97]">
-            Network: <span className="font-semibold text-[#86efac]">{CHAIN_LABEL}</span> ({CLUSTER})
+            Network:{' '}
+            <span className="font-semibold text-[#86efac]">{CHAIN_LABEL}</span> ({CLUSTER})
           </p>
+          {(PERSONAL_MODE || personalMode) && (
+            <>
+              <p className="text-[11px] leading-relaxed text-[#8b8d97]">
+                Personal market: bots create coins and trade with free virtual accounts.
+                No gas, no Phantom required. You get {PERSONAL_START_SOL} virtual SOL.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  connectPersonal?.()
+                  closeModal()
+                }}
+                className="btn-press flex w-full items-center gap-3 rounded-xl border border-violet-400/40 bg-violet-400/10 px-4 py-3 text-left hover:bg-violet-400/20"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/30 text-lg">
+                  ⚡
+                </span>
+                <span className="flex-1">
+                  <span className="block text-sm font-bold text-white">Enter personal market</span>
+                  <span className="block text-[11px] text-[#8b8d97]">
+                    Zero gas · instant fills · bot traders live
+                  </span>
+                </span>
+              </button>
+            </>
+          )}
+          {!(PERSONAL_MODE || personalMode) && (
           <p className="text-[11px] leading-relaxed text-[#8b8d97]">
             Phantom will ask you to approve. We never see your seed phrase — only your public address.
           </p>
+          )}
+          {!(PERSONAL_MODE || personalMode) && (
           <button
             type="button"
             disabled={connecting}
@@ -65,7 +99,8 @@ export function WalletModal() {
               </span>
             </span>
           </button>
-          {!phantomInstalled && (
+          )}
+          {!(PERSONAL_MODE || personalMode) && !phantomInstalled && (
             <button
               type="button"
               onClick={installPhantom}
@@ -74,7 +109,8 @@ export function WalletModal() {
               Install Phantom →
             </button>
           )}
-          {others.map((w) => (
+          {!(PERSONAL_MODE || personalMode) &&
+          others.map((w) => (
             <button
               key={w.adapter.name}
               type="button"

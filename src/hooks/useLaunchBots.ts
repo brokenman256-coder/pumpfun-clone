@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
+import { PERSONAL_MODE } from '../chain/config'
 
 /**
- * Local backup fleet — only fills the board if the live API is unreachable.
- * Primary coin bot is useLiveBoard → POST /api/live-board every 30s.
+ * Local coin fleet. In personal mode, useLiveBoard already runs botTick;
+ * this stays as a quiet backup only when live board is off.
  */
 export function useLaunchBots() {
   const enabled = useStore((s) => s.botConfig.enabled)
@@ -13,7 +14,8 @@ export function useLaunchBots() {
   const booted = useRef(false)
 
   useEffect(() => {
-    // When live board works, skip local-only spam (live bot is source of truth)
+    // Personal: primary loop is in useLiveBoard
+    if (PERSONAL_MODE) return
     if (!enabled || liveSynced) {
       booted.current = false
       return

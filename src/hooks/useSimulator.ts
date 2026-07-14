@@ -1,19 +1,31 @@
 import { useEffect } from 'react'
 import { useStore } from '../store/useStore'
+import { PERSONAL_MODE } from '../chain/config'
 
 /**
- * Live board activity for managed coins — keeps charts, mcaps, and tickers
- * moving like a real order book without touching DexScreener / on-chain mints.
+ * Personal market engine:
+ * - traderTick: multi-account bots buy (pump) then eventually sell — zero gas
+ * - simTick: light ambient noise
  */
 export function useSimulator() {
   const simTick = useStore((s) => s.simTick)
+  const traderTick = useStore((s) => s.traderTick)
 
   useEffect(() => {
-    // ~2.2s cadence = lively but not chaotic
-    const id = window.setInterval(() => {
+    const ambient = window.setInterval(() => {
       if (document.hidden) return
       simTick()
-    }, 2200)
-    return () => clearInterval(id)
-  }, [simTick])
+    }, PERSONAL_MODE ? 3500 : 2200)
+
+    // Trader bots fire faster so the board looks like a real tape
+    const traders = window.setInterval(() => {
+      if (document.hidden) return
+      traderTick()
+    }, PERSONAL_MODE ? 1400 : 2800)
+
+    return () => {
+      clearInterval(ambient)
+      clearInterval(traders)
+    }
+  }, [simTick, traderTick])
 }

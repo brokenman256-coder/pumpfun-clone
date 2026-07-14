@@ -1,20 +1,38 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
 import { fetchLiveBoard, launchLiveCoin } from '../lib/liveBoardApi'
+import { PERSONAL_MODE } from '../chain/config'
 
 /**
- * Syncs the shared live board (server bot coins + shared curves)
- * and keeps the coin-creation bot running every 30s via the API.
+ * Shared live board sync — skipped in PERSONAL_MODE (everything is local,
+ * free, and self-contained).
  */
 export function useLiveBoard() {
   const mergeLiveBoard = useStore((s) => s.mergeLiveBoard)
   const setBotLog = useStore((s) => s.pushBotLog)
   const botEnabled = useStore((s) => s.botConfig.enabled)
   const intervalMs = useStore((s) => s.botConfig.intervalMs)
+  const botTick = useStore((s) => s.botTick)
   const lastLaunch = useRef(0)
 
-  // Poll shared board
+  // Personal mode: only local coin bot (no server / no gas)
   useEffect(() => {
+    if (!PERSONAL_MODE || !botEnabled) return
+    const warm = window.setTimeout(() => {
+      if (!document.hidden) botTick()
+    }, 2000)
+    const id = window.setInterval(() => {
+      if (document.hidden) return
+      botTick()
+    }, intervalMs)
+    return () => {
+      clearTimeout(warm)
+      clearInterval(id)
+    }
+  }, [botEnabled, intervalMs, botTick])
+
+  useEffect(() => {
+    if (PERSONAL_MODE) return
     let cancelled = false
     async function pull() {
       const snap = await fetchLiveBoard()
@@ -34,9 +52,8 @@ export function useLiveBoard() {
     }
   }, [mergeLiveBoard])
 
-  // Server-side coin bot (one unique meme every 30s)
   useEffect(() => {
-    if (!botEnabled) return
+    if (PERSONAL_MODE || !botEnabled) return
 
     async function tick() {
       if (document.hidden) return
@@ -48,7 +65,6 @@ export function useLiveBoard() {
         setBotLog(
           `LIVE bot · $${res.token.symbol} · mcap $${Math.round(res.token.marketCapUsd).toLocaleString()}`,
         )
-        // Immediate merge so board updates without waiting for poll
         const snap = await fetchLiveBoard()
         if (snap.ok) {
           mergeLiveBoard({
@@ -61,7 +77,6 @@ export function useLiveBoard() {
       }
     }
 
-    // First launch soon after load
     const warm = window.setTimeout(() => void tick(), 3_000)
     const id = window.setInterval(() => void tick(), intervalMs)
     return () => {

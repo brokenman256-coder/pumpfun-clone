@@ -27,6 +27,14 @@ import {
   collectUsedMemeUrls,
   type BotConfig,
 } from '../engine/launchBots'
+import {
+  createTraderFleet,
+  decideSide,
+  pickPersona,
+  sellFraction,
+  tradeSize,
+  type TraderState,
+} from '../engine/traderBots'
 import type { PaymentResult } from '../chain/paymentGateway'
 import {
   loadHoldings,
@@ -35,6 +43,7 @@ import {
   loadUsedMemeUrls,
   saveUsedMemeUrls,
 } from '../lib/tradePersist'
+import { PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
 
 type Store = {
   tokens: Token[]
@@ -143,7 +152,11 @@ type Store = {
   addComment: (tokenId: string, text: string, imageUrl?: string) => void
   likeComment: (id: string) => void
   simTick: () => void
+  /** Multi-account free trader bots (buy pressure → eventual sells). Zero gas. */
+  traderTick: () => void
+  enterPersonalSession: () => void
   clearShake: (tokenId: string) => void
+  traderFleet: TraderState[]
 }
 
 function sig() {
@@ -172,9 +185,9 @@ export const useStore = create<Store>((set, get) => ({
   trades: [],
   comments: [],
   wallet: {
-    connected: false,
-    address: null,
-    solBalance: 0,
+    connected: PERSONAL_MODE,
+    address: PERSONAL_MODE ? 'personal_trader' : null,
+    solBalance: PERSONAL_MODE ? PERSONAL_START_SOL : 0,
     holdings: typeof localStorage !== 'undefined' ? loadHoldings() : {},
     costBasis: typeof localStorage !== 'undefined' ? loadCostBasis() : {},
   },
@@ -190,15 +203,18 @@ export const useStore = create<Store>((set, get) => ({
   dexStatus: 'idle',
   dexError: null,
   dexLastSync: null,
-  liveMode: true,
+  liveMode: !PERSONAL_MODE,
   botConfig: { ...DEFAULT_BOT_CONFIG },
   botLog: [
-    `${new Date().toISOString()} · LIVE managed market · margin ${PLATFORM_MARGIN_BPS / 100}% · coin bot every ${DEFAULT_BOT_CONFIG.intervalMs / 1000}s`,
+    PERSONAL_MODE
+      ? `${new Date().toISOString()} · PERSONAL market · zero gas · ${PLATFORM_MARGIN_BPS / 100}% margin · coin bot 30s · multi-bot traders`
+      : `${new Date().toISOString()} · managed market · margin ${PLATFORM_MARGIN_BPS / 100}%`,
   ],
   payments: [],
   adminAuthed: false,
   usedMemeUrls: typeof localStorage !== 'undefined' ? loadUsedMemeUrls() : [],
   liveBoardSynced: false,
+  traderFleet: createTraderFleet(),
 
   setSort: (s) => set({ sort: s }),
   setSearch: (q) => set({ search: q }),
@@ -437,13 +453,40 @@ export const useStore = create<Store>((set, get) => ({
         ...s.wallet,
         connected,
         address,
-        solBalance: connected ? s.wallet.solBalance : 0,
+        // Personal mode keeps virtual bankroll; real chain overwrites via setSolBalance
+        solBalance: PERSONAL_MODE
+          ? connected
+            ? Math.max(s.wallet.solBalance, PERSONAL_START_SOL * 0.25)
+            : s.wallet.solBalance
+          : connected
+            ? s.wallet.solBalance
+            : 0,
       },
       walletModalOpen: false,
     })),
 
   setSolBalance: (bal) =>
-    set((s) => ({ wallet: { ...s.wallet, solBalance: bal } })),
+    set((s) => {
+      // Don't let RPC overwrite personal virtual balance with 0
+      if (PERSONAL_MODE && bal === 0 && s.wallet.solBalance > 0) return s
+      return { wallet: { ...s.wallet, solBalance: bal } }
+    }),
+
+  enterPersonalSession: () =>
+    set((s) => ({
+      wallet: {
+        ...s.wallet,
+        connected: true,
+        address: s.wallet.address || 'personal_trader',
+        solBalance:
+          s.wallet.solBalance > 0 ? s.wallet.solBalance : PERSONAL_START_SOL,
+      },
+      walletModalOpen: false,
+      botLog: [
+        `${new Date().toISOString()} · personal session · ${PERSONAL_START_SOL} virtual SOL · zero gas`,
+        ...s.botLog,
+      ].slice(0, 100),
+    })),
 
   executeTrade: (tokenId, side, amount, walletOverride, isSim = false, signature) => {
     const state = get()
@@ -462,7 +505,10 @@ export const useStore = create<Store>((set, get) => ({
 
     if (side === 'buy') {
       if (!isSim && amount > state.wallet.solBalance + 0.0001 && !signature) {
-        return { ok: false, error: 'Insufficient SOL' }
+        return {
+          ok: false,
+          error: PERSONAL_MODE ? 'Insufficient virtual SOL' : 'Insufficient SOL',
+        }
       }
 
       let tokensOut: number
@@ -706,7 +752,9 @@ export const useStore = create<Store>((set, get) => ({
           // Only credit local SOL when we have a real payout/on-chain sig,
           // or for sims. Managed sells without signature wait for refreshBalance.
           solBalance:
-            !isSim && s.wallet.address === wallet && (!managed || !!signature)
+            !isSim &&
+            s.wallet.address === wallet &&
+            (PERSONAL_MODE || !managed || !!signature)
               ? s.wallet.solBalance + solOut
               : s.wallet.solBalance,
         },
@@ -724,11 +772,16 @@ export const useStore = create<Store>((set, get) => ({
 
   createToken: (input) => {
     const state = get()
-    if (!state.wallet.connected || !state.wallet.address) return null
+    if (!state.wallet.connected || !state.wallet.address) {
+      if (PERSONAL_MODE) get().enterPersonalSession()
+      else return null
+    }
+    const addr = get().wallet.address || 'personal_trader'
     const id = `user_${Date.now().toString(36)}`
     const symbol = input.symbol.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
     const emoji = input.emoji || tokenEmoji(id + symbol)
     const mcap = marketCapUsd(VIRTUAL_SOL, VIRTUAL_TOKENS)
+    const createFee = PERSONAL_MODE ? 0 : CREATE_FEE_SOL
     const token: Token = {
       id,
       name: input.name.trim(),
@@ -737,11 +790,11 @@ export const useStore = create<Store>((set, get) => ({
       description: input.description || `${input.name.trim()} launched on the curve.`,
       imageUrl: input.imageUrl || tokenImageUrl(id + symbol, emoji, symbol),
       imageHue: Math.random() * 360,
-      creator: state.wallet.address,
-      creatorName: shortCreator(state.wallet.address),
+      creator: addr,
+      creatorName: shortCreator(addr),
       virtualSol: VIRTUAL_SOL,
       virtualTokens: VIRTUAL_TOKENS,
-      realSol: CREATE_FEE_SOL,
+      realSol: createFee,
       realTokens: REAL_TOKEN_RESERVES,
       priceSol: priceSol(VIRTUAL_SOL, VIRTUAL_TOKENS),
       marketCapUsd: mcap,
@@ -755,7 +808,7 @@ export const useStore = create<Store>((set, get) => ({
       complete: false,
       createdAt: Date.now(),
       lastTradeAt: Date.now(),
-      candles: [],
+      candles: seedCandles(mcap, 20),
       holders: [
         {
           wallet: 'bonding-curve',
@@ -764,7 +817,7 @@ export const useStore = create<Store>((set, get) => ({
           isCurve: true,
         },
         {
-          wallet: state.wallet.address,
+          wallet: addr,
           amount: REAL_TOKEN_RESERVES * 0.2,
           pct: 20,
           isCreator: true,
@@ -788,7 +841,7 @@ export const useStore = create<Store>((set, get) => ({
       totalLaunches: s.totalLaunches + 1,
       wallet: {
         ...s.wallet,
-        solBalance: Math.max(0, s.wallet.solBalance - CREATE_FEE_SOL),
+        solBalance: Math.max(0, s.wallet.solBalance - createFee),
       },
     }))
     return id
@@ -847,8 +900,8 @@ export const useStore = create<Store>((set, get) => ({
     })),
 
   simTick: () => {
-    const { tokens, executeTrade, botConfig } = get()
-    // Only animate managed board coins (bots + local) — looks like real order flow
+    // Lightweight ambient noise; real volume comes from traderTick
+    const { tokens, executeTrade } = get()
     const pool = tokens.filter(
       (t) =>
         !t.complete &&
@@ -856,51 +909,81 @@ export const useStore = create<Store>((set, get) => ({
         t.source !== 'dexscreener',
     )
     if (pool.length === 0) return
+    if (Math.random() > 0.55) return
+    const t = pool[(Math.random() * Math.min(12, pool.length)) | 0]
+    if (!t) return
+    executeTrade(t.id, 'buy', 0.02 + Math.random() * 0.08, randomWallet(), true)
+  },
 
-    // Prefer fresher coins for activity (top of board)
-    const hot = pool.slice(0, Math.min(24, pool.length))
-    if (Math.random() > 0.28) {
-      const t = hot[(Math.random() * hot.length) | 0]
-      if (t) {
-        const side: TradeSide = Math.random() > 0.38 ? 'buy' : 'sell'
-        if (side === 'buy') {
-          // Realistic small retail size distribution
-          const r = Math.random()
-          const amount =
-            r < 0.55
-              ? 0.02 + Math.random() * 0.15
-              : r < 0.9
-                ? 0.15 + Math.random() * 0.6
-                : 0.5 + Math.random() * 1.8
-          executeTrade(t.id, 'buy', amount, randomWallet(), true)
-        } else {
-          // Sell a fraction of virtual supply so chart wiggles realistically
-          const amount = Math.min(
-            t.virtualTokens * (0.0002 + Math.random() * 0.0015),
-            REAL_TOKEN_RESERVES * 0.002,
-          )
-          if (amount > 1) executeTrade(t.id, 'sell', amount, randomWallet(), true)
+  traderTick: () => {
+    const state = get()
+    const pool = state.tokens.filter(
+      (t) =>
+        !t.complete &&
+        (t.managed || t.source === 'bot' || t.source === 'local') &&
+        t.source !== 'dexscreener',
+    )
+    if (pool.length === 0) return
+
+    // Prefer newer coins (top of board) for FOMO buys
+    const hot = pool.slice(0, Math.min(20, pool.length))
+    const fleet = state.traderFleet.map((t) => ({
+      ...t,
+      bags: { ...t.bags },
+    }))
+
+    // 2–4 bot actions per tick across different accounts
+    const actions = 2 + ((Math.random() * 3) | 0)
+    for (let i = 0; i < actions; i++) {
+      const trader = pickPersona(fleet)
+      const token = hot[(Math.random() * hot.length) | 0]
+      if (!token) continue
+      const age = Date.now() - token.createdAt
+      const side = decideSide(trader, token.id, age)
+      if (side === 'skip') continue
+
+      if (side === 'buy') {
+        const sol = Math.min(tradeSize(trader.persona), trader.sol)
+        if (sol < 0.02) continue
+        const res = get().executeTrade(token.id, 'buy', sol, trader.persona.id, true)
+        if (!res.ok || !res.tokensOut) continue
+        trader.sol -= sol
+        const prev = trader.bags[token.id]
+        trader.bags[token.id] = {
+          tokens: (prev?.tokens || 0) + res.tokensOut,
+          costSol: (prev?.costSol || 0) + sol,
+          boughtAt: prev?.boughtAt || Date.now(),
+        }
+      } else {
+        const tokensToSell = sellFraction(trader, token.id)
+        if (tokensToSell <= 1) continue
+        const res = get().executeTrade(
+          token.id,
+          'sell',
+          tokensToSell,
+          trader.persona.id,
+          true,
+        )
+        if (!res.ok) continue
+        const bag = trader.bags[token.id]
+        if (bag) {
+          const ratio = tokensToSell / Math.max(bag.tokens, 1e-12)
+          bag.tokens = Math.max(0, bag.tokens - tokensToSell)
+          bag.costSol = Math.max(0, bag.costSol * (1 - ratio))
+          trader.sol += res.solOut || 0
+          if (bag.tokens < 1) delete trader.bags[token.id]
         }
       }
     }
 
-    // Secondary trade burst on king/hot coin (~15%)
-    if (Math.random() > 0.85 && hot[0]) {
-      executeTrade(
-        hot[0].id,
-        Math.random() > 0.45 ? 'buy' : 'sell',
-        Math.random() > 0.45
-          ? 0.05 + Math.random() * 0.35
-          : Math.min(hot[0].virtualTokens * 0.0008, 40_000),
-        randomWallet(),
-        true,
-      )
+    // Top up broke bots so the market never dies (still free / virtual)
+    for (const t of fleet) {
+      if (t.sol < t.persona.sizeMin) {
+        t.sol = Math.min(t.persona.bankroll, t.sol + t.persona.bankroll * 0.35)
+      }
     }
 
-    // If bots are off, occasionally spawn one managed coin so board never dies
-    if (!botConfig.enabled && Math.random() > 0.97) {
-      get().botTick()
-    }
+    set({ traderFleet: fleet })
   },
 
   clearShake: (tokenId) =>

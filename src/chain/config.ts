@@ -1,9 +1,22 @@
 import { PublicKey } from '@solana/web3.js'
 
-export type Cluster = 'devnet' | 'mainnet-beta' | 'testnet' | 'localnet'
+export type Cluster = 'devnet' | 'mainnet-beta' | 'testnet' | 'localnet' | 'personal'
 
-export const CLUSTER: Cluster =
-  (import.meta.env.VITE_SOLANA_CLUSTER as Cluster) || 'devnet'
+/**
+ * PERSONAL MODE (default): fully self-contained market.
+ * - No real chain, no gas, no Phantom payments required
+ * - Bots create coins + buy/sell with free virtual accounts
+ * - You trade with virtual SOL; system owns price/chart/supply
+ *
+ * Set VITE_PERSONAL_MODE=false to re-enable real Solana paths.
+ */
+export const PERSONAL_MODE =
+  import.meta.env.VITE_PERSONAL_MODE !== 'false' &&
+  import.meta.env.VITE_PERSONAL_MODE !== '0'
+
+export const CLUSTER: Cluster = PERSONAL_MODE
+  ? 'personal'
+  : (import.meta.env.VITE_SOLANA_CLUSTER as Cluster) || 'devnet'
 
 export const RPC_URL =
   import.meta.env.VITE_SOLANA_RPC ||
@@ -47,11 +60,15 @@ export const EXPLORER_ADDR = (addr: string) =>
       ? `https://solscan.io/account/${addr}?cluster=custom&customUrl=${encodeURIComponent(RPC_URL)}`
       : `https://solscan.io/account/${addr}?cluster=${CLUSTER}`
 
-export const CHAIN_LABEL =
-  CLUSTER === 'mainnet-beta'
+export const CHAIN_LABEL = PERSONAL_MODE
+  ? 'Personal Market · zero gas'
+  : CLUSTER === 'mainnet-beta'
     ? 'Solana Mainnet'
     : CLUSTER === 'testnet'
       ? 'Solana Testnet'
       : CLUSTER === 'localnet'
         ? 'Solana Localnet'
         : 'Solana Devnet'
+
+/** Starting virtual SOL for the human trader in personal mode */
+export const PERSONAL_START_SOL = Number(import.meta.env.VITE_PERSONAL_START_SOL || 100)

@@ -5,7 +5,7 @@ import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { useStore } from '../store/useStore'
 import { paySolOnChain } from '../chain/pay'
-import { CLUSTER } from '../chain/config'
+import { CLUSTER, PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
 
 const PHANTOM = 'Phantom' as WalletName
 const INSTALL = 'https://phantom.app/download'
@@ -46,7 +46,15 @@ export function useWallet() {
   const pending = useRef<WalletName | null>(null)
   const phantomInstalled = !!getPhantom()
 
+  const enterPersonalSession = useStore((s) => s.enterPersonalSession)
+  const personalConnected = useStore((s) => s.wallet.connected)
+  const personalAddress = useStore((s) => s.wallet.address)
+
   const refreshBalance = useCallback(async () => {
+    if (PERSONAL_MODE) {
+      // Virtual bankroll — never wipe with chain 0
+      return
+    }
     if (!sol.publicKey) {
       setSolBalance(0)
       return
@@ -60,6 +68,11 @@ export function useWallet() {
   }, [connection, sol.publicKey, setSolBalance])
 
   useEffect(() => {
+    if (PERSONAL_MODE) {
+      // Auto-enter personal session once
+      if (!personalConnected) enterPersonalSession()
+      return
+    }
     if (sol.connected && sol.publicKey) {
       setChainWallet(true, sol.publicKey.toBase58())
       setWalletModalOpen(false)
@@ -68,7 +81,16 @@ export function useWallet() {
     } else if (!sol.connecting) {
       setChainWallet(false, null)
     }
-  }, [sol.connected, sol.publicKey, sol.connecting, setChainWallet, setWalletModalOpen, refreshBalance])
+  }, [
+    sol.connected,
+    sol.publicKey,
+    sol.connecting,
+    setChainWallet,
+    setWalletModalOpen,
+    refreshBalance,
+    personalConnected,
+    enterPersonalSession,
+  ])
 
   useEffect(() => {
     if (!sol.publicKey) return
@@ -180,18 +202,31 @@ export function useWallet() {
     [sol, refreshBalance],
   )
 
+  const connectPersonal = useCallback(() => {
+    enterPersonalSession()
+    setError(null)
+  }, [enterPersonalSession])
+
   return {
-    connected: sol.connected && !!sol.publicKey,
-    address: sol.publicKey?.toBase58() ?? null,
-    solBalance,
+    connected: PERSONAL_MODE
+      ? personalConnected
+      : sol.connected && !!sol.publicKey,
+    address: PERSONAL_MODE
+      ? personalAddress
+      : sol.publicKey?.toBase58() ?? null,
+    solBalance: PERSONAL_MODE
+      ? solBalance || PERSONAL_START_SOL
+      : solBalance,
     holdings,
     costBasis,
     connecting: sol.connecting || busy,
     cluster: CLUSTER,
     phantomInstalled,
+    personalMode: PERSONAL_MODE,
     error,
     clearError: () => setError(null),
-    connectPhantom,
+    connectPhantom: PERSONAL_MODE ? connectPersonal : connectPhantom,
+    connectPersonal,
     selectAndConnect,
     disconnect,
     openModal,
