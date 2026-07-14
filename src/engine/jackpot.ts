@@ -1,22 +1,21 @@
 /**
- * Jackpot / freeze trap:
- * 1) Coin goes past 2× launch → ARMED (freeze button shoots up, bots hype)
- * 2) Real user puts ≥ 10 SOL into that coin → FREEZE (no transfers)
- * 3) After freeze window → coin completely disappears
+ * Rising coin lock:
+ * - Past 2× launch → "FREEZE" button up, bots hype
+ * - People can BUY but cannot SELL
+ * - No SOL threshold
+ * - 24h after lock → coin completely disappears
  */
 
-/** Arm hyping UI + bots when multiple exceeds this */
+/** Lock sells when multiple exceeds this */
 export const JACKPOT_ARM_X = 2
 
-/** Real-user SOL required after arm before freeze */
-export const JACKPOT_USER_SOL_MIN = 10
-
-/** Freeze duration before coin vanishes */
+/** How long buy-only lasts before coin vanishes */
 export const JACKPOT_FREEZE_MS = 24 * 60 * 60 * 1000
 
-// legacy aliases (unused trigger band)
 export const JACKPOT_MIN_X = JACKPOT_ARM_X
 export const JACKPOT_MAX_X = JACKPOT_ARM_X
+/** @deprecated no longer used */
+export const JACKPOT_USER_SOL_MIN = 0
 
 export function multipleFromLaunch(launchPrice: number, currentPrice: number): number {
   if (!launchPrice || launchPrice <= 0) return 1
@@ -27,32 +26,55 @@ export function rollJackpotTriggerX(): number {
   return JACKPOT_ARM_X
 }
 
+/** Past 2× — sells locked, buys still open */
 export function isJackpotArmed(t: {
   jackpotArmed?: boolean
   jackpotFrozen?: boolean
   priceSol?: number
   launchPriceSol?: number
 }): boolean {
-  if (t.jackpotFrozen) return false
-  if (t.jackpotArmed) return true
+  if (t.jackpotArmed || t.jackpotFrozen) return true
   const mult = multipleFromLaunch(t.launchPriceSol || 0, t.priceSol || 0)
   return mult > JACKPOT_ARM_X
 }
 
+/**
+ * "Frozen" for UI = sell-locked rising coin (same as armed).
+ * Buys still allowed until vanish.
+ */
 export function isJackpotFrozen(t: {
+  jackpotArmed?: boolean
   jackpotFrozen?: boolean
   jackpotUnlockAt?: number
+  priceSol?: number
+  launchPriceSol?: number
 }): boolean {
-  if (!t.jackpotFrozen) return false
+  // Sell lock while armed/frozen and timer not expired
+  if (!isJackpotArmed(t) && !t.jackpotFrozen) return false
   if (t.jackpotUnlockAt && Date.now() >= t.jackpotUnlockAt) return false
-  return true
+  return Boolean(t.jackpotArmed || t.jackpotFrozen)
 }
 
+/** Sells blocked; buys OK */
+export function isSellLocked(t: {
+  jackpotArmed?: boolean
+  jackpotFrozen?: boolean
+  jackpotUnlockAt?: number
+  priceSol?: number
+  launchPriceSol?: number
+}): boolean {
+  return isJackpotFrozen(t)
+}
+
+/** After 24h lock window → delete coin */
 export function shouldJackpotVanish(t: {
+  jackpotArmed?: boolean
   jackpotFrozen?: boolean
   jackpotUnlockAt?: number
 }): boolean {
-  return Boolean(t.jackpotFrozen && t.jackpotUnlockAt && Date.now() >= t.jackpotUnlockAt)
+  if (!t.jackpotUnlockAt) return false
+  if (!(t.jackpotArmed || t.jackpotFrozen)) return false
+  return Date.now() >= t.jackpotUnlockAt
 }
 
 export function formatJackpotCountdown(unlockAt: number): string {
@@ -65,7 +87,6 @@ export function formatJackpotCountdown(unlockAt: number): string {
   return `${s}s`
 }
 
-/** Progress toward 10 SOL real-user bag for freeze */
-export function freezeSolProgress(realUserSol: number): number {
-  return Math.min(100, (realUserSol / JACKPOT_USER_SOL_MIN) * 100)
+export function freezeSolProgress(_realUserSol: number): number {
+  return 0
 }

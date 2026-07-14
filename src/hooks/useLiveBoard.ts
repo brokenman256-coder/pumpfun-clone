@@ -15,17 +15,21 @@ export function useLiveBoard() {
   const botTick = useStore((s) => s.botTick)
   const lastLaunch = useRef(0)
 
-  // Personal mode: only local coin bot (no server / no gas)
+  // Personal mode: local coin bot — 2/min + instant burst so board fills immediately
   useEffect(() => {
     if (!PERSONAL_MODE || !botEnabled) return
-    const warm = window.setTimeout(() => {
-      if (!document.hidden) botTick()
-    }, 2000)
+    // Burst 3 coins on load so user always sees activity
+    const burst = window.setTimeout(() => {
+      botTick()
+      botTick()
+      botTick()
+    }, 400)
+    const warm = window.setTimeout(() => botTick(), 2500)
     const id = window.setInterval(() => {
-      if (document.hidden) return
       botTick()
     }, intervalMs)
     return () => {
+      clearTimeout(burst)
       clearTimeout(warm)
       clearInterval(id)
     }

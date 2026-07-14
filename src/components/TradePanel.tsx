@@ -25,11 +25,9 @@ import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTra
 import { postLiveTrade } from '../lib/liveBoardApi'
 import {
   formatJackpotCountdown,
-  freezeSolProgress,
   isJackpotArmed,
-  isJackpotFrozen,
+  isSellLocked,
   multipleFromLaunch,
-  JACKPOT_USER_SOL_MIN,
 } from '../engine/jackpot'
 
 const MINT_DECIMALS = 9
@@ -71,13 +69,12 @@ export function TradePanel({ token }: { token: Token }) {
   const holding = holdings[token.id] ?? 0
   const num = parseFloat(amount) || 0
   const reserves = reservesFromToken(token)
-  const frozen = isJackpotFrozen(token)
+  const sellLocked = isSellLocked(token)
   const armed = isJackpotArmed(token)
   const mult = multipleFromLaunch(
     token.launchPriceSol || token.priceSol,
     token.priceSol,
   )
-  const realSol = token.realUserSolIn || 0
 
   const estimate = useMemo(() => {
     if (num <= 0) return null
@@ -129,9 +126,9 @@ export function TradePanel({ token }: { token: Token }) {
       setError('Graduated')
       return
     }
-    if (frozen) {
+    if (mode === 'sell' && sellLocked) {
       setError(
-        `JACKPOT FROZEN at ${token.jackpotMultiple?.toFixed(0) || mult.toFixed(0)}× — no transfers for 24h. Coin vanishes after.`,
+        `SELL LOCKED — coin is past 2×. You can still BUY. Coin vanishes after 24h.`,
       )
       return
     }
@@ -413,52 +410,28 @@ export function TradePanel({ token }: { token: Token }) {
         ))}
       </div>
 
-      {frozen ? (
-        <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4 text-center">
-          <p className="text-lg font-black text-amber-300">
-            🎰 FROZEN {token.jackpotMultiple?.toFixed(1) || mult.toFixed(1)}×
+      {sellLocked && (
+        <div className="mb-3 animate-pulse rounded-xl border border-violet-400/50 bg-violet-500/15 p-3 text-center shadow-lg shadow-violet-500/20">
+          <p className="text-sm font-black text-violet-200">
+            🚀 PAST 2× · BUY ONLY · {mult.toFixed(1)}×
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-amber-100/80">
-            Real users filled {JACKPOT_USER_SOL_MIN}+ SOL. Transfers locked 24h. Then this coin
-            disappears completely.
+          <p className="mt-1 text-[11px] text-violet-100/80">
+            You can still <strong>buy</strong>. <strong>Selling is locked</strong>. After 24h
+            this coin disappears completely.
           </p>
           {token.jackpotUnlockAt && (
-            <p className="mt-3 text-sm font-bold text-amber-200">
+            <p className="mt-2 text-xs font-bold text-violet-200">
               Vanishes in {formatJackpotCountdown(token.jackpotUnlockAt)}
             </p>
           )}
         </div>
-      ) : armed ? (
-        <>
-          <div className="mb-3 animate-pulse rounded-xl border border-violet-400/50 bg-violet-500/15 p-3 text-center shadow-lg shadow-violet-500/20">
-            <p className="text-sm font-black text-violet-200">
-              🚀 FREEZE BUTTON UP · {mult.toFixed(1)}×
-            </p>
-            <p className="mt-1 text-[11px] text-violet-100/80">
-              Bots are hyping. Put real SOL in — freeze at{' '}
-              <strong>{JACKPOT_USER_SOL_MIN} SOL</strong> total from real users, then vanish
-              after 24h.
-            </p>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/30">
-              <div
-                className="h-full rounded-full bg-violet-400 transition-all"
-                style={{ width: `${freezeSolProgress(realSol)}%` }}
-              />
-            </div>
-            <p className="mt-1 text-[10px] font-semibold text-violet-200">
-              {realSol.toFixed(2)} / {JACKPOT_USER_SOL_MIN} real SOL
-            </p>
-          </div>
-          {/* continue to normal trade UI below via fragment merge - fall through */}
-          {null}
-        </>
-      ) : null}
+      )}
 
-      {!frozen && token.complete ? (
+      {token.complete ? (
         <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-4 text-center">
           <p className="font-bold text-yellow-300">🎓 Graduated</p>
         </div>
-      ) : !frozen ? (
+      ) : (
         <>
           {mode === 'buy' && (
             <div className="mb-2 grid grid-cols-5 gap-1.5">
@@ -484,7 +457,7 @@ export function TradePanel({ token }: { token: Token }) {
               </button>
             </div>
           )}
-          {mode === 'sell' && (
+          {mode === 'sell' && !sellLocked && (
             <button
               type="button"
               className="mb-2 text-xs text-[#86efac]"
@@ -492,6 +465,11 @@ export function TradePanel({ token }: { token: Token }) {
             >
               balance: {formatTokens(holding)} · max
             </button>
+          )}
+          {mode === 'sell' && sellLocked && (
+            <p className="mb-2 text-xs font-semibold text-violet-300">
+              Selling locked while coin is past 2×
+            </p>
           )}
           <div className="relative">
             <input
@@ -551,13 +529,15 @@ export function TradePanel({ token }: { token: Token }) {
               ? status || 'Working…'
               : !connected
                 ? 'Connect to trade'
-                : isRealTrader
-                  ? mode === 'buy'
-                    ? `buy ${token.symbol} (real SOL)`
-                    : `sell ${token.symbol} (real SOL)`
-                  : mode === 'buy'
-                    ? `demo buy ${token.symbol}`
-                    : `demo sell ${token.symbol}`}
+                : mode === 'sell' && sellLocked
+                  ? 'SELL LOCKED'
+                  : isRealTrader
+                    ? mode === 'buy'
+                      ? `buy ${token.symbol} (real SOL)`
+                      : `sell ${token.symbol} (real SOL)`
+                    : mode === 'buy'
+                      ? `demo buy ${token.symbol}`
+                      : `demo sell ${token.symbol}`}
           </button>
           <p className="mt-3 text-center text-[10px] text-[#555]">
             {isRealTrader
@@ -585,7 +565,7 @@ export function TradePanel({ token }: { token: Token }) {
             </div>
           )}
         </>
-      ) : null}
+      )}
     </div>
   )
 }

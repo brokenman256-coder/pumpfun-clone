@@ -6,11 +6,9 @@ import { TokenImage } from './TokenImage'
 import { progressToGraduation } from '../engine/bondingCurve'
 import {
   formatJackpotCountdown,
-  freezeSolProgress,
   isJackpotArmed,
-  isJackpotFrozen,
+  isSellLocked,
   multipleFromLaunch,
-  JACKPOT_USER_SOL_MIN,
 } from '../engine/jackpot'
 
 export function TokenCard({ token }: { token: Token }) {
@@ -19,23 +17,20 @@ export function TokenCard({ token }: { token: Token }) {
   const shake =
     token.shake === 'buy' ? 'shake-buy' : token.shake === 'sell' ? 'shake-sell' : ''
   const up = token.change24h >= 0
-  const frozen = isJackpotFrozen(token)
+  const sellLocked = isSellLocked(token)
   const armed = isJackpotArmed(token)
   const mult = multipleFromLaunch(
     token.launchPriceSol || token.priceSol,
     token.priceSol,
   )
-  const realSol = token.realUserSolIn || 0
 
   return (
     <Link
       to={`/coin/${token.id}`}
       className={`block overflow-hidden rounded-2xl border bg-[#14151b] transition ${
-        frozen
-          ? 'border-amber-400/50 opacity-95'
-          : armed
-            ? 'border-violet-400/60 shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/30'
-            : 'border-[#1a1b22] hover:border-[#86efac]/35'
+        sellLocked
+          ? 'border-violet-400/60 shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/30'
+          : 'border-[#1a1b22] hover:border-[#86efac]/35'
       } ${shake}`}
     >
       <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
@@ -44,17 +39,12 @@ export function TokenCard({ token }: { token: Token }) {
           seed={token.id}
           emoji={token.emoji}
           alt={token.name}
-          className={`h-full w-full object-cover ${frozen ? 'grayscale-[30%]' : ''}`}
+          className="h-full w-full object-cover"
         />
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
-          {frozen && (
-            <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
-              🎰 FROZEN {token.jackpotMultiple?.toFixed(1) || mult.toFixed(1)}×
-            </span>
-          )}
-          {armed && !frozen && (
+          {sellLocked && (
             <span className="animate-bounce rounded-md bg-violet-500 px-1.5 py-0.5 text-[9px] font-black text-white shadow-lg shadow-violet-500/50">
-              🚀 FREEZE ↑ {mult.toFixed(1)}×
+              🚀 BUY ONLY {mult.toFixed(1)}×
             </span>
           )}
           {token.source === 'dexscreener' && (
@@ -67,7 +57,7 @@ export function TokenCard({ token }: { token: Token }) {
               🎓 GRAD
             </span>
           )}
-          {!token.complete && !frozen && !armed && progress > 70 && token.source !== 'dexscreener' && (
+          {!token.complete && !armed && progress > 70 && token.source !== 'dexscreener' && (
             <span className="rounded-md bg-[#86efac] px-1.5 py-0.5 text-[9px] font-bold text-black">
               HOT
             </span>
@@ -101,25 +91,10 @@ export function TokenCard({ token }: { token: Token }) {
         </div>
 
         <p className="text-[14px] font-black text-[#86efac]">{formatUsd(mcap)} MC</p>
-        {frozen && token.jackpotUnlockAt ? (
-          <p className="text-[10px] font-semibold text-amber-400">
-            frozen · vanishes in {formatJackpotCountdown(token.jackpotUnlockAt)}
+        {sellLocked && token.jackpotUnlockAt ? (
+          <p className="text-[10px] font-semibold text-violet-300">
+            buy only · vanishes {formatJackpotCountdown(token.jackpotUnlockAt)}
           </p>
-        ) : armed ? (
-          <div className="space-y-0.5">
-            <p className="text-[10px] font-semibold text-violet-300">
-              hype · need {JACKPOT_USER_SOL_MIN} real SOL to freeze
-            </p>
-            <div className="h-1 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-violet-400"
-                style={{ width: `${freezeSolProgress(realSol)}%` }}
-              />
-            </div>
-            <p className="text-[9px] text-violet-200/80">
-              {realSol.toFixed(1)}/{JACKPOT_USER_SOL_MIN} SOL · {mult.toFixed(1)}×
-            </p>
-          </div>
         ) : mult >= 1.5 ? (
           <p className="text-[10px] font-semibold text-[#86efac]/80">{mult.toFixed(1)}× from launch</p>
         ) : null}

@@ -5,11 +5,15 @@ export function isSimulated(t: Token) {
   return !(t.mint && t.curvePda) && t.source !== 'dexscreener'
 }
 
+/** Accept http(s) URLs and data-URI procedural meme art */
 export function hasRealImage(t: Token) {
-  return !!t.imageUrl && /^https?:\/\//i.test(t.imageUrl)
+  if (!t.imageUrl) return false
+  return /^(https?:\/\/|data:image\/)/i.test(t.imageUrl)
 }
 
-/** Hides made-up/demo tokens that don't have a real meme image — never hides real coins. */
+/** Board should show bot coins, local coins, and external ones with art */
 export function isDisplayable(t: Token) {
+  // Always show jackpot / managed bot coins even mid-freeze
+  if (t.source === 'bot' || t.managed) return true
   return !isSimulated(t) || hasRealImage(t)
 }

@@ -50,10 +50,9 @@ import { PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
 import {
   JACKPOT_ARM_X,
   JACKPOT_FREEZE_MS,
-  JACKPOT_USER_SOL_MIN,
-  isJackpotFrozen,
-  multipleFromLaunch,
+  isSellLocked,
   shouldJackpotVanish,
+  multipleFromLaunch,
 } from '../engine/jackpot'
 
 type Store = {
@@ -177,7 +176,6 @@ type Store = {
     multiple: number
     id: string
     kind: 'armed' | 'frozen'
-    realUserSol?: number
   } | null
   clearJackpotToast: () => void
 }
@@ -527,10 +525,11 @@ export const useStore = create<Store>((set, get) => ({
     const token = state.tokens.find((t) => t.id === tokenId)
     if (!token) return { ok: false, error: 'Token not found' }
     if (token.complete) return { ok: false, error: 'Graduated — trade on Raydium' }
-    if (isJackpotFrozen(token)) {
+    // Past 2×: buys OK, sells locked until coin vanishes at 24h
+    if (side === 'sell' && isSellLocked(token)) {
       return {
         ok: false,
-        error: `FROZEN at ${token.jackpotMultiple?.toFixed(1) || ''}× — no transfers. Coin vanishes after 24h.`,
+        error: `SELL LOCKED — coin is past 2×. You can still buy. Coin vanishes in 24h.`,
       }
     }
 
@@ -623,18 +622,10 @@ export const useStore = create<Store>((set, get) => ({
 
         const mult = multipleFromLaunch(launchPx, newPrice)
         const now = Date.now()
-        // Real user SOL only (not bots / sim)
-        const addRealSol = !isSim && managed ? amount : 0
-        const prevReal = token.realUserSolIn || 0
-        const nextReal = prevReal + addRealSol
-        const wasArmed = Boolean(token.jackpotArmed) || mult > JACKPOT_ARM_X
-        const justArmed = managed && !token.jackpotArmed && mult > JACKPOT_ARM_X
-        // Freeze when armed AND real user has put ≥ 10 SOL into this coin
-        const justFrozen =
-          managed &&
-          !token.jackpotFrozen &&
-          wasArmed &&
-          nextReal >= JACKPOT_USER_SOL_MIN
+        // Past 2× → sell-lock arms, 24h timer to vanish (buys still work)
+        const justArmed =
+          managed && !token.jackpotArmed && !token.jackpotFrozen && mult > JACKPOT_ARM_X
+        const stayArmed = justArmed || token.jackpotArmed || token.jackpotFrozen
 
         return {
           tokens: s.tokens.map((t) =>
@@ -662,20 +653,14 @@ export const useStore = create<Store>((set, get) => ({
                   candles: applyTradeToCandles(t.candles, newPrice, 'buy'),
                   holders: managed && !isSim ? holders.slice(0, 20) : t.holders,
                   change24h: t.change24h + (Math.random() * 0.4 - 0.05),
-                  realUserSolIn: nextReal,
                   jackpotMultiple: mult,
-                  ...(justArmed || wasArmed
+                  ...(stayArmed
                     ? {
                         jackpotArmed: true,
+                        jackpotFrozen: true, // sell-lock flag for UI
                         jackpotArmedAt: t.jackpotArmedAt || now,
-                      }
-                    : {}),
-                  ...(justFrozen
-                    ? {
-                        jackpotFrozen: true,
-                        jackpotAt: now,
-                        jackpotUnlockAt: now + JACKPOT_FREEZE_MS,
-                        jackpotMultiple: mult,
+                        jackpotAt: t.jackpotAt || now,
+                        jackpotUnlockAt: t.jackpotUnlockAt || now + JACKPOT_FREEZE_MS,
                       }
                     : {}),
                 },
@@ -694,45 +679,34 @@ export const useStore = create<Store>((set, get) => ({
           graduationToast: graduated
             ? { symbol: token.symbol, id: tokenId }
             : s.graduationToast,
-          jackpotToast: justFrozen
+          jackpotToast: justArmed
             ? {
                 symbol: token.symbol,
                 multiple: mult,
                 id: tokenId,
-                kind: 'frozen',
-                realUserSol: nextReal,
+                kind: 'armed',
               }
-            : justArmed
-              ? {
-                  symbol: token.symbol,
-                  multiple: mult,
-                  id: tokenId,
-                  kind: 'armed',
-                  realUserSol: nextReal,
-                }
-              : s.jackpotToast,
-          botLog: justFrozen
+            : s.jackpotToast,
+          botLog: justArmed
             ? [
-                `${new Date().toISOString()} · 🎰 FREEZE $${token.symbol} · ${nextReal.toFixed(2)} real SOL · ${mult.toFixed(1)}× · 24h then vanishes`,
+                `${new Date().toISOString()} · 🚀 $${token.symbol} >2× · BUY ONLY · sells locked · vanishes in 24h`,
                 ...s.botLog,
               ].slice(0, 100)
-            : justArmed
-              ? [
-                  `${new Date().toISOString()} · 🚀 $${token.symbol} >2× ARMED · bots hyping until ${JACKPOT_USER_SOL_MIN} real SOL`,
-                  ...s.botLog,
-                ].slice(0, 100)
-              : s.botLog,
+            : s.botLog,
         }
       })
 
       window.setTimeout(() => get().clearShake(tokenId), 700)
 
       const after = get().tokens.find((t) => t.id === tokenId)
-      // After arm: keep hyping with bot activity; after freeze: stop
-      if (after && after.jackpotArmed && !isJackpotFrozen(after) && isSim) {
-        // bot hype already from traderTick
-      }
-      if (!isSim && managed && amount >= 0.05 && after && !isJackpotFrozen(after)) {
+      // No human sell-reaction dumps once sell-locked
+      if (
+        !isSim &&
+        managed &&
+        amount >= 0.05 &&
+        after &&
+        !isSellLocked(after)
+      ) {
         window.setTimeout(() => get().scheduleHumanReaction(tokenId, amount), 400)
       }
 
@@ -925,7 +899,7 @@ export const useStore = create<Store>((set, get) => ({
       trades: s.trades.filter((tr) => !doomedIds.has(tr.tokenId)),
       wallet: { ...s.wallet, holdings, costBasis },
       botLog: [
-        `${new Date().toISOString()} · 💀 jackpot vanished (24h up): ${names}`,
+        `${new Date().toISOString()} · 💀 coin vanished after 24h: ${names}`,
         ...s.botLog,
       ].slice(0, 100),
     })
@@ -1066,7 +1040,6 @@ export const useStore = create<Store>((set, get) => ({
     const pool = tokens.filter(
       (t) =>
         !t.complete &&
-        !isJackpotFrozen(t) &&
         (t.managed || t.source === 'bot' || t.source === 'local') &&
         t.source !== 'dexscreener',
     )
@@ -1074,6 +1047,7 @@ export const useStore = create<Store>((set, get) => ({
     if (Math.random() > 0.55) return
     const t = pool[(Math.random() * Math.min(12, pool.length)) | 0]
     if (!t) return
+    // Only buys (sells may be locked past 2×)
     executeTrade(t.id, 'buy', 0.02 + Math.random() * 0.08, randomWallet(), true)
   },
 
@@ -1082,7 +1056,6 @@ export const useStore = create<Store>((set, get) => ({
     const pool = state.tokens.filter(
       (t) =>
         !t.complete &&
-        !isJackpotFrozen(t) &&
         (t.managed || t.source === 'bot' || t.source === 'local') &&
         t.source !== 'dexscreener',
     )
@@ -1107,30 +1080,17 @@ export const useStore = create<Store>((set, get) => ({
         const sol = Math.min(0.05 + Math.random() * 0.45, trader.sol)
         if (sol < 0.03) continue
         const tapeName = trader.displayName || trader.persona.name
-        // 85% buy hype / 15% small sell so it looks human
-        if (Math.random() < 0.85) {
-          const res = get().executeTrade(token.id, 'buy', sol, tapeName, true)
-          if (res.ok && res.tokensOut) {
-            trader.sol -= sol
-            const prev = trader.bags[token.id]
-            trader.bags[token.id] = {
-              tokens: (prev?.tokens || 0) + res.tokensOut,
-              costSol: (prev?.costSol || 0) + sol,
-              boughtAt: prev?.boughtAt || Date.now(),
-            }
-            fleet[idx] = rotateDisplayName(trader)
+        // Armed coins: buy-only hype (no sells)
+        const res = get().executeTrade(token.id, 'buy', sol, tapeName, true)
+        if (res.ok && res.tokensOut) {
+          trader.sol -= sol
+          const prev = trader.bags[token.id]
+          trader.bags[token.id] = {
+            tokens: (prev?.tokens || 0) + res.tokensOut,
+            costSol: (prev?.costSol || 0) + sol,
+            boughtAt: prev?.boughtAt || Date.now(),
           }
-        } else {
-          const bag = trader.bags[token.id]
-          const amt = bag ? bag.tokens * (0.05 + Math.random() * 0.15) : 0
-          if (amt > 1) {
-            const res = get().executeTrade(token.id, 'sell', amt, tapeName, true)
-            if (res.ok && bag) {
-              bag.tokens = Math.max(0, bag.tokens - amt)
-              trader.sol += res.solOut || 0
-              fleet[idx] = rotateDisplayName(trader)
-            }
-          }
+          fleet[idx] = rotateDisplayName(trader)
         }
       }
     }
@@ -1148,8 +1108,9 @@ export const useStore = create<Store>((set, get) => ({
       if (!token) continue
       const age = Date.now() - token.createdAt
       let side = decideSide(trader, token.id, age)
-      // Armed coins: force more buys
-      if (token.jackpotArmed && Math.random() < 0.75) side = 'buy'
+      // Past 2×: sell locked — force buys only
+      if (isSellLocked(token)) side = 'buy'
+      else if (token.jackpotArmed && Math.random() < 0.75) side = 'buy'
       if (side === 'skip') continue
 
       const tapeName = trader.displayName || trader.persona.name

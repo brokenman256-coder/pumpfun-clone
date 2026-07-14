@@ -12,18 +12,24 @@ export function useSimulator() {
   const traderTick = useStore((s) => s.traderTick)
 
   useEffect(() => {
-    const ambient = window.setInterval(() => {
-      if (document.hidden) return
-      simTick()
-    }, PERSONAL_MODE ? 3500 : 2200)
-
-    // Trader bots fire faster so the board looks like a real tape
-    const traders = window.setInterval(() => {
-      if (document.hidden) return
+    // Immediate trades so tape is not empty
+    const kick = window.setTimeout(() => {
       traderTick()
-    }, PERSONAL_MODE ? 1400 : 2800)
+      traderTick()
+      simTick()
+    }, 800)
+
+    const ambient = window.setInterval(() => {
+      simTick()
+    }, PERSONAL_MODE ? 2800 : 2200)
+
+    // Trader bots — keep firing even if tab is in background (slightly slower)
+    const traders = window.setInterval(() => {
+      traderTick()
+    }, PERSONAL_MODE ? 1200 : 2800)
 
     return () => {
+      clearTimeout(kick)
       clearInterval(ambient)
       clearInterval(traders)
     }
