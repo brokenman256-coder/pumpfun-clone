@@ -33,6 +33,9 @@ import {
   pickPersona,
   sellFraction,
   tradeSize,
+  rotateDisplayName,
+  planHumanSellSequence,
+  pickActors,
   type TraderState,
 } from '../engine/traderBots'
 import type { PaymentResult } from '../chain/paymentGateway'
@@ -154,6 +157,8 @@ type Store = {
   simTick: () => void
   /** Multi-account free trader bots (buy pressure → eventual sells). Zero gas. */
   traderTick: () => void
+  /** After a real user buy — staggered human-like bot sells */
+  scheduleHumanReaction: (tokenId: string, userSolIn: number) => void
   enterPersonalSession: () => void
   clearShake: (tokenId: string) => void
   traderFleet: TraderState[]
@@ -414,17 +419,6 @@ export const useStore = create<Store>((set, get) => ({
       usedUrls: used,
     })
 
-    if (!token) {
-      set({
-        botConfig: { ...s.botConfig, enabled: false },
-        botLog: [
-          `${new Date().toISOString()} · unique meme pool exhausted — fleet paused`,
-          ...s.botLog,
-        ].slice(0, 100),
-      })
-      return
-    }
-
     used.add(token.imageUrl)
     const usedList = Array.from(used)
     saveUsedMemeUrls(usedList)
@@ -640,6 +634,12 @@ export const useStore = create<Store>((set, get) => ({
       })
 
       window.setTimeout(() => get().clearShake(tokenId), 700)
+
+      // Real human investment → bots distribute like people (staggered sells)
+      if (!isSim && managed && amount >= 0.05) {
+        window.setTimeout(() => get().scheduleHumanReaction(tokenId, amount), 400)
+      }
+
       return {
         ok: true,
         graduated,
@@ -941,27 +941,31 @@ export const useStore = create<Store>((set, get) => ({
     )
     if (pool.length === 0) return
 
-    // Prefer newer coins (top of board) for FOMO buys
-    const hot = pool.slice(0, Math.min(20, pool.length))
-    const fleet = state.traderFleet.map((t) => ({
+    const hot = pool.slice(0, Math.min(28, pool.length))
+    let fleet = state.traderFleet.map((t) => ({
       ...t,
       bags: { ...t.bags },
+      persona: { ...t.persona },
     }))
 
-    // 2–4 bot actions per tick across different accounts
-    const actions = 2 + ((Math.random() * 3) | 0)
+    // More concurrent actors = livelier tape (6–12 trades / tick)
+    const actions = 6 + ((Math.random() * 7) | 0)
     for (let i = 0; i < actions; i++) {
-      const trader = pickPersona(fleet)
+      const idx = (Math.random() * fleet.length) | 0
+      let trader = fleet[idx]
       const token = hot[(Math.random() * hot.length) | 0]
       if (!token) continue
       const age = Date.now() - token.createdAt
       const side = decideSide(trader, token.id, age)
       if (side === 'skip') continue
 
+      // Public name on the tape (rotates after fill)
+      const tapeName = trader.displayName || trader.persona.name
+
       if (side === 'buy') {
         const sol = Math.min(tradeSize(trader.persona), trader.sol)
         if (sol < 0.02) continue
-        const res = get().executeTrade(token.id, 'buy', sol, trader.persona.id, true)
+        const res = get().executeTrade(token.id, 'buy', sol, tapeName, true)
         if (!res.ok || !res.tokensOut) continue
         trader.sol -= sol
         const prev = trader.bags[token.id]
@@ -970,16 +974,12 @@ export const useStore = create<Store>((set, get) => ({
           costSol: (prev?.costSol || 0) + sol,
           boughtAt: prev?.boughtAt || Date.now(),
         }
+        trader = rotateDisplayName(trader)
+        fleet[idx] = trader
       } else {
         const tokensToSell = sellFraction(trader, token.id)
         if (tokensToSell <= 1) continue
-        const res = get().executeTrade(
-          token.id,
-          'sell',
-          tokensToSell,
-          trader.persona.id,
-          true,
-        )
+        const res = get().executeTrade(token.id, 'sell', tokensToSell, tapeName, true)
         if (!res.ok) continue
         const bag = trader.bags[token.id]
         if (bag) {
@@ -989,17 +989,111 @@ export const useStore = create<Store>((set, get) => ({
           trader.sol += res.solOut || 0
           if (bag.tokens < 1) delete trader.bags[token.id]
         }
+        trader = rotateDisplayName(trader)
+        fleet[idx] = trader
       }
     }
 
-    // Top up broke bots so the market never dies (still free / virtual)
     for (const t of fleet) {
       if (t.sol < t.persona.sizeMin) {
-        t.sol = Math.min(t.persona.bankroll, t.sol + t.persona.bankroll * 0.35)
+        t.sol = Math.min(t.persona.bankroll, t.sol + t.persona.bankroll * 0.4)
       }
     }
 
     set({ traderFleet: fleet })
+  },
+
+  scheduleHumanReaction: (tokenId, userSolIn) => {
+    const steps = planHumanSellSequence(userSolIn)
+    const actors = pickActors(get().traderFleet, 4 + ((Math.random() * 5) | 0))
+
+    get().pushBotLog(
+      `human-like reaction on ${tokenId.slice(0, 10)}… · ${steps.length} steps · ${actors.length} usernames`,
+    )
+
+    // Ensure some bots already hold inventory (pre-buy) so sells look natural
+    for (const ai of actors.slice(0, 3)) {
+      const fleet = get().traderFleet
+      const t = fleet[ai]
+      if (!t) continue
+      const sol = 0.08 + Math.random() * Math.min(0.8, userSolIn * 0.4)
+      const name = t.displayName || t.persona.name
+      const res = get().executeTrade(tokenId, 'buy', sol, name, true)
+      if (res.ok && res.tokensOut) {
+        const next = [...get().traderFleet]
+        const tr = { ...next[ai], bags: { ...next[ai].bags } }
+        tr.sol = Math.max(0, tr.sol - sol)
+        const prev = tr.bags[tokenId]
+        tr.bags[tokenId] = {
+          tokens: (prev?.tokens || 0) + res.tokensOut,
+          costSol: (prev?.costSol || 0) + sol,
+          boughtAt: Date.now(),
+        }
+        next[ai] = rotateDisplayName(tr)
+        set({ traderFleet: next })
+      }
+    }
+
+    for (const step of steps) {
+      window.setTimeout(() => {
+        const fleet = get().traderFleet
+        const token = get().tokens.find((x) => x.id === tokenId)
+        if (!token || token.complete) return
+
+        const ai = actors[(Math.random() * actors.length) | 0]
+        let tr = fleet[ai]
+        if (!tr) return
+        const name = tr.displayName || tr.persona.name
+
+        if (step.preBuySol && step.preBuySol > 0) {
+          const res = get().executeTrade(tokenId, 'buy', step.preBuySol, name, true)
+          if (res.ok && res.tokensOut) {
+            const next = [...get().traderFleet]
+            tr = { ...next[ai], bags: { ...next[ai].bags } }
+            tr.sol = Math.max(0, tr.sol - step.preBuySol)
+            const prev = tr.bags[tokenId]
+            tr.bags[tokenId] = {
+              tokens: (prev?.tokens || 0) + res.tokensOut,
+              costSol: (prev?.costSol || 0) + step.preBuySol,
+              boughtAt: prev?.boughtAt || Date.now(),
+            }
+            next[ai] = rotateDisplayName(tr)
+            set({ traderFleet: next })
+          }
+          return
+        }
+
+        if (step.sellFrac <= 0) return
+        tr = get().traderFleet[ai]
+        if (!tr) return
+        const bag = tr.bags[tokenId]
+        // If no bag, sell a small synthetic slice of curve for tape pressure
+        const amount = bag
+          ? bag.tokens * step.sellFrac
+          : Math.min(token.virtualTokens * 0.0004 * step.sellFrac, 80_000)
+        if (amount <= 1) return
+        const res = get().executeTrade(
+          tokenId,
+          'sell',
+          amount,
+          tr.displayName || tr.persona.name,
+          true,
+        )
+        if (!res.ok) return
+        const next = [...get().traderFleet]
+        tr = { ...next[ai], bags: { ...next[ai].bags } }
+        if (tr.bags[tokenId]) {
+          const b = tr.bags[tokenId]
+          const ratio = amount / Math.max(b.tokens, 1e-12)
+          b.tokens = Math.max(0, b.tokens - amount)
+          b.costSol = Math.max(0, b.costSol * (1 - ratio))
+          tr.sol += res.solOut || 0
+          if (b.tokens < 1) delete tr.bags[tokenId]
+        }
+        next[ai] = rotateDisplayName(tr)
+        set({ traderFleet: next })
+      }, step.delayMs)
+    }
   },
 
   clearShake: (tokenId) =>

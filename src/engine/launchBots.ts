@@ -1,12 +1,13 @@
 /**
- * Board launch fleet — managed-market meme coins every 30s.
- * Unique realistic images (never repeated), proper name/symbol/bio,
- * and mcap seeded with platform 5% margin baked in.
+ * Board launch fleet — 2 coins per minute (every 30s).
+ * Curated memes first, then endless procedural memes.
+ * Proper bios, seeded mcap, and candle history for graphs.
  */
 import type { Token } from '../types'
 import { spawnRandomToken } from './seedTokens'
 import { tokenEmoji } from '../lib/tokenImage'
-import { CURATED_MEMES, type CuratedMeme } from '../lib/curatedMemes'
+import type { CuratedMeme } from '../lib/curatedMemes'
+import { pickAnyUniqueMeme } from './memeFactory'
 import { seedCandles } from './candles'
 import {
   seedReservesToMcap,
@@ -15,20 +16,20 @@ import {
   REAL_TOKEN_RESERVES,
 } from './managedMarket'
 import { priceSol, marketCapUsd, VIRTUAL_SOL, VIRTUAL_TOKENS } from './bondingCurve'
+import { generateUsername } from './traderBots'
 
 export type BotConfig = {
   /** Max coins the fleet will launch this session */
   fleetSize: number
-  /** Interval between launches (ms) — default 30s */
+  /** Interval between launches (ms) — 30s = 2 coins/minute */
   intervalMs: number
   enabled: boolean
   launched: number
 }
 
 export const DEFAULT_BOT_CONFIG: BotConfig = {
-  fleetSize: 500,
+  fleetSize: 2000,
   intervalMs: 30_000,
-  /** Primary launcher is useLiveBoard → /api/live-board; local fleet is backup */
   enabled: true,
   launched: 0,
 }
@@ -90,12 +91,8 @@ export function memeToBio(meme: CuratedMeme, symbol: string): string {
   ].join('\n')
 }
 
-export function pickUniqueMeme(usedUrls: Set<string>): CuratedMeme | null {
-  const free = CURATED_MEMES.filter((m) => !usedUrls.has(m.url))
-  if (free.length === 0) return null
-  // Prefer less-used pool order with light shuffle
-  const i = Math.floor(Math.random() * free.length)
-  return free[i]
+export function pickUniqueMeme(usedUrls: Set<string>, seq = 0): CuratedMeme {
+  return pickAnyUniqueMeme(usedUrls, seq)
 }
 
 export function collectUsedMemeUrls(tokens: { imageUrl?: string; source?: string }[]): Set<string> {
@@ -112,39 +109,39 @@ export type BuildBotOptions = {
   botIndex: number
   seq: number
   usedUrls: Set<string>
-  /** Optional USD mcap target; random band if omitted */
   targetMcapUsd?: number
   creatorLabel?: string
 }
 
 /**
- * Build one managed board coin from a unique curated meme.
- * Returns null when the unique meme pool is exhausted.
+ * Build one managed board coin — never fails (procedural memes if needed).
  */
-export function buildBotToken(opts: BuildBotOptions): Token | null {
-  const meme = pickUniqueMeme(opts.usedUrls)
-  if (!meme) return null
+export function buildBotToken(opts: BuildBotOptions): Token {
+  const meme = pickAnyUniqueMeme(opts.usedUrls, opts.seq)
+  opts.usedUrls.add(meme.url)
 
   const seq = opts.seq
   const name = memeToName(meme.title, `Meme ${opts.botIndex + 1}`)
   const symbol = memeToSymbol(meme.title, seq)
-  const seed = `bot_${opts.botIndex}_${seq}_${meme.url}`
+  const seed = `bot_${opts.botIndex}_${seq}_${meme.url.slice(0, 40)}`
   const emoji = tokenEmoji(seed)
   const id = `bot_${Date.now().toString(36)}_${seq.toString(36)}`
-  const creator = opts.creatorLabel || `BotFleet${String(opts.botIndex % 100).padStart(3, '0')}`
+  const creator = opts.creatorLabel || generateUsername(opts.botIndex * 91 + seq)
 
   const target = opts.targetMcapUsd ?? randomBotTargetMcap()
   const seeded = seedReservesToMcap(target, PLATFORM_MARGIN_BPS)
   const mcap = marketCapUsd(seeded.virtualSol, seeded.virtualTokens)
   const px = priceSol(seeded.virtualSol, seeded.virtualTokens)
 
-  // Seed a bit of volume / activity so the board looks alive
   const seedVolSol = seeded.seedSol * 0.35 + Math.random() * 0.4
-  const buys = 3 + Math.floor(Math.random() * 18)
-  const sells = Math.floor(buys * (0.15 + Math.random() * 0.25))
+  const buys = 8 + Math.floor(Math.random() * 40)
+  const sells = Math.floor(buys * (0.12 + Math.random() * 0.28))
 
   const curveHold = Math.max(REAL_TOKEN_RESERVES * 0.55, seeded.realTokens * 0.9)
   const creatorHold = Math.max(0, REAL_TOKEN_RESERVES - curveHold)
+
+  // Richer candle history so graphs look real on open
+  const candles = seedCandles(mcap, 48)
 
   return {
     id,
@@ -155,7 +152,7 @@ export function buildBotToken(opts: BuildBotOptions): Token | null {
     imageUrl: meme.url,
     imageHue: (opts.botIndex * 37) % 360,
     creator,
-    creatorName: `bot${(opts.botIndex % 99) + 1}`,
+    creatorName: creator,
     virtualSol: seeded.virtualSol,
     virtualTokens: seeded.virtualTokens,
     realSol: seeded.curveSol,
@@ -174,7 +171,7 @@ export function buildBotToken(opts: BuildBotOptions): Token | null {
     complete: false,
     createdAt: Date.now(),
     lastTradeAt: Date.now() - Math.floor(Math.random() * 60_000),
-    candles: seedCandles(mcap, 36),
+    candles,
     holders: [
       {
         wallet: 'bonding-curve',
@@ -197,21 +194,8 @@ export function buildBotToken(opts: BuildBotOptions): Token | null {
   }
 }
 
-/** Fallback if unique pool exhausted mid-session */
 export function botOrSpawn(i: number, seq: number, used: Set<string>) {
-  const t = buildBotToken({ botIndex: i, seq, usedUrls: used })
-  if (t) return t
-  // Last resort: generic spawn (still marks managed)
-  const fallback = spawnRandomToken(seq)
-  return {
-    ...fallback,
-    source: 'bot' as const,
-    managed: true,
-    curveSol: fallback.realSol,
-    marginSol: 0,
-    virtualSol: fallback.virtualSol || VIRTUAL_SOL,
-    virtualTokens: fallback.virtualTokens || VIRTUAL_TOKENS,
-  }
+  return buildBotToken({ botIndex: i, seq, usedUrls: used })
 }
 
 export { PLATFORM_MARGIN_BPS }

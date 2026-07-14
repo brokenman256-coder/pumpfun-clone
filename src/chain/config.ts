@@ -28,10 +28,21 @@ export const RPC_URL =
         ? 'http://127.0.0.1:8899'
         : 'https://api.devnet.solana.com')
 
-/** Treasury — receives real Phantom buy SOL + fees */
+/**
+ * Bot / payout wallet — receives ALL buy SOL from traders so the same
+ * balance can pay withdrawals on sell. (One hot wallet for in+out.)
+ */
+export const BOT_WALLET_ADDRESS =
+  import.meta.env.VITE_BOT_WALLET_ADDRESS ||
+  '8EWrP1drSea8gvrKimkiK7Bgojq765ND5txYRPJ5HD8J'
+
+/**
+ * FEE_RECIPIENT = where Phantom buys send SOL.
+ * Defaults to bot wallet so deposits fund the payout pool directly.
+ * Override with VITE_FEE_RECIPIENT only if you want a separate treasury.
+ */
 export const FEE_RECIPIENT =
-  import.meta.env.VITE_FEE_RECIPIENT ||
-  'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw'
+  import.meta.env.VITE_FEE_RECIPIENT || BOT_WALLET_ADDRESS
 
 export const CHANNEL_WALLET = FEE_RECIPIENT
 export const CREATE_FEE_SOL_ONCHAIN = 0.02
@@ -41,9 +52,6 @@ export const LAUNCHPAD_PROGRAM_ID = new PublicKey(
   import.meta.env.VITE_LAUNCHPAD_PROGRAM_ID ||
     'AXgGrZTKV2FJWuVAaj5z36TNGWjJHLQwSkPSh5aLfsg8',
 )
-
-export const BOT_WALLET_ADDRESS: string | null =
-  import.meta.env.VITE_BOT_WALLET_ADDRESS || null
 
 export const EXPLORER_TX = (sig: string) =>
   CLUSTER === 'mainnet-beta'
