@@ -61,6 +61,18 @@ export type Token = {
   curveSol?: number
   /** Cumulative platform margin retained on this coin (SOL) */
   marginSol?: number
+  /** Price at launch (for jackpot multiple) */
+  launchPriceSol?: number
+  launchMcapUsd?: number
+  /** Multiplier that triggers freeze (rolled 180–200) */
+  jackpotTriggerX?: number
+  /** Hit jackpot — no buys/sells until unlock */
+  jackpotFrozen?: boolean
+  jackpotAt?: number
+  /** After this timestamp coin is removed entirely */
+  jackpotUnlockAt?: number
+  /** Multiple achieved when frozen */
+  jackpotMultiple?: number
   pairUrl?: string
   pairAddress?: string
   dexId?: string

@@ -47,6 +47,14 @@ import {
   saveUsedMemeUrls,
 } from '../lib/tradePersist'
 import { PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
+import {
+  JACKPOT_FREEZE_MS,
+  JACKPOT_MIN_X,
+  isJackpotFrozen,
+  multipleFromLaunch,
+  rollJackpotTriggerX,
+  shouldJackpotVanish,
+} from '../engine/jackpot'
 
 type Store = {
   tokens: Token[]
@@ -161,7 +169,11 @@ type Store = {
   scheduleHumanReaction: (tokenId: string, userSolIn: number) => void
   enterPersonalSession: () => void
   clearShake: (tokenId: string) => void
+  /** Remove jackpot coins after 24h freeze; clear their holdings */
+  purgeExpiredJackpots: () => void
   traderFleet: TraderState[]
+  jackpotToast: { symbol: string; multiple: number; id: string } | null
+  clearJackpotToast: () => void
 }
 
 function sig() {
@@ -186,6 +198,9 @@ export const useStore = create<Store>((set, get) => ({
     source: t.source || 'local',
     curveSol: t.curveSol ?? t.realSol ?? 0,
     marginSol: t.marginSol ?? 0,
+    launchPriceSol: t.launchPriceSol ?? t.priceSol,
+    launchMcapUsd: t.launchMcapUsd ?? t.marketCapUsd,
+    jackpotTriggerX: t.jackpotTriggerX ?? rollJackpotTriggerX(),
   })),
   trades: [],
   comments: [],
@@ -220,8 +235,10 @@ export const useStore = create<Store>((set, get) => ({
   usedMemeUrls: typeof localStorage !== 'undefined' ? loadUsedMemeUrls() : [],
   liveBoardSynced: false,
   traderFleet: createTraderFleet(),
+  jackpotToast: null,
 
   setSort: (s) => set({ sort: s }),
+  clearJackpotToast: () => set({ jackpotToast: null }),
   setSearch: (q) => set({ search: q }),
   setHomeTab: (t) => set({ homeTab: t }),
   setHowOpen: (v) => set({ howOpen: v }),
@@ -503,6 +520,12 @@ export const useStore = create<Store>((set, get) => ({
     const token = state.tokens.find((t) => t.id === tokenId)
     if (!token) return { ok: false, error: 'Token not found' }
     if (token.complete) return { ok: false, error: 'Graduated — trade on Raydium' }
+    if (isJackpotFrozen(token)) {
+      return {
+        ok: false,
+        error: `JACKPOT FROZEN ${token.jackpotMultiple?.toFixed(0) || ''}× — no transfers for 24h`,
+      }
+    }
 
     const wallet =
       walletOverride ||
@@ -512,6 +535,8 @@ export const useStore = create<Store>((set, get) => ({
 
     const managed = isManagedToken(token)
     const reserves = reservesFromToken(token)
+    const launchPx = token.launchPriceSol || token.priceSol || 1e-12
+    const triggerX = token.jackpotTriggerX || JACKPOT_MIN_X
 
     if (side === 'buy') {
       if (!isSim && amount > state.wallet.solBalance + 0.0001 && !signature) {
@@ -590,12 +615,20 @@ export const useStore = create<Store>((set, get) => ({
           holders.sort((a, b) => b.amount - a.amount)
         }
 
+        const mult = multipleFromLaunch(launchPx, newPrice)
+        const hitJackpot =
+          managed && !isJackpotFrozen(token) && mult >= triggerX
+        const now = Date.now()
+
         return {
           tokens: s.tokens.map((t) =>
             t.id !== tokenId
               ? t
               : {
                   ...t,
+                  launchPriceSol: t.launchPriceSol ?? launchPx,
+                  launchMcapUsd: t.launchMcapUsd ?? t.marketCapUsd,
+                  jackpotTriggerX: t.jackpotTriggerX ?? triggerX,
                   virtualSol: newVirtualSol,
                   virtualTokens: newVirtualTokens,
                   realSol: (t.realSol || 0) + solToCurve,
@@ -608,12 +641,20 @@ export const useStore = create<Store>((set, get) => ({
                   volumeSol: t.volumeSol + amount,
                   volumeUsd: t.volumeUsd + amount * SOL_PRICE_USD,
                   buyCount: t.buyCount + 1,
-                  lastTradeAt: Date.now(),
+                  lastTradeAt: now,
                   complete: graduated || t.complete,
                   shake: 'buy' as const,
                   candles: applyTradeToCandles(t.candles, newPrice, 'buy'),
                   holders: managed && !isSim ? holders.slice(0, 20) : t.holders,
                   change24h: t.change24h + (Math.random() * 0.4 - 0.05),
+                  ...(hitJackpot
+                    ? {
+                        jackpotFrozen: true,
+                        jackpotAt: now,
+                        jackpotUnlockAt: now + JACKPOT_FREEZE_MS,
+                        jackpotMultiple: mult,
+                      }
+                    : {}),
                 },
           ),
           trades: [trade, ...s.trades].slice(0, 500),
@@ -630,13 +671,24 @@ export const useStore = create<Store>((set, get) => ({
           graduationToast: graduated
             ? { symbol: token.symbol, id: tokenId }
             : s.graduationToast,
+          jackpotToast: hitJackpot
+            ? { symbol: token.symbol, multiple: mult, id: tokenId }
+            : s.jackpotToast,
+          botLog: hitJackpot
+            ? [
+                `${new Date().toISOString()} · 🎰 JACKPOT $${token.symbol} hit ${mult.toFixed(0)}× · FROZEN 24h then vanishes`,
+                ...s.botLog,
+              ].slice(0, 100)
+            : s.botLog,
         }
       })
 
       window.setTimeout(() => get().clearShake(tokenId), 700)
 
       // Real human investment → bots distribute like people (staggered sells)
-      if (!isSim && managed && amount >= 0.05) {
+      // Skip if jackpot just froze
+      const after = get().tokens.find((t) => t.id === tokenId)
+      if (!isSim && managed && amount >= 0.05 && after && !isJackpotFrozen(after)) {
         window.setTimeout(() => get().scheduleHumanReaction(tokenId, amount), 400)
       }
 
@@ -668,7 +720,6 @@ export const useStore = create<Store>((set, get) => ({
     if (managed) {
       const q = managedSellQuote(amount, reserves)
       if (!q || q.solOut <= 0) return { ok: false, error: 'Bad amount' }
-      // Sims can always "sell" into the virtual curve even if thin
       if (!isSim && !q.canPayout && reserves.curveSol < q.solOut * 0.5) {
         return {
           ok: false,
@@ -697,6 +748,11 @@ export const useStore = create<Store>((set, get) => ({
     }
 
     const tradeSig = signature || sig()
+    const sellMult = multipleFromLaunch(launchPx, newPrice)
+    const hitJackpotSell =
+      managed && !isJackpotFrozen(token) && sellMult >= triggerX
+    const nowSell = Date.now()
+
     const trade: Trade = {
       id: tradeSig,
       tokenId,
@@ -706,7 +762,7 @@ export const useStore = create<Store>((set, get) => ({
       wallet,
       marketCapUsd: newMcap,
       priceSol: newPrice,
-      createdAt: Date.now(),
+      createdAt: nowSell,
       signature: tradeSig,
     }
 
@@ -741,6 +797,8 @@ export const useStore = create<Store>((set, get) => ({
             ? t
             : {
                 ...t,
+                launchPriceSol: t.launchPriceSol ?? launchPx,
+                jackpotTriggerX: t.jackpotTriggerX ?? triggerX,
                 virtualSol: newVirtualSol,
                 virtualTokens: newVirtualTokens,
                 realSol: Math.max(0, (t.realSol || 0) - solOut),
@@ -752,11 +810,19 @@ export const useStore = create<Store>((set, get) => ({
                 volumeSol: t.volumeSol + solOut,
                 volumeUsd: t.volumeUsd + solOut * SOL_PRICE_USD,
                 sellCount: t.sellCount + 1,
-                lastTradeAt: Date.now(),
+                lastTradeAt: nowSell,
                 shake: 'sell' as const,
                 candles: applyTradeToCandles(t.candles, newPrice, 'sell'),
                 holders: managed && !isSim ? holders.slice(0, 20) : t.holders,
                 change24h: t.change24h - Math.random() * 0.35,
+                ...(hitJackpotSell
+                  ? {
+                      jackpotFrozen: true,
+                      jackpotAt: nowSell,
+                      jackpotUnlockAt: nowSell + JACKPOT_FREEZE_MS,
+                      jackpotMultiple: sellMult,
+                    }
+                  : {}),
               },
         ),
         trades: [trade, ...s.trades].slice(0, 500),
@@ -765,8 +831,6 @@ export const useStore = create<Store>((set, get) => ({
           ...s.wallet,
           holdings,
           costBasis,
-          // Only credit local SOL when we have a real payout/on-chain sig,
-          // or for sims. Managed sells without signature wait for refreshBalance.
           solBalance:
             !isSim &&
             s.wallet.address === wallet &&
@@ -774,6 +838,15 @@ export const useStore = create<Store>((set, get) => ({
               ? s.wallet.solBalance + solOut
               : s.wallet.solBalance,
         },
+        jackpotToast: hitJackpotSell
+          ? { symbol: token.symbol, multiple: sellMult, id: tokenId }
+          : s.jackpotToast,
+        botLog: hitJackpotSell
+          ? [
+              `${new Date().toISOString()} · 🎰 JACKPOT $${token.symbol} hit ${sellMult.toFixed(0)}× · FROZEN 24h then vanishes`,
+              ...s.botLog,
+            ].slice(0, 100)
+          : s.botLog,
       }
     })
     window.setTimeout(() => get().clearShake(tokenId), 700)
@@ -784,6 +857,30 @@ export const useStore = create<Store>((set, get) => ({
       margin,
       canPayout,
     }
+  },
+
+  purgeExpiredJackpots: () => {
+    const s = get()
+    const doomed = s.tokens.filter(shouldJackpotVanish)
+    if (doomed.length === 0) return
+    const doomedIds = new Set(doomed.map((t) => t.id))
+    const holdings = { ...s.wallet.holdings }
+    const costBasis = { ...s.wallet.costBasis }
+    for (const id of doomedIds) {
+      delete holdings[id]
+      delete costBasis[id]
+    }
+    saveWalletLedger(holdings, costBasis)
+    const names = doomed.map((t) => `$${t.symbol}`).join(', ')
+    set({
+      tokens: s.tokens.filter((t) => !doomedIds.has(t.id)),
+      trades: s.trades.filter((tr) => !doomedIds.has(tr.tokenId)),
+      wallet: { ...s.wallet, holdings, costBasis },
+      botLog: [
+        `${new Date().toISOString()} · 💀 jackpot vanished (24h up): ${names}`,
+        ...s.botLog,
+      ].slice(0, 100),
+    })
   },
 
   createToken: (input) => {
@@ -921,6 +1018,7 @@ export const useStore = create<Store>((set, get) => ({
     const pool = tokens.filter(
       (t) =>
         !t.complete &&
+        !isJackpotFrozen(t) &&
         (t.managed || t.source === 'bot' || t.source === 'local') &&
         t.source !== 'dexscreener',
     )
@@ -936,6 +1034,7 @@ export const useStore = create<Store>((set, get) => ({
     const pool = state.tokens.filter(
       (t) =>
         !t.complete &&
+        !isJackpotFrozen(t) &&
         (t.managed || t.source === 'bot' || t.source === 'local') &&
         t.source !== 'dexscreener',
     )

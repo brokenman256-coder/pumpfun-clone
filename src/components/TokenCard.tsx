@@ -4,6 +4,7 @@ import { formatUsd, shortAddr, timeAgo, formatSol } from '../lib/format'
 import { useCountUp } from '../hooks/useCountUp'
 import { TokenImage } from './TokenImage'
 import { progressToGraduation } from '../engine/bondingCurve'
+import { formatJackpotCountdown, isJackpotFrozen, multipleFromLaunch } from '../engine/jackpot'
 
 export function TokenCard({ token }: { token: Token }) {
   const mcap = useCountUp(token.marketCapUsd, 300)
@@ -11,11 +12,20 @@ export function TokenCard({ token }: { token: Token }) {
   const shake =
     token.shake === 'buy' ? 'shake-buy' : token.shake === 'sell' ? 'shake-sell' : ''
   const up = token.change24h >= 0
+  const frozen = isJackpotFrozen(token)
+  const mult = multipleFromLaunch(
+    token.launchPriceSol || token.priceSol,
+    token.priceSol,
+  )
 
   return (
     <Link
       to={`/coin/${token.id}`}
-      className={`block overflow-hidden rounded-2xl border border-[#1a1b22] bg-[#14151b] transition hover:border-[#86efac]/35 ${shake}`}
+      className={`block overflow-hidden rounded-2xl border bg-[#14151b] transition ${
+        frozen
+          ? 'border-amber-400/50 opacity-95'
+          : 'border-[#1a1b22] hover:border-[#86efac]/35'
+      } ${shake}`}
     >
       <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
         <TokenImage
@@ -23,9 +33,14 @@ export function TokenCard({ token }: { token: Token }) {
           seed={token.id}
           emoji={token.emoji}
           alt={token.name}
-          className="h-full w-full object-cover"
+          className={`h-full w-full object-cover ${frozen ? 'grayscale-[30%]' : ''}`}
         />
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+          {frozen && (
+            <span className="rounded-md bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
+              🎰 {token.jackpotMultiple?.toFixed(0) || mult.toFixed(0)}× FREEZE
+            </span>
+          )}
           {token.source === 'dexscreener' && (
             <span className="rounded-md bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-bold text-white">
               DEX
@@ -36,7 +51,7 @@ export function TokenCard({ token }: { token: Token }) {
               🎓 GRAD
             </span>
           )}
-          {!token.complete && progress > 70 && token.source !== 'dexscreener' && (
+          {!token.complete && !frozen && progress > 70 && token.source !== 'dexscreener' && (
             <span className="rounded-md bg-[#86efac] px-1.5 py-0.5 text-[9px] font-bold text-black">
               HOT
             </span>
@@ -70,6 +85,13 @@ export function TokenCard({ token }: { token: Token }) {
         </div>
 
         <p className="text-[14px] font-black text-[#86efac]">{formatUsd(mcap)} MC</p>
+        {frozen && token.jackpotUnlockAt ? (
+          <p className="text-[10px] font-semibold text-amber-400">
+            frozen · vanishes in {formatJackpotCountdown(token.jackpotUnlockAt)}
+          </p>
+        ) : mult >= 10 ? (
+          <p className="text-[10px] font-semibold text-[#86efac]/80">{mult.toFixed(1)}× from launch</p>
+        ) : null}
 
         <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#6b6d78]">
           <span>vol {formatUsd(token.volumeUsd)}</span>

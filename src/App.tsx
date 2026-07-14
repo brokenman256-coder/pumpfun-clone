@@ -22,7 +22,9 @@ import { useSimulator } from './hooks/useSimulator'
 import { useDexScreener } from './hooks/useDexScreener'
 import { useLaunchBots } from './hooks/useLaunchBots'
 import { useLiveBoard } from './hooks/useLiveBoard'
+import { useJackpotWatch } from './hooks/useJackpotWatch'
 import { useOnChainTokens } from './hooks/useOnChainTokens'
+import { JackpotToast } from './components/JackpotToast'
 import { useStore } from './store/useStore'
 
 export default function App() {
@@ -31,6 +33,7 @@ export default function App() {
   useDexScreener()
   useLaunchBots()
   useOnChainTokens()
+  useJackpotWatch()
   const setHowOpen = useStore((s) => s.setHowOpen)
 
   useEffect(() => {
@@ -75,6 +78,7 @@ export default function App() {
           <WalletModal />
           <HowItWorksModal />
           <GraduationToast />
+          <JackpotToast />
         </div>
       </MaintenanceGate>
     </BrowserRouter>

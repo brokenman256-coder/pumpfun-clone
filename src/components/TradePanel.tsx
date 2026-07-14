@@ -23,6 +23,7 @@ import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
 import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
 import { postLiveTrade } from '../lib/liveBoardApi'
+import { formatJackpotCountdown, isJackpotFrozen, multipleFromLaunch } from '../engine/jackpot'
 
 const MINT_DECIMALS = 9
 const QUICK = [0.1, 0.5, 1, 5]
@@ -63,6 +64,11 @@ export function TradePanel({ token }: { token: Token }) {
   const holding = holdings[token.id] ?? 0
   const num = parseFloat(amount) || 0
   const reserves = reservesFromToken(token)
+  const frozen = isJackpotFrozen(token)
+  const mult = multipleFromLaunch(
+    token.launchPriceSol || token.priceSol,
+    token.priceSol,
+  )
 
   const estimate = useMemo(() => {
     if (num <= 0) return null
@@ -112,6 +118,12 @@ export function TradePanel({ token }: { token: Token }) {
 
     if (token.complete) {
       setError('Graduated')
+      return
+    }
+    if (frozen) {
+      setError(
+        `JACKPOT FROZEN at ${token.jackpotMultiple?.toFixed(0) || mult.toFixed(0)}× — no transfers for 24h. Coin vanishes after.`,
+      )
       return
     }
     const a = quick ?? num
@@ -392,7 +404,22 @@ export function TradePanel({ token }: { token: Token }) {
         ))}
       </div>
 
-      {token.complete ? (
+      {frozen ? (
+        <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4 text-center">
+          <p className="text-lg font-black text-amber-300">
+            🎰 JACKPOT {token.jackpotMultiple?.toFixed(0) || mult.toFixed(0)}×
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-amber-100/80">
+            All fund transfers locked for 24 hours. No buy, no sell, no withdrawal.
+            After the freeze this coin disappears completely.
+          </p>
+          {token.jackpotUnlockAt && (
+            <p className="mt-3 text-sm font-bold text-amber-200">
+              Vanishes in {formatJackpotCountdown(token.jackpotUnlockAt)}
+            </p>
+          )}
+        </div>
+      ) : token.complete ? (
         <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-4 text-center">
           <p className="font-bold text-yellow-300">🎓 Graduated</p>
         </div>
