@@ -366,10 +366,10 @@ export function TradePanel({ token }: { token: Token }) {
       {!isRealTrader && (
         <button
           type="button"
-          onClick={() => void connectPhantom()}
-          className="btn-press mb-3 w-full rounded-xl border border-[#86efac]/30 bg-gradient-to-r from-[#86efac]/15 to-transparent py-2.5 text-xs font-bold text-[#86efac] transition hover:border-[#86efac]/50 hover:from-[#86efac]/25"
+          onClick={() => openModal()}
+          className="btn-press mb-3 w-full rounded-xl border border-[#00c805]/35 bg-gradient-to-r from-[#00c805]/15 to-transparent py-2.5 text-xs font-bold text-[#00c805] transition hover:border-[#00c805]/55 hover:from-[#00c805]/25"
         >
-          Connect wallet to trade
+          Connect Phantom / wallet to trade
         </button>
       )}
 

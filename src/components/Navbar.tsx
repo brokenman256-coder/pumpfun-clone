@@ -8,8 +8,7 @@ export function Navbar() {
   const navigate = useNavigate()
   const search = useStore((s) => s.search)
   const setSearch = useStore((s) => s.setSearch)
-  const { connected, address, solBalance, openModal, connectPhantom, disconnect, connecting } =
-    useWallet()
+  const { connected, address, solBalance, openModal, disconnect, connecting } = useWallet()
   const [menu, setMenu] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -46,13 +45,10 @@ export function Navbar() {
         {!connected ? (
           <button
             type="button"
-            onClick={() => {
-              openModal()
-              void connectPhantom()
-            }}
-            className="btn-press rounded-full bg-[#86efac] px-3.5 py-1.5 text-[13px] font-bold text-black"
+            onClick={() => openModal()}
+            className="btn-press rounded-full bg-[#00c805] px-3.5 py-1.5 text-[13px] font-bold text-black shadow-[0_0_16px_rgba(0,200,5,0.25)]"
           >
-            {connecting ? '…' : 'Sign in'}
+            {connecting ? '…' : 'Connect wallet'}
           </button>
         ) : (
           <div className="relative">

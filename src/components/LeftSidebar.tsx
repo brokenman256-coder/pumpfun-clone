@@ -19,7 +19,7 @@ export function LeftSidebar() {
   const navigate = useNavigate()
   const setHomeTab = useStore((s) => s.setHomeTab)
   const homeTab = useStore((s) => s.homeTab)
-  const { connected, address, solBalance, openModal, connectPhantom, disconnect } = useWallet()
+  const { connected, address, solBalance, openModal, disconnect } = useWallet()
   const tokens = useStore((s) => s.tokens)
   const trades = useStore((s) => s.tickerTrades)
 
@@ -102,13 +102,10 @@ export function LeftSidebar() {
         {!connected ? (
           <button
             type="button"
-            onClick={() => {
-              openModal()
-              void connectPhantom()
-            }}
-            className="w-full rounded-full bg-[#86efac] py-2 text-sm font-bold text-black"
+            onClick={() => openModal()}
+            className="btn-press w-full rounded-full bg-[#00c805] py-2.5 text-sm font-bold text-black shadow-[0_0_16px_rgba(0,200,5,0.2)]"
           >
-            Sign in
+            Connect wallet
           </button>
         ) : (
           <div className="rounded-xl border border-[#1f2028] bg-[#14151b] p-3">
