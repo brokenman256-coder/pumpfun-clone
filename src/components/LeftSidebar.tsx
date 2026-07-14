@@ -8,7 +8,7 @@ const NAV = [
   { to: '/swap', label: 'Swap', icon: '🔄' },
   { to: '/profile', label: 'Bag / Profile', icon: '💼' },
   { to: '/channel', label: 'Channel', icon: '📡' },
-  { to: '/admin', label: 'Admin', icon: '🛡️' },
+  // Admin is intentionally NOT in the public nav — open /admin privately
 ]
 
 /**
