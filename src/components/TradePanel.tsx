@@ -12,13 +12,7 @@ import {
   PLATFORM_MARGIN_BPS,
 } from '../engine/managedMarket'
 import { formatSol, formatTokens } from '../lib/format'
-import {
-  CHAIN_LABEL,
-  EXPLORER_TX,
-  CLUSTER,
-  PERSONAL_MODE,
-  FEE_RECIPIENT,
-} from '../chain/config'
+import { EXPLORER_TX, PERSONAL_MODE } from '../chain/config'
 import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
 import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
@@ -354,39 +348,32 @@ export function TradePanel({ token }: { token: Token }) {
     estimate && 'margin' in estimate ? (estimate as { margin: number }).margin : null
 
   return (
-    <div className="rounded-2xl border border-[#1f2028] bg-[#14151b] p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px]">
-        <span className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]">
-          {CHAIN_LABEL}
-        </span>
-        {isRealTrader ? (
-          <span
-            className="rounded-full bg-[#86efac]/15 px-2 py-0.5 font-semibold text-[#86efac]"
-            title={`Buys send real SOL to ${FEE_RECIPIENT.slice(0, 4)}…`}
-          >
-            👻 Phantom · real SOL · {PLATFORM_MARGIN_BPS / 100}% fee
+    <div className="trade-panel rounded-2xl border border-[#1f2028] bg-[#14151b] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#86efac] opacity-50" />
+            <span className="relative h-2 w-2 rounded-full bg-[#86efac]" />
           </span>
-        ) : (
-          <span className="rounded-full bg-violet-400/15 px-2 py-0.5 font-semibold text-violet-300">
-            demo · bots free · connect Phantom for real $
-          </span>
-        )}
-        <span className="text-[#8b8d97]">
-          bal {formatSol(solBalance)} {isRealTrader ? 'SOL' : 'vSOL'}
+          <span className="text-xs font-bold text-white">Trade</span>
+          <span className="text-[10px] text-[#6b6d78]">{PLATFORM_MARGIN_BPS / 100}% fee</span>
+        </div>
+        <span className="rounded-full bg-[#0e0f13] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#86efac]">
+          {formatSol(solBalance)} SOL
         </span>
       </div>
 
-      {!isRealTrader && PERSONAL_MODE && (
+      {!isRealTrader && (
         <button
           type="button"
           onClick={() => void connectPhantom()}
-          className="mb-3 w-full rounded-lg border border-[#86efac]/35 bg-[#86efac]/10 py-2 text-xs font-bold text-[#86efac] hover:bg-[#86efac]/20"
+          className="btn-press mb-3 w-full rounded-xl border border-[#86efac]/30 bg-gradient-to-r from-[#86efac]/15 to-transparent py-2.5 text-xs font-bold text-[#86efac] transition hover:border-[#86efac]/50 hover:from-[#86efac]/25"
         >
-          👻 Connect Phantom to trade with real SOL
+          Connect wallet to trade
         </button>
       )}
 
-      <div className="mb-3 flex rounded-lg bg-[#0e0f13] p-1">
+      <div className="mb-3 flex rounded-xl bg-[#0e0f13] p-1">
         {(['buy', 'sell'] as const).map((m) => (
           <button
             key={m}
@@ -397,12 +384,12 @@ export function TradePanel({ token }: { token: Token }) {
               setError('')
               setStatus('')
             }}
-            className={`flex-1 rounded-md py-2.5 text-sm font-bold capitalize ${
+            className={`flex-1 rounded-lg py-2.5 text-sm font-bold capitalize transition duration-200 ${
               mode === m
                 ? m === 'buy'
-                  ? 'bg-[#86efac] text-black'
-                  : 'bg-[#f87171] text-white'
-                : 'text-[#8b8d97]'
+                  ? 'bg-[#86efac] text-black shadow-[0_0_20px_rgba(134,239,172,0.25)]'
+                  : 'bg-[#f87171] text-white shadow-[0_0_20px_rgba(248,113,113,0.2)]'
+                : 'text-[#8b8d97] hover:text-white'
             }`}
           >
             {m}
@@ -540,9 +527,7 @@ export function TradePanel({ token }: { token: Token }) {
                       : `demo sell ${token.symbol}`}
           </button>
           <p className="mt-3 text-center text-[10px] text-[#555]">
-            {isRealTrader
-              ? `Real SOL on ${CLUSTER}. Buys → treasury. Sells → your Phantom. Bots still trade free (no gas).`
-              : 'Demo mode uses virtual SOL. Connect Phantom above to trade with real money.'}
+            Instant fills · bonding curve pricing
           </p>
           {!PERSONAL_MODE && (token.mint || token.source === 'dexscreener') && (
             <div className="mt-2 flex flex-wrap justify-center gap-2 text-[10px]">

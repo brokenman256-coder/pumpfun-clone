@@ -1,11 +1,5 @@
 import { useWallet } from '../hooks/useWallet'
-import {
-  CHAIN_LABEL,
-  CLUSTER,
-  PERSONAL_MODE,
-  PERSONAL_START_SOL,
-  FEE_RECIPIENT,
-} from '../chain/config'
+import { PERSONAL_MODE } from '../chain/config'
 import type { WalletName } from '@solana/wallet-adapter-base'
 
 export function WalletModal() {
@@ -41,47 +35,36 @@ export function WalletModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#26272e] px-5 py-4">
-          <h2 className="text-sm font-bold text-white">Connect to trade</h2>
-          <button type="button" onClick={closeModal} className="text-[#8b8d97]">
+          <h2 className="text-sm font-bold text-white">Connect wallet</h2>
+          <button type="button" onClick={closeModal} className="text-[#8b8d97] transition hover:text-white">
             ✕
           </button>
         </div>
         <div className="space-y-3 p-5">
-          <p className="text-xs text-[#8b8d97]">
-            Network:{' '}
-            <span className="font-semibold text-[#86efac]">{CHAIN_LABEL}</span> ({CLUSTER})
-          </p>
-
-          {/* Primary: real Phantom */}
           <p className="text-[11px] leading-relaxed text-[#8b8d97]">
-            <strong className="text-white">Traders:</strong> connect Phantom to buy/sell with
-            real SOL. Buys go to treasury{' '}
-            <span className="font-mono text-[10px] text-[#86efac]">
-              {FEE_RECIPIENT.slice(0, 4)}…{FEE_RECIPIENT.slice(-4)}
-            </span>
-            . Bots never use your wallet and never pay gas.
+            Connect your wallet to buy and sell on the live board.
           </p>
           <button
             type="button"
             disabled={connecting || isRealTrader}
             onClick={() => void connectPhantom()}
-            className="btn-press flex w-full items-center gap-3 rounded-xl border border-[#86efac]/40 bg-[#86efac]/10 px-4 py-3 text-left hover:bg-[#86efac]/20 disabled:opacity-60"
+            className="btn-press flex w-full items-center gap-3 rounded-xl border border-[#86efac]/40 bg-[#86efac]/10 px-4 py-3 text-left transition hover:bg-[#86efac]/20 disabled:opacity-60"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ab9ff2] text-lg">
               👻
             </span>
             <span className="flex-1">
               <span className="block text-sm font-bold text-white">
-                {isRealTrader ? 'Phantom connected' : 'Phantom — real SOL'}
+                {isRealTrader ? 'Connected' : 'Phantom'}
               </span>
               <span className="block text-[11px] text-[#8b8d97]">
                 {isRealTrader
-                  ? 'You are trading with real SOL'
+                  ? 'Ready to trade'
                   : phantomInstalled
                     ? connecting
-                      ? 'Approve in Phantom…'
-                      : 'Recommended for live trading'
-                    : 'Not installed'}
+                      ? 'Approve in wallet…'
+                      : 'Fastest way to trade'
+                    : 'Install to continue'}
               </span>
             </span>
           </button>
@@ -112,11 +95,10 @@ export function WalletModal() {
             </button>
           ))}
 
-          {/* Secondary: demo only */}
           {PERSONAL_MODE && (
             <>
               <div className="relative py-1 text-center text-[10px] uppercase tracking-wide text-[#555]">
-                or browse without wallet
+                or continue browsing
               </div>
               <button
                 type="button"
@@ -124,15 +106,15 @@ export function WalletModal() {
                   connectPersonal?.()
                   closeModal()
                 }}
-                className="flex w-full items-center gap-3 rounded-xl border border-[#26272e] bg-[#0e0f13] px-4 py-3 text-left hover:border-violet-400/30"
+                className="flex w-full items-center gap-3 rounded-xl border border-[#26272e] bg-[#0e0f13] px-4 py-3 text-left transition hover:border-[#86efac]/25"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20 text-lg">
-                  ⚡
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#86efac]/15 text-lg">
+                  👁
                 </span>
                 <span className="flex-1">
-                  <span className="block text-sm font-bold text-white">Demo session</span>
+                  <span className="block text-sm font-bold text-white">Browse markets</span>
                   <span className="block text-[11px] text-[#8b8d97]">
-                    {PERSONAL_START_SOL} virtual SOL · bots still live · not real money
+                    Explore charts · connect anytime to trade
                   </span>
                 </span>
               </button>

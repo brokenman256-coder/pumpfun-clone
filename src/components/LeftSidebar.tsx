@@ -2,8 +2,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { shortAddr, formatSol } from '../lib/format'
-import { CLUSTER } from '../chain/config'
-
 const NAV = [
   { to: '/', label: 'Home', icon: '🏠' },
   { to: '/create', label: 'Create', icon: '🚀' },
@@ -21,20 +19,24 @@ export function LeftSidebar() {
   const navigate = useNavigate()
   const setHomeTab = useStore((s) => s.setHomeTab)
   const homeTab = useStore((s) => s.homeTab)
-  const dexStatus = useStore((s) => s.dexStatus)
   const { connected, address, solBalance, openModal, connectPhantom, disconnect } = useWallet()
+  const tokens = useStore((s) => s.tokens)
+  const trades = useStore((s) => s.tickerTrades)
 
   return (
     <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#1f2028] bg-[#0a0b0f] min-h-screen sticky top-0 h-screen">
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-[#1f2028]">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#86efac] to-[#4ade80] text-lg">
-          💊
+      <div className="flex items-center gap-2.5 border-b border-[#1f2028] px-4 py-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#86efac] to-[#4ade80] text-lg shadow-[0_0_16px_rgba(134,239,172,0.35)]">
+          🔥
         </span>
         <div>
-          <p className="font-logo text-[9px] text-white">
-            pump<span className="text-[#86efac]">.fun</span>
+          <p className="text-sm font-black tracking-tight text-white">
+            IGNITE
           </p>
-          <p className="text-[10px] text-[#6b6d78]">{CLUSTER}</p>
+          <p className="flex items-center gap-1 text-[10px] text-[#6b6d78]">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#86efac]" />
+            Live board
+          </p>
         </div>
       </div>
 
@@ -89,14 +91,13 @@ export function LeftSidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-[#1f2028] p-3 space-y-2">
-        <div className="flex items-center gap-2 text-[10px] text-[#6b6d78]">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              dexStatus === 'ok' ? 'bg-[#86efac] animate-pulse' : 'bg-[#555]'
-            }`}
-          />
-          DexScreener {dexStatus}
+      <div className="space-y-2 border-t border-[#1f2028] p-3">
+        <div className="rounded-xl border border-[#1f2028] bg-[#14151b]/80 px-3 py-2">
+          <p className="text-[10px] text-[#6b6d78]">Markets</p>
+          <p className="text-sm font-bold text-white">{tokens.length.toLocaleString()}</p>
+          <p className="mt-0.5 text-[10px] text-[#555]">
+            {trades.length ? `${trades[0]?.side} · live tape` : 'warming up'}
+          </p>
         </div>
         {!connected ? (
           <button

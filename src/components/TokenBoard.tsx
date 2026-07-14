@@ -4,7 +4,7 @@ import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
 import { BountiesStrip } from './BountiesStrip'
 import { KingOfHill } from './KingOfHill'
-import { DexLiveBar } from './DexLiveBar'
+import { LiveMarketHero } from './LiveMarketHero'
 import { useTokenFeed } from '../hooks/useTokenFeed'
 
 const CHIPS: { id: SortTab; label: string }[] = [
@@ -47,7 +47,7 @@ export function TokenBoard() {
 
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-5xl">
-      <DexLiveBar />
+      <LiveMarketHero />
 
       <div className="no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto">
         {CHIPS.map((c) => (
@@ -55,8 +55,10 @@ export function TokenBoard() {
             key={c.id}
             type="button"
             onClick={() => setSort(c.id)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold ${
-              sort === c.id ? 'bg-[#86efac] text-black' : 'bg-[#1a1b22] text-[#9a9ba3]'
+            className={`chip-press shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition duration-200 ${
+              sort === c.id
+                ? 'bg-[#86efac] text-black shadow-[0_0_20px_rgba(134,239,172,0.25)]'
+                : 'bg-[#1a1b22] text-[#9a9ba3] hover:bg-[#22232c] hover:text-white'
             }`}
           >
             {c.label}
@@ -68,10 +70,14 @@ export function TokenBoard() {
       <BountiesStrip />
 
       <section className="mb-5">
-        <h2 className="mb-2 text-[15px] font-bold">Trending now</h2>
+        <h2 className="mb-2 text-[15px] font-bold tracking-tight">Trending now</h2>
         <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-          {trending.map((t) => (
-            <div key={`tr_${t.id}`} className="w-[140px] shrink-0">
+          {trending.map((t, i) => (
+            <div
+              key={`tr_${t.id}`}
+              className="w-[140px] shrink-0 fade-up"
+              style={{ animationDelay: `${i * 40}ms` }}
+            >
               <TokenCard token={t} />
             </div>
           ))}
@@ -92,14 +98,20 @@ export function TokenBoard() {
           ))}
         </div>
       ) : shown.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#2a2b33] py-16 text-center">
-          <p className="text-3xl">💊</p>
-          <p className="mt-2 font-semibold">no coins found</p>
+        <div className="rounded-2xl border border-dashed border-[#2a2b33] py-16 text-center fade-up">
+          <p className="text-3xl">🔥</p>
+          <p className="mt-2 font-semibold">Markets loading…</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-          {shown.map((t) => (
-            <TokenCard key={t.id} token={t} />
+          {shown.map((t, i) => (
+            <div
+              key={t.id}
+              className="fade-up"
+              style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
+            >
+              <TokenCard token={t} />
+            </div>
           ))}
         </div>
       )}

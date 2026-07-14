@@ -67,21 +67,14 @@ export const EXPLORER_ADDR = (addr: string) =>
       ? `https://solscan.io/account/${addr}?cluster=custom&customUrl=${encodeURIComponent(RPC_URL)}`
       : `https://solscan.io/account/${addr}?cluster=${CLUSTER}`
 
-export const CHAIN_LABEL = PERSONAL_MODE
-  ? CLUSTER === 'mainnet-beta'
-    ? 'Managed market · Phantom Mainnet'
+export const CHAIN_LABEL =
+  CLUSTER === 'mainnet-beta'
+    ? 'Solana'
     : CLUSTER === 'testnet'
-      ? 'Managed market · Phantom Testnet'
+      ? 'Testnet'
       : CLUSTER === 'localnet'
-        ? 'Managed market · Localnet'
-        : 'Managed market · Phantom Devnet'
-  : CLUSTER === 'mainnet-beta'
-    ? 'Solana Mainnet'
-    : CLUSTER === 'testnet'
-      ? 'Solana Testnet'
-      : CLUSTER === 'localnet'
-        ? 'Solana Localnet'
-        : 'Solana Devnet'
+        ? 'Local'
+        : 'Solana'
 
 /** Virtual SOL for demo browsing (bots always free; traders use Phantom for real $) */
 export const PERSONAL_START_SOL = Number(import.meta.env.VITE_PERSONAL_START_SOL || 100)
