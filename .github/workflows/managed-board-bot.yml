@@ -1,0 +1,48 @@
+name: Managed board coin bot (every 30s)
+
+# Continuous managed-market coin creation for the shared live board.
+# Does NOT spend SOL — only updates public/live-board.json via the live API
+# (or direct node script fallback). One unique meme coin every 30 seconds.
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      loop_minutes:
+        description: 'Minutes to run (default 345 ≈ 5h45m)'
+        required: false
+        default: '345'
+
+concurrency:
+  group: managed-board-bot
+  cancel-in-progress: false
+
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compute loop budget
+        id: loopcfg
+        env:
+          LOOP_MINUTES_INPUT: ${{ github.event.inputs.loop_minutes }}
+        run: |
+          MIN="${LOOP_MINUTES_INPUT:-345}"
+          echo "budget_ms=$((MIN * 60000))" >> "$GITHUB_OUTPUT"
+      - name: Run managed board bot loop
+        env:
+          LIVE_BOARD_URL: ${{ vars.LIVE_BOARD_URL }}
+          BOT_API_SECRET: ${{ secrets.BOT_API_SECRET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOOP_INTERVAL_MS: '30000'
+          LOOP_BUDGET_MS: ${{ steps.loopcfg.outputs.budget_ms }}
+        run: |
+          if [ -z "$LIVE_BOARD_URL" ]; then
+            export LIVE_BOARD_URL="https://pumpfun-clone-mw7z.vercel.app"
+          fi
+          echo "Target: $LIVE_BOARD_URL"
+          node scripts/managed-board-bot.mjs

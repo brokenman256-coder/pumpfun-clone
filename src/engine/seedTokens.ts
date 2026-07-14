@@ -11,7 +11,8 @@ import {
 import { hash, tokenEmoji } from '../lib/tokenImage'
 import { curatedMemeFor } from '../lib/curatedMemes'
 
-export const SEED_COUNT = 120
+/** Light seed so live bot coins dominate the board */
+export const SEED_COUNT = 18
 
 const NAMES = [
   'Pepe', 'Doge', 'Wojak', 'Bonk', 'Popcat', 'Wif', 'MooDeng', 'Goat',
@@ -114,7 +115,11 @@ export function createSeedTokens(count = SEED_COUNT): Token[] {
       website: undefined,
       twitter: h % 2 === 0 ? `https://x.com/${symbol.toLowerCase()}` : undefined,
       telegram: h % 4 === 0 ? `https://t.me/${symbol.toLowerCase()}` : undefined,
-      tags: [TAGS[h % TAGS.length], TAGS[(h + 3) % TAGS.length]],
+      tags: [TAGS[h % TAGS.length], TAGS[(h + 3) % TAGS.length], 'managed'],
+      source: 'local',
+      managed: true,
+      curveSol: progress * 28 * 0.95,
+      marginSol: progress * 28 * 0.05,
     })
   }
 
@@ -158,6 +163,10 @@ export function spawnRandomToken(seq: number): Token {
     candles: [],
     holders: makeHolders(creator, REAL_TOKEN_RESERVES),
     shake: null,
-    tags: ['new', 'meme'],
+    tags: ['new', 'meme', 'managed'],
+    source: 'local',
+    managed: true,
+    curveSol: 0,
+    marginSol: 0,
   }
 }

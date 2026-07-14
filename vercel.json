@@ -1,4 +1,15 @@
 {
   "framework": "vite",
-  "rewrites": [{ "source": "/((?!api/|site-status\\.json).*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/((?!api/|live-board\\.json|site-status\\.json).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-coin-bot",
+      "schedule": "* * * * *"
+    }
+  ]
 }

@@ -1,56 +1,82 @@
-# pump.fun clone
+# IGNITE — live memecoin launchpad
 
-A pump.fun-style Solana memecoin launchpad. Token creation and trading go
-through a real deployed on-chain program (`program/`) — a bonding-curve PDA
-vault that actually moves SOL and SPL tokens, not client-side math — plus a
-board/feed UI with live charts, comments, holders, and an admin dashboard.
+pump.fun-style Solana board with a **live managed market**: real Phantom SOL
+for buys/sells, system-owned price/supply/charts, **5% platform margin**, and a
+**coin creation bot** that launches unique realistic meme coins every 30s.
+
+## Live trading model
+
+| Layer | What happens |
+|--------|----------------|
+| **SOL** | Buy → Phantom pays treasury. Sell → bot wallet pays trader. |
+| **Curve** | Shared managed bonding curve (mcap, supply, candles). |
+| **Margin** | 5% on every buy & sell (platform profit). |
+| **Coin bot** | One unique curated meme / 30s via `/api/live-board` + GitHub Actions. |
+
+Board state is shared through `GET/POST /api/live-board` (durable via GitHub
+when `GITHUB_TOKEN` is set; warm-memory fallback otherwise).
 
 ## Stack
 
 - Vite + React + TypeScript, Tailwind CSS v4, Zustand
-- `@solana/web3.js` + `@solana/wallet-adapter-react` (Phantom, Solflare)
-- lightweight-charts (TradingView-style candles), canvas-confetti
-- On-chain: Anchor program in `program/` (see `program/README.md` for the
-  build/deploy process — it needs a pinned older toolchain, documented there)
+- Phantom / Solflare wallet adapters
+- lightweight-charts, canvas-confetti
+- Optional real Anchor program in `program/` for on-chain curves
 
-## Run the frontend
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Set `VITE_SOLANA_CLUSTER` (`devnet` / `localnet` /
-`mainnet-beta`) and `VITE_LAUNCHPAD_PROGRAM_ID` in `.env` to point at your
-deployed program (see `.env.example`).
+Open http://localhost:5173
 
-## What's real vs. simulated
+### `.env` (client)
 
-- **Real, on-chain**: "Bonding curve" mode on the Create page mints a token
-  and creates its curve via the deployed program; buying/selling a
-  bonding-curve-backed coin sends real transactions that move real SOL and
-  real SPL tokens through the program's vault. The TradePanel shows a
-  "🔒 on-chain curve" badge for these.
-- **Simulated**: the board's background trade ticker/bot fleet (demo
-  activity for a livelier board) and any legacy/DexScreener-sourced coins —
-  these show a "simulated" badge in the TradePanel and aren't backed by the
-  on-chain program.
+```env
+VITE_SOLANA_CLUSTER=devnet
+VITE_SOLANA_RPC=https://api.devnet.solana.com
+VITE_FEE_RECIPIENT=YourTreasuryPublicKey
+VITE_ADMIN_KEY=change-me
+```
 
-## Features
+### Vercel (server)
 
-- Token board with King of the Hill, live ticker, shake-on-trade cards
-- Token page: live candlestick chart, buy/sell panel, bonding curve, trades,
-  thread, holders
-- Create a real on-chain coin (bonding curve) or mint a standalone SPL token
-- Profile: held / created / replies + PnL
-- Admin dashboard: live treasury balance, deployed program ID, on-chain vs.
-  simulated coin counts, bot fleet controls, gateway payment ledger
-- Graduation flag once the curve's real SOL raised crosses the threshold
-  (migrating liquidity to a DEX like Raydium is a real follow-up, not done)
+```env
+# Durable board writes (contents:write PAT)
+GITHUB_TOKEN=
+# Sell payouts (base58 secret of funded bot wallet)
+BOT_WALLET_SECRET=
+# Optional API auth
+BOT_API_SECRET=
+CRON_SECRET=
+LIVE_BOARD_OPEN=1
+```
 
-## Program
+## Coin bot
 
-See `program/README.md` for the on-chain program's architecture, how to build
-it (needs a pinned Anchor/Solana toolchain — a plain `anchor build` on a
-modern host will fail), deploy it, and run the one-time `initialize` step a
-fresh deployment needs.
+1. **Browser** — `useLiveBoard` POSTs `action: launch` every 30s while open  
+2. **Vercel cron** — `/api/cron-coin-bot` every minute  
+3. **GitHub Actions** — `managed-board-bot.yml` loops every 30s for ~6h  
+
+```bash
+# Manual loop against production
+LIVE_BOARD_URL=https://your-app.vercel.app node scripts/managed-board-bot.mjs
+```
+
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local frontend |
+| `npm run build` | Production build |
+| `node scripts/managed-board-bot.mjs` | Continuous managed coin launches |
+| `node scripts/bot-launch.mjs` | Real on-chain bot (needs `BOT_WALLET_SECRET`) |
+
+## Trade flow
+
+1. Connect Phantom  
+2. Buy → approve SOL transfer to treasury → live curve updates for everyone  
+3. Sell → curve books fill (after 5% margin) → `/api/managed-sell` pays SOL  
+4. Charts / mcap / volume update in real time on the shared board  

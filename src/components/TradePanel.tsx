@@ -5,20 +5,37 @@ import type { Token } from '../types'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { getBuyQuote, getSellQuote, TRADE_FEE_BPS } from '../engine/bondingCurve'
+import {
+  managedBuyQuote,
+  managedSellQuote,
+  reservesFromToken,
+  PLATFORM_MARGIN_BPS,
+} from '../engine/managedMarket'
 import { formatSol, formatTokens } from '../lib/format'
 import { CHAIN_LABEL, EXPLORER_TX, CLUSTER } from '../chain/config'
 import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
+import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
+import { postLiveTrade } from '../lib/liveBoardApi'
 
 const MINT_DECIMALS = 9
-
 const QUICK = [0.1, 0.5, 1]
+
+function isManaged(token: Token) {
+  if (token.mint && token.curvePda) return false
+  if (token.source === 'dexscreener') return false
+  return token.managed === true || token.source === 'bot' || token.source === 'local' || !token.mint
+}
 
 export function TradePanel({ token }: { token: Token }) {
   const executeTrade = useStore((s) => s.executeTrade)
+  const applyLiveToken = useStore((s) => s.applyLiveToken)
+  const bookHolding = useStore((s) => s.bookHolding)
   const syncTokenFromChain = useStore((s) => s.syncTokenFromChain)
-  const { connected, openModal, holdings, solBalance, paySol, refreshBalance, adapter } = useWallet()
+  const { connected, openModal, holdings, solBalance, refreshBalance, adapter, address } =
+    useWallet()
   const onChain = Boolean(token.mint && token.curvePda)
+  const managed = isManaged(token)
   const [mode, setMode] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
@@ -28,13 +45,23 @@ export function TradePanel({ token }: { token: Token }) {
 
   const holding = holdings[token.id] ?? 0
   const num = parseFloat(amount) || 0
+  const reserves = reservesFromToken(token)
 
   const estimate = useMemo(() => {
     if (num <= 0) return null
+    if (managed) {
+      return mode === 'buy'
+        ? managedBuyQuote(num, reserves)
+        : managedSellQuote(num, reserves)
+    }
     return mode === 'buy'
       ? getBuyQuote(num, token.virtualSol, token.virtualTokens)
       : getSellQuote(num, token.virtualSol, token.virtualTokens)
-  }, [num, mode, token.virtualSol, token.virtualTokens])
+  }, [num, mode, managed, token.virtualSol, token.virtualTokens, reserves.curveSol, reserves.marginSol, reserves.virtualSol, reserves.virtualTokens])
+
+  const feeLabel = managed
+    ? `${PLATFORM_MARGIN_BPS / 100}% platform`
+    : `${TRADE_FEE_BPS / 100}% fee`
 
   async function place(quick?: number) {
     setError('')
@@ -58,6 +85,7 @@ export function TradePanel({ token }: { token: Token }) {
     try {
       let signature: string | undefined
 
+      // ── Real on-chain launchpad program ───────────────────
       if (onChain && token.mint) {
         const mint = new PublicKey(token.mint)
         setStatus(`Confirm ${mode} in wallet…`)
@@ -88,13 +116,118 @@ export function TradePanel({ token }: { token: Token }) {
             decimals: curve.decimals,
           })
         }
-        // Local holdings/SOL-balance bookkeeping only — the trade itself
-        // already executed for real above.
         executeTrade(token.id, mode, a, undefined, false, signature)
-      } else {
+      }
+      // ── Managed market (our system) + Phantom SOL ─────────
+      else if (managed) {
+        if (mode === 'buy') {
+          if (a > solBalance + 0.0001) {
+            setError('Insufficient SOL in Phantom')
+            return
+          }
+          setStatus(`Approve ${a} SOL in Phantom…`)
+          signature = await managedBuyOnChain({
+            wallet: adapter,
+            amountSol: a,
+            tokenId: token.id,
+            symbol: token.symbol,
+          })
+          setTxSig(signature)
+          setStatus('SOL confirmed · live curve…')
+
+          // Shared live board first (all visitors see the same mcap)
+          const live = await postLiveTrade({
+            tokenId: token.id,
+            side: 'buy',
+            amount: a,
+            wallet: address || undefined,
+            signature,
+          })
+          if (live.ok && live.token) {
+            applyLiveToken(live.token)
+            bookHolding(token.id, 'buy', live.tokensOut || 0, a, signature)
+          } else {
+            // Offline fallback — local curve only
+            const res = executeTrade(token.id, 'buy', a, undefined, false, signature)
+            if (!res.ok) {
+              setError(res.error || live.error || 'Failed to update curve')
+              return
+            }
+          }
+        } else {
+          const q = managedSellQuote(a, reserves)
+          if (!q || q.solOut <= 0) {
+            setError('Bad sell amount')
+            return
+          }
+          if (a > holding + 1e-9) {
+            setError('Insufficient tokens')
+            return
+          }
+
+          setStatus('Booking sell on live curve…')
+          const live = await postLiveTrade({
+            tokenId: token.id,
+            side: 'sell',
+            amount: a,
+            wallet: address || undefined,
+          })
+
+          let solOut = q.solOut
+          if (live.ok && live.token) {
+            applyLiveToken(live.token)
+            solOut = live.solOut ?? q.solOut
+            bookHolding(token.id, 'sell', a, solOut, live.trade?.signature)
+          } else {
+            const res = executeTrade(token.id, 'sell', a, undefined, false)
+            if (!res.ok) {
+              setError(res.error || live.error || 'Sell failed')
+              return
+            }
+            solOut = res.solOut ?? q.solOut
+          }
+
+          setStatus(`Paying ${solOut.toFixed(4)} SOL to your wallet…`)
+
+          if (address) {
+            const payout = await requestManagedSellPayout({
+              to: address,
+              amountSol: solOut,
+              tokenId: token.id,
+              symbol: token.symbol,
+              tokenAmount: a,
+            })
+            if (payout.ok && payout.signature) {
+              signature = payout.signature
+              setTxSig(payout.signature)
+              setStatus('SOL sent · sell complete')
+            } else {
+              setStatus(
+                payout.error
+                  ? `Curve updated · ${payout.error}`
+                  : 'Curve updated · payout pending (fund bot wallet)',
+              )
+              if (payout.error && /not configured/i.test(payout.error)) {
+                setError(
+                  'Sell booked on curve. Set BOT_WALLET_SECRET on server to auto-pay SOL.',
+                )
+              } else if (payout.error) {
+                setError(payout.error)
+              }
+            }
+          }
+        }
+      }
+      // ── Legacy simulated (no mint) ────────────────────────
+      else {
         if (mode === 'buy') {
           setStatus(`Approve ${a} SOL in Phantom…`)
-          signature = await paySol(a, `buy:${token.symbol}:${token.id}`)
+          signature = await managedBuyOnChain({
+            wallet: adapter,
+            amountSol: a,
+            tokenId: token.id,
+            symbol: token.symbol,
+          })
           setTxSig(signature)
           setStatus('Confirmed · updating curve…')
         }
@@ -107,37 +240,67 @@ export function TradePanel({ token }: { token: Token }) {
 
       setAmount('')
       await refreshBalance()
-      setStatus(mode === 'buy' ? 'Buy confirmed ✓' : 'Sell filled ✓')
       if (mode === 'buy') {
-        confetti({ particleCount: 70, spread: 55, origin: { y: 0.7 }, colors: ['#86efac', '#fff'] })
+        setStatus('Buy confirmed ✓')
+        confetti({
+          particleCount: 70,
+          spread: 55,
+          origin: { y: 0.7 },
+          colors: ['#86efac', '#fff'],
+        })
+      } else if (!onChain) {
+        // Managed sell may already set a payout-specific status
+        setStatus((prev) =>
+          prev && /paying|sent|pending|updated/i.test(prev)
+            ? prev.includes('✓')
+              ? prev
+              : prev
+            : 'Sell filled ✓',
+        )
+      } else {
+        setStatus('Sell filled ✓')
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Transaction failed'
       setError(/reject|cancel|denied/i.test(msg) ? 'Cancelled in wallet' : msg)
+      setStatus('')
     } finally {
       setLoading(false)
     }
   }
 
+  const tokensOut =
+    estimate && 'tokensOut' in estimate
+      ? (estimate as { tokensOut: number }).tokensOut
+      : null
+  const solOut =
+    estimate && 'solOut' in estimate ? (estimate as { solOut: number }).solOut : null
+  const marginAmt =
+    estimate && 'margin' in estimate ? (estimate as { margin: number }).margin : null
+
   return (
     <div className="rounded-2xl border border-[#1f2028] bg-[#14151b] p-4">
-      <div className="mb-3 flex items-center justify-between text-[10px]">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px]">
         <span className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]">
           ⛓ {CHAIN_LABEL}
         </span>
         {onChain ? (
           <span
             className="rounded-full bg-[#86efac]/10 px-2 py-0.5 font-semibold text-[#86efac]"
-            title="Trades execute on a real deployed program — every buy/sell moves real SOL and real SPL tokens."
+            title="Trades execute on the deployed bonding-curve program."
           >
             🔒 on-chain curve
           </span>
-        ) : (
+        ) : managed ? (
           <span
-            className="rounded-full bg-yellow-400/10 px-2 py-0.5 font-semibold text-yellow-300"
-            title="This coin isn't backed by the on-chain program — trades here are simulated board activity."
+            className="rounded-full bg-emerald-400/10 px-2 py-0.5 font-semibold text-emerald-300"
+            title="Price, supply & chart are system-managed. SOL moves via Phantom to/from treasury."
           >
-            simulated
+            ⚡ live market · {PLATFORM_MARGIN_BPS / 100}% fee
+          </span>
+        ) : (
+          <span className="rounded-full bg-yellow-400/10 px-2 py-0.5 font-semibold text-yellow-300">
+            external
           </span>
         )}
         <span className="text-[#8b8d97]">bal {formatSol(solBalance)} SOL</span>
@@ -152,6 +315,7 @@ export function TradePanel({ token }: { token: Token }) {
               setMode(m)
               setAmount('')
               setError('')
+              setStatus('')
             }}
             className={`flex-1 rounded-md py-2.5 text-sm font-bold capitalize ${
               mode === m
@@ -169,7 +333,12 @@ export function TradePanel({ token }: { token: Token }) {
       {token.complete ? (
         <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-4 text-center">
           <p className="font-bold text-yellow-300">🎓 Graduated</p>
-          <a href="https://raydium.io" target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-[#86efac] underline">
+          <a
+            href="https://raydium.io"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block text-sm text-[#86efac] underline"
+          >
             trade on Raydium →
           </a>
         </div>
@@ -198,7 +367,11 @@ export function TradePanel({ token }: { token: Token }) {
             </div>
           )}
           {mode === 'sell' && (
-            <button type="button" className="mb-2 text-xs text-[#86efac]" onClick={() => setAmount(String(holding))}>
+            <button
+              type="button"
+              className="mb-2 text-xs text-[#86efac]"
+              onClick={() => setAmount(String(holding))}
+            >
               balance: {formatTokens(holding)} · max
             </button>
           )}
@@ -216,28 +389,39 @@ export function TradePanel({ token }: { token: Token }) {
           </div>
           {estimate && (
             <p className="mt-2 text-xs text-[#8b8d97]">
-              {mode === 'buy' ? (
+              {mode === 'buy' && tokensOut != null ? (
                 <>
                   you get ≈{' '}
                   <span className="text-[#86efac]">
-                    {formatTokens((estimate as { tokensOut: number }).tokensOut)} {token.symbol}
+                    {formatTokens(tokensOut)} {token.symbol}
                   </span>
                 </>
-              ) : (
+              ) : solOut != null ? (
                 <>
-                  you get ≈{' '}
-                  <span className="text-[#86efac]">
-                    {formatSol((estimate as { solOut: number }).solOut)} SOL
-                  </span>
+                  you get ≈ <span className="text-[#86efac]">{formatSol(solOut)} SOL</span>
                 </>
+              ) : null}
+              {' · '}
+              {feeLabel}
+              {marginAmt != null && marginAmt > 0 && (
+                <span className="text-[#555]"> · fee {formatSol(marginAmt)} SOL</span>
               )}
-              {' · '}fee {TRADE_FEE_BPS / 100}%
+            </p>
+          )}
+          {managed && mode === 'sell' && estimate && 'canPayout' in estimate && !(estimate as { canPayout: boolean }).canPayout && (
+            <p className="mt-1 text-[10px] text-yellow-400/90">
+              Thin curve liquidity — smaller size fills more reliably.
             </p>
           )}
           {status && <p className="mt-2 text-xs text-[#86efac]">{status}</p>}
           {error && <p className="mt-2 text-xs text-[#f87171]">{error}</p>}
           {txSig && (
-            <a href={EXPLORER_TX(txSig)} target="_blank" rel="noreferrer" className="mt-1 block text-[10px] text-[#86efac] underline">
+            <a
+              href={EXPLORER_TX(txSig)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 block text-[10px] text-[#86efac] underline"
+            >
               view tx →
             </a>
           )}
@@ -252,17 +436,24 @@ export function TradePanel({ token }: { token: Token }) {
             {loading
               ? status || 'Confirm in wallet…'
               : !connected
-                ? 'Sign in'
+                ? 'Connect Phantom'
                 : mode === 'buy'
                   ? `buy ${token.symbol}`
                   : `sell ${token.symbol}`}
           </button>
           <p className="mt-3 text-center text-[10px] text-[#555]">
-            Curve buys send SOL to treasury on {CLUSTER}.
+            {managed
+              ? `Buy sends SOL to treasury on ${CLUSTER}. Chart & supply update instantly. Platform keeps ${PLATFORM_MARGIN_BPS / 100}%.`
+              : `Curve buys send SOL to treasury on ${CLUSTER}.`}
             {CLUSTER === 'devnet' && (
               <>
                 {' '}
-                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-[#86efac] underline">
+                <a
+                  href="https://faucet.solana.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#86efac] underline"
+                >
                   faucet
                 </a>
               </>

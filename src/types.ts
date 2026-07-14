@@ -53,8 +53,14 @@ export type Token = {
   mint?: string
   curvePda?: string
   signature?: string
-  /** Live feed from DexScreener */
-  source?: 'local' | 'dexscreener'
+  /** Origin of the listing */
+  source?: 'local' | 'dexscreener' | 'bot' | 'onchain'
+  /** System-managed curve (board bots + user managed coins) */
+  managed?: boolean
+  /** Real SOL in curve available for sell payouts (post-margin) */
+  curveSol?: number
+  /** Cumulative platform margin retained on this coin (SOL) */
+  marginSol?: number
   pairUrl?: string
   pairAddress?: string
   dexId?: string

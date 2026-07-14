@@ -6,6 +6,7 @@ export const REAL_TOKEN_RESERVES = 793_100_000
 export const TOTAL_SUPPLY = 1_000_000_000
 export const GRADUATION_MCAP_USD = 69_000
 export const SOL_PRICE_USD = 150
+/** Legacy 1% fee for non-managed paths; managed market uses PLATFORM_MARGIN_BPS (5%). */
 export const TRADE_FEE_BPS = 100
 export const CREATE_FEE_SOL = 0.02
 

@@ -21,10 +21,12 @@ import { MaintenanceGate } from './components/MaintenanceGate'
 import { useSimulator } from './hooks/useSimulator'
 import { useDexScreener } from './hooks/useDexScreener'
 import { useLaunchBots } from './hooks/useLaunchBots'
+import { useLiveBoard } from './hooks/useLiveBoard'
 import { useOnChainTokens } from './hooks/useOnChainTokens'
 import { useStore } from './store/useStore'
 
 export default function App() {
+  useLiveBoard()
   useSimulator()
   useDexScreener()
   useLaunchBots()
