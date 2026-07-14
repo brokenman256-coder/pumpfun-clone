@@ -17,7 +17,7 @@ import {
 } from './managedMarket'
 import { priceSol, marketCapUsd, VIRTUAL_SOL, VIRTUAL_TOKENS } from './bondingCurve'
 import { generateUsername } from './traderBots'
-import { rollJackpotTriggerX } from './jackpot'
+
 
 export type BotConfig = {
   /** Max coins the fleet will launch this session */
@@ -164,7 +164,8 @@ export function buildBotToken(opts: BuildBotOptions): Token {
     marketCapUsd: mcap,
     launchPriceSol: px,
     launchMcapUsd: mcap,
-    jackpotTriggerX: rollJackpotTriggerX(),
+    jackpotArmed: false,
+    realUserSolIn: 0,
     change24h: (Math.random() - 0.35) * 40,
     athUsd: mcap * (1 + Math.random() * 0.15),
     volumeSol: seedVolSol,

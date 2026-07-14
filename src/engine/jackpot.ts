@@ -1,21 +1,42 @@
 /**
- * Jackpot rule:
- * - When a coin hits 180×–200× from launch price → FREEZE all transfers 24h
- * - After 24h → coin is wiped from the board (disappears)
+ * Jackpot / freeze trap:
+ * 1) Coin goes past 2× launch → ARMED (freeze button shoots up, bots hype)
+ * 2) Real user puts ≥ 10 SOL into that coin → FREEZE (no transfers)
+ * 3) After freeze window → coin completely disappears
  */
 
-export const JACKPOT_MIN_X = 180
-export const JACKPOT_MAX_X = 200
+/** Arm hyping UI + bots when multiple exceeds this */
+export const JACKPOT_ARM_X = 2
+
+/** Real-user SOL required after arm before freeze */
+export const JACKPOT_USER_SOL_MIN = 10
+
+/** Freeze duration before coin vanishes */
 export const JACKPOT_FREEZE_MS = 24 * 60 * 60 * 1000
+
+// legacy aliases (unused trigger band)
+export const JACKPOT_MIN_X = JACKPOT_ARM_X
+export const JACKPOT_MAX_X = JACKPOT_ARM_X
 
 export function multipleFromLaunch(launchPrice: number, currentPrice: number): number {
   if (!launchPrice || launchPrice <= 0) return 1
   return currentPrice / launchPrice
 }
 
-/** Random freeze trigger between 180x and 200x (inclusive band) */
 export function rollJackpotTriggerX(): number {
-  return JACKPOT_MIN_X + Math.random() * (JACKPOT_MAX_X - JACKPOT_MIN_X)
+  return JACKPOT_ARM_X
+}
+
+export function isJackpotArmed(t: {
+  jackpotArmed?: boolean
+  jackpotFrozen?: boolean
+  priceSol?: number
+  launchPriceSol?: number
+}): boolean {
+  if (t.jackpotFrozen) return false
+  if (t.jackpotArmed) return true
+  const mult = multipleFromLaunch(t.launchPriceSol || 0, t.priceSol || 0)
+  return mult > JACKPOT_ARM_X
 }
 
 export function isJackpotFrozen(t: {
@@ -27,7 +48,6 @@ export function isJackpotFrozen(t: {
   return true
 }
 
-/** True when freeze window ended and coin should be deleted */
 export function shouldJackpotVanish(t: {
   jackpotFrozen?: boolean
   jackpotUnlockAt?: number
@@ -43,4 +63,9 @@ export function formatJackpotCountdown(unlockAt: number): string {
   if (h > 0) return `${h}h ${m}m`
   if (m > 0) return `${m}m ${s}s`
   return `${s}s`
+}
+
+/** Progress toward 10 SOL real-user bag for freeze */
+export function freezeSolProgress(realUserSol: number): number {
+  return Math.min(100, (realUserSol / JACKPOT_USER_SOL_MIN) * 100)
 }

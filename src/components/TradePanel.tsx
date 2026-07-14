@@ -23,7 +23,14 @@ import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
 import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
 import { postLiveTrade } from '../lib/liveBoardApi'
-import { formatJackpotCountdown, isJackpotFrozen, multipleFromLaunch } from '../engine/jackpot'
+import {
+  formatJackpotCountdown,
+  freezeSolProgress,
+  isJackpotArmed,
+  isJackpotFrozen,
+  multipleFromLaunch,
+  JACKPOT_USER_SOL_MIN,
+} from '../engine/jackpot'
 
 const MINT_DECIMALS = 9
 const QUICK = [0.1, 0.5, 1, 5]
@@ -65,10 +72,12 @@ export function TradePanel({ token }: { token: Token }) {
   const num = parseFloat(amount) || 0
   const reserves = reservesFromToken(token)
   const frozen = isJackpotFrozen(token)
+  const armed = isJackpotArmed(token)
   const mult = multipleFromLaunch(
     token.launchPriceSol || token.priceSol,
     token.priceSol,
   )
+  const realSol = token.realUserSolIn || 0
 
   const estimate = useMemo(() => {
     if (num <= 0) return null
@@ -407,11 +416,11 @@ export function TradePanel({ token }: { token: Token }) {
       {frozen ? (
         <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4 text-center">
           <p className="text-lg font-black text-amber-300">
-            🎰 JACKPOT {token.jackpotMultiple?.toFixed(0) || mult.toFixed(0)}×
+            🎰 FROZEN {token.jackpotMultiple?.toFixed(1) || mult.toFixed(1)}×
           </p>
           <p className="mt-2 text-xs leading-relaxed text-amber-100/80">
-            All fund transfers locked for 24 hours. No buy, no sell, no withdrawal.
-            After the freeze this coin disappears completely.
+            Real users filled {JACKPOT_USER_SOL_MIN}+ SOL. Transfers locked 24h. Then this coin
+            disappears completely.
           </p>
           {token.jackpotUnlockAt && (
             <p className="mt-3 text-sm font-bold text-amber-200">
@@ -419,11 +428,37 @@ export function TradePanel({ token }: { token: Token }) {
             </p>
           )}
         </div>
-      ) : token.complete ? (
+      ) : armed ? (
+        <>
+          <div className="mb-3 animate-pulse rounded-xl border border-violet-400/50 bg-violet-500/15 p-3 text-center shadow-lg shadow-violet-500/20">
+            <p className="text-sm font-black text-violet-200">
+              🚀 FREEZE BUTTON UP · {mult.toFixed(1)}×
+            </p>
+            <p className="mt-1 text-[11px] text-violet-100/80">
+              Bots are hyping. Put real SOL in — freeze at{' '}
+              <strong>{JACKPOT_USER_SOL_MIN} SOL</strong> total from real users, then vanish
+              after 24h.
+            </p>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/30">
+              <div
+                className="h-full rounded-full bg-violet-400 transition-all"
+                style={{ width: `${freezeSolProgress(realSol)}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[10px] font-semibold text-violet-200">
+              {realSol.toFixed(2)} / {JACKPOT_USER_SOL_MIN} real SOL
+            </p>
+          </div>
+          {/* continue to normal trade UI below via fragment merge - fall through */}
+          {null}
+        </>
+      ) : null}
+
+      {!frozen && token.complete ? (
         <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-4 text-center">
           <p className="font-bold text-yellow-300">🎓 Graduated</p>
         </div>
-      ) : (
+      ) : !frozen ? (
         <>
           {mode === 'buy' && (
             <div className="mb-2 grid grid-cols-5 gap-1.5">
@@ -550,7 +585,7 @@ export function TradePanel({ token }: { token: Token }) {
             </div>
           )}
         </>
-      )}
+      ) : null}
     </div>
   )
 }
