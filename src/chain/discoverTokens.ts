@@ -6,7 +6,8 @@
 import type { Connection } from '@solana/web3.js'
 import { LAUNCHPAD_PROGRAM_ID } from './config'
 import { decodeBondingCurve, bondingCurvePda, type OnChainCurve } from './launchpadClient'
-import { tokenImageUrl, tokenEmoji } from '../lib/tokenImage'
+import { tokenEmoji } from '../lib/tokenImage'
+import { realTokenImageUrl } from '../lib/realTokenImages'
 import { marketCapUsd, priceSol } from '../engine/bondingCurve'
 import type { Token } from '../types'
 
@@ -44,7 +45,8 @@ function toToken(curve: OnChainCurve, curvePda: string): Token {
   const seed = curve.mint
   const emoji = tokenEmoji(seed)
   const { image: parsedImage, blurb } = parseUri(curve.uri)
-  const image = parsedImage && isHttpUrl(parsedImage) ? parsedImage : tokenImageUrl(seed, emoji, curve.symbol)
+  const image =
+    parsedImage && isHttpUrl(parsedImage) ? parsedImage : realTokenImageUrl(seed + curve.symbol)
 
   return {
     id: curve.mint,

@@ -5,10 +5,11 @@ export function isSimulated(t: Token) {
   return !(t.mint && t.curvePda) && t.source !== 'dexscreener'
 }
 
-/** Accept http(s) URLs and data-URI procedural meme art */
+/** Accept real http(s) coin art (no SVG placeholders) */
 export function hasRealImage(t: Token) {
   if (!t.imageUrl) return false
-  return /^(https?:\/\/|data:image\/)/i.test(t.imageUrl)
+  if (/^data:image\/svg/i.test(t.imageUrl)) return false
+  return /^https?:\/\//i.test(t.imageUrl)
 }
 
 /** Board should show bot coins, local coins, and external ones with art */

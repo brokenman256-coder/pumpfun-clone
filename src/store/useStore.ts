@@ -20,7 +20,8 @@ import {
 } from '../engine/managedMarket'
 import { createSeedTokens, randomWallet, SEED_COUNT } from '../engine/seedTokens'
 import { applyTradeToCandles, seedCandles } from '../engine/candles'
-import { tokenImageUrl, tokenEmoji } from '../lib/tokenImage'
+import { tokenEmoji } from '../lib/tokenImage'
+import { realTokenImageUrl } from '../lib/realTokenImages'
 import {
   DEFAULT_BOT_CONFIG,
   buildBotToken,
@@ -923,7 +924,10 @@ export const useStore = create<Store>((set, get) => ({
       symbol,
       emoji,
       description: input.description || `${input.name.trim()} launched on the curve.`,
-      imageUrl: input.imageUrl || tokenImageUrl(id + symbol, emoji, symbol),
+      imageUrl:
+        input.imageUrl && /^https?:\/\//i.test(input.imageUrl)
+          ? input.imageUrl
+          : realTokenImageUrl(id + symbol),
       imageHue: Math.random() * 360,
       creator: addr,
       creatorName: shortCreator(addr),

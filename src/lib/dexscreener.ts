@@ -11,7 +11,8 @@ import {
   TOTAL_SUPPLY,
   SOL_PRICE_USD,
 } from '../engine/bondingCurve'
-import { tokenImageUrl, tokenEmoji } from './tokenImage'
+import { tokenEmoji } from './tokenImage'
+import { realTokenImageUrl } from './realTokenImages'
 
 const BASE = 'https://api.dexscreener.com'
 
@@ -213,7 +214,7 @@ export function pairToToken(
     description:
       profile?.description ||
       `${name} ($${symbol}) live on ${pair.dexId || 'DEX'} · data via DexScreener. NFA.`,
-    imageUrl: icon || tokenImageUrl(mint, emoji, symbol),
+    imageUrl: icon || realTokenImageUrl(mint + symbol),
     imageHue: Math.abs(mint.charCodeAt(0) * 13) % 360,
     creator: mint.slice(0, 32) + '…',
     creatorName: pair.dexId || 'dex',
