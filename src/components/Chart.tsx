@@ -2,39 +2,51 @@ import { useEffect, useRef, useState } from 'react'
 import {
   createChart,
   CandlestickSeries,
-  LineSeries,
-  AreaSeries,
   HistogramSeries,
   type IChartApi,
   type ISeriesApi,
   type CandlestickData,
-  type LineData,
+  type HistogramData,
   type UTCTimestamp,
 } from 'lightweight-charts'
 import type { Token } from '../types'
 import { useStore } from '../store/useStore'
+import { formatUsd } from '../lib/format'
+import { SOL_PRICE_USD } from '../engine/bondingCurve'
 
-type ChartKind = 'candles' | 'line' | 'area' | 'volume'
-type Tf = '1m' | '5m' | '15m' | '1h' | '4h'
+/**
+ * pump.fun-style chart: dark canvas, green/red candles, volume underlay,
+ * crosshair, live last-price line, timeframes.
+ */
+type Tf = '1s' | '1m' | '5m' | '15m' | '1h'
 
 const TF_SEC: Record<Tf, number> = {
+  '1s': 1,
   '1m': 60,
   '5m': 300,
   '15m': 900,
   '1h': 3600,
-  '4h': 14400,
 }
 
-/**
- * Multi-type charts: candles · line · area · volume + timeframes
- */
+// pump.fun palette
+const UP = '#00c805'
+const DOWN = '#f23645'
+const BG = '#0b0e11'
+const GRID = '#1a1d24'
+const TEXT = '#848e9c'
+
 export function Chart({ token }: { token: Token }) {
   const ensureCandles = useStore((s) => s.ensureCandles)
   const wrap = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const seriesRef = useRef<ISeriesApi<'Candlestick' | 'Line' | 'Area' | 'Histogram'> | null>(null)
-  const [kind, setKind] = useState<ChartKind>('candles')
+  const candleRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  const volRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const [tf, setTf] = useState<Tf>('1m')
+  const [hoverPx, setHoverPx] = useState<number | null>(null)
+
+  const lastPx = token.priceSol
+  const lastUsd = lastPx * SOL_PRICE_USD
+  const up = token.change24h >= 0
 
   useEffect(() => {
     ensureCandles(token.id)
@@ -42,24 +54,97 @@ export function Chart({ token }: { token: Token }) {
 
   useEffect(() => {
     if (!wrap.current) return
+
     const chart = createChart(wrap.current, {
       layout: {
-        background: { color: '#14151b' },
-        textColor: '#8b8d97',
+        background: { color: BG },
+        textColor: TEXT,
+        fontSize: 11,
+        fontFamily: "Inter, system-ui, -apple-system, sans-serif",
       },
       grid: {
-        vertLines: { color: '#1f2028' },
-        horzLines: { color: '#1f2028' },
+        vertLines: { color: GRID, style: 1 },
+        horzLines: { color: GRID, style: 1 },
+      },
+      crosshair: {
+        mode: 1,
+        vertLine: {
+          color: 'rgba(134,239,172,0.35)',
+          width: 1,
+          style: 2,
+          labelBackgroundColor: '#1a1d24',
+        },
+        horzLine: {
+          color: 'rgba(134,239,172,0.35)',
+          width: 1,
+          style: 2,
+          labelBackgroundColor: '#1a1d24',
+        },
       },
       width: wrap.current.clientWidth,
-      height: 320,
-      timeScale: { borderColor: '#26272e' },
-      rightPriceScale: { borderColor: '#26272e' },
+      height: wrap.current.clientHeight || 380,
+      timeScale: {
+        borderColor: GRID,
+        timeVisible: true,
+        secondsVisible: tf === '1s' || tf === '1m',
+        rightOffset: 4,
+        barSpacing: 8,
+        minBarSpacing: 3,
+      },
+      rightPriceScale: {
+        borderColor: GRID,
+        scaleMargins: { top: 0.08, bottom: 0.22 },
+      },
+      handleScroll: { vertTouchDrag: false },
     })
+
+    const candles = chart.addSeries(CandlestickSeries, {
+      upColor: UP,
+      downColor: DOWN,
+      borderUpColor: UP,
+      borderDownColor: DOWN,
+      wickUpColor: UP,
+      wickDownColor: DOWN,
+      borderVisible: true,
+      priceLineVisible: true,
+      lastValueVisible: true,
+      priceFormat: {
+        type: 'price',
+        precision: 10,
+        minMove: 1e-10,
+      },
+    })
+
+    const volume = chart.addSeries(HistogramSeries, {
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'vol',
+    })
+    chart.priceScale('vol').applyOptions({
+      scaleMargins: { top: 0.82, bottom: 0 },
+      borderVisible: false,
+    })
+
     chartRef.current = chart
+    candleRef.current = candles
+    volRef.current = volume
+
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time || !param.seriesData) {
+        setHoverPx(null)
+        return
+      }
+      const d = param.seriesData.get(candles) as CandlestickData | undefined
+      if (d && 'close' in d) setHoverPx(d.close as number)
+      else setHoverPx(null)
+    })
 
     const ro = new ResizeObserver(() => {
-      if (wrap.current) chart.applyOptions({ width: wrap.current.clientWidth })
+      if (wrap.current) {
+        chart.applyOptions({
+          width: wrap.current.clientWidth,
+          height: wrap.current.clientHeight || 380,
+        })
+      }
     })
     ro.observe(wrap.current)
 
@@ -67,106 +152,74 @@ export function Chart({ token }: { token: Token }) {
       ro.disconnect()
       chart.remove()
       chartRef.current = null
-      seriesRef.current = null
+      candleRef.current = null
+      volRef.current = null
     }
-  }, [token.id, kind])
+  }, [token.id])
 
   useEffect(() => {
+    const candles = candleRef.current
+    const vol = volRef.current
     const chart = chartRef.current
-    if (!chart) return
+    if (!candles || !vol || !chart) return
 
-    // Remove previous series by recreating chart content
-    // lightweight-charts v5: removeSeries
-    if (seriesRef.current) {
-      try {
-        chart.removeSeries(seriesRef.current)
-      } catch {
-        /* */
+    const raw = resample(token.candles, TF_SEC[tf])
+    if (raw.length === 0) return
+
+    const cdata: CandlestickData[] = raw.map((c) => ({
+      time: c.time as UTCTimestamp,
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+    }))
+    candles.setData(cdata)
+
+    const vdata: HistogramData[] = raw.map((c) => {
+      const body = Math.abs(c.close - c.open)
+      const wick = c.high - c.low
+      const value = Math.max(body, wick * 0.3) * 1e12 + c.close * 1e6
+      return {
+        time: c.time as UTCTimestamp,
+        value,
+        color: c.close >= c.open ? 'rgba(0,200,5,0.45)' : 'rgba(242,54,69,0.45)',
       }
-    }
+    })
+    vol.setData(vdata)
+    chart.timeScale().scrollToRealTime()
+  }, [token.candles, token.id, tf, token.priceSol])
 
-    let series: ISeriesApi<'Candlestick' | 'Line' | 'Area' | 'Histogram'>
-    if (kind === 'candles') {
-      series = chart.addSeries(CandlestickSeries, {
-        upColor: '#86efac',
-        downColor: '#f87171',
-        borderVisible: false,
-        wickUpColor: '#86efac',
-        wickDownColor: '#f87171',
-      })
-    } else if (kind === 'line') {
-      series = chart.addSeries(LineSeries, {
-        color: '#86efac',
-        lineWidth: 2,
-      })
-    } else if (kind === 'area') {
-      series = chart.addSeries(AreaSeries, {
-        lineColor: '#86efac',
-        topColor: 'rgba(134,239,172,0.4)',
-        bottomColor: 'rgba(134,239,172,0.02)',
-        lineWidth: 2,
-      })
-    } else {
-      series = chart.addSeries(HistogramSeries, {
-        color: '#86efac',
-      })
-    }
-    seriesRef.current = series
-
-    const candles = resample(token.candles, TF_SEC[tf])
-    if (candles.length === 0) return
-
-    if (kind === 'candles') {
-      const data: CandlestickData[] = candles.map((c) => ({
-        time: c.time as UTCTimestamp,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-      }))
-      ;(series as ISeriesApi<'Candlestick'>).setData(data)
-    } else if (kind === 'volume') {
-      const data = candles.map((c, i) => ({
-        time: c.time as UTCTimestamp,
-        value: Math.abs(c.close - c.open) * 1e9 + i,
-        color: c.close >= c.open ? 'rgba(134,239,172,0.7)' : 'rgba(248,113,113,0.7)',
-      }))
-      ;(series as ISeriesApi<'Histogram'>).setData(data)
-    } else {
-      const data: LineData[] = candles.map((c) => ({
-        time: c.time as UTCTimestamp,
-        value: c.close,
-      }))
-      ;(series as ISeriesApi<'Line'>).setData(data)
-    }
-    chart.timeScale().fitContent()
-  }, [token.candles, token.id, kind, tf])
+  const displayPx = hoverPx ?? lastPx
+  const displayUsd = displayPx * SOL_PRICE_USD
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#1f2028] bg-[#14151b]">
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#1f2028] px-3 py-2">
-        <div className="flex gap-1">
-          {(['candles', 'line', 'area', 'volume'] as ChartKind[]).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setKind(k)}
-              className={`rounded-lg px-2 py-1 text-[11px] font-semibold capitalize ${
-                kind === k ? 'bg-[#86efac] text-black' : 'text-[#8b8d97] hover:text-white'
-              }`}
-            >
-              {k}
-            </button>
-          ))}
+    <div className="overflow-hidden rounded-2xl border border-[#1a1d24] bg-[#0b0e11] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      {/* pump.fun-style header strip */}
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-[#1a1d24] px-3 py-2.5">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-wide text-[#5d6573]">
+            Price · {token.symbol}/SOL
+          </p>
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
+            <span className={`font-mono text-lg font-bold tabular-nums sm:text-xl ${up ? 'text-[#00c805]' : 'text-[#f23645]'}`}>
+              {displayPx < 0.0001 ? displayPx.toExponential(4) : displayPx.toFixed(8)}
+            </span>
+            <span className="text-xs text-[#848e9c]">≈ {formatUsd(displayUsd)}</span>
+            <span className={`text-xs font-bold ${up ? 'text-[#00c805]' : 'text-[#f23645]'}`}>
+              {up ? '▲' : '▼'} {Math.abs(token.change24h).toFixed(2)}%
+            </span>
+          </div>
         </div>
-        <div className="ml-auto flex gap-1">
-          {(['1m', '5m', '15m', '1h', '4h'] as Tf[]).map((t) => (
+        <div className="flex items-center gap-0.5 rounded-lg bg-[#12151a] p-0.5">
+          {(['1s', '1m', '5m', '15m', '1h'] as Tf[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTf(t)}
-              className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                tf === t ? 'bg-white/10 text-white' : 'text-[#6b6d78]'
+              className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                tf === t
+                  ? 'bg-[#1e2329] text-white shadow-sm'
+                  : 'text-[#5d6573] hover:text-[#848e9c]'
               }`}
             >
               {t}
@@ -174,16 +227,41 @@ export function Chart({ token }: { token: Token }) {
           ))}
         </div>
       </div>
-      <div ref={wrap} className="w-full" />
+      <div ref={wrap} className="h-[320px] w-full sm:h-[400px]" />
+      <div className="flex items-center justify-between border-t border-[#1a1d24] px-3 py-1.5 text-[10px] text-[#5d6573]">
+        <span>MC {formatUsd(token.marketCapUsd)}</span>
+        <span>Vol {formatUsd(token.volumeUsd)}</span>
+        <span>
+          🟢{token.buyCount} 🔴{token.sellCount}
+        </span>
+      </div>
     </div>
   )
 }
 
-function resample(
-  candles: Token['candles'],
-  bucketSec: number,
-): Token['candles'] {
-  if (!candles.length || bucketSec <= 60) return candles
+function resample(candles: Token['candles'], bucketSec: number): Token['candles'] {
+  if (!candles.length) return []
+  if (bucketSec <= 1) {
+    // expand 1m candles into pseudo 1s trail for live feel
+    const out: Token['candles'] = []
+    for (const c of candles.slice(-40)) {
+      const steps = 4
+      for (let i = 0; i < steps; i++) {
+        const t = c.time - (steps - 1 - i) * 15
+        const mix = i / (steps - 1)
+        const mid = c.open + (c.close - c.open) * mix
+        out.push({
+          time: t,
+          open: i === 0 ? c.open : out[out.length - 1].close,
+          high: Math.max(c.open, c.close, mid) * (1 + Math.random() * 0.002),
+          low: Math.min(c.open, c.close, mid) * (1 - Math.random() * 0.002),
+          close: mid,
+        })
+      }
+    }
+    return out.sort((a, b) => a.time - b.time)
+  }
+  if (bucketSec <= 60) return candles
   const map = new Map<number, Token['candles'][0]>()
   for (const c of candles) {
     const t = Math.floor(c.time / bucketSec) * bucketSec

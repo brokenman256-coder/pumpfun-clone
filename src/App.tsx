@@ -23,6 +23,7 @@ import { useDexScreener } from './hooks/useDexScreener'
 import { useLaunchBots } from './hooks/useLaunchBots'
 import { useLiveBoard } from './hooks/useLiveBoard'
 import { useJackpotWatch } from './hooks/useJackpotWatch'
+import { useSystemSupervisor } from './hooks/useSystemSupervisor'
 import { useOnChainTokens } from './hooks/useOnChainTokens'
 import { JackpotToast } from './components/JackpotToast'
 import { useStore } from './store/useStore'
@@ -34,6 +35,7 @@ export default function App() {
   useLaunchBots()
   useOnChainTokens()
   useJackpotWatch()
+  useSystemSupervisor()
   const setHowOpen = useStore((s) => s.setHowOpen)
 
   useEffect(() => {

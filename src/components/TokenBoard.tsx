@@ -5,6 +5,7 @@ import { TokenCard } from './TokenCard'
 import { BountiesStrip } from './BountiesStrip'
 import { KingOfHill } from './KingOfHill'
 import { LiveMarketHero } from './LiveMarketHero'
+import { LiveTradeTape } from './LiveTradeTape'
 import { useTokenFeed } from '../hooks/useTokenFeed'
 
 const CHIPS: { id: SortTab; label: string }[] = [
@@ -46,7 +47,8 @@ export function TokenBoard() {
   const trending = sorted.slice(0, 8)
 
   return (
-    <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-5xl">
+    <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
+      <LiveTradeTape />
       <LiveMarketHero />
 
       <div className="no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto">

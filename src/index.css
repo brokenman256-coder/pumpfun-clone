@@ -148,6 +148,25 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Live trade tape marquee */
+@keyframes tape-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.tape-scroll {
+  animation: tape-scroll 40s linear infinite;
+  width: max-content;
+}
+.tape-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* pump.fun-ish dark surface */
+.surface-dark {
+  background: #0b0e11;
+  border-color: #1a1d24;
+}
+
 .bond-fill {
   background: linear-gradient(90deg, #86efac, #4ade80);
   transform-origin: left;
