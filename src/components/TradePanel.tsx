@@ -529,6 +529,11 @@ export function TradePanel({ token }: { token: Token }) {
           <p className="mt-3 text-center text-[10px] text-[#555]">
             Instant fills · bonding curve pricing
           </p>
+          {token.source === 'dexscreener' && (
+            <p className="mt-2 text-center text-[10px] text-[#6b6d78]">
+              Real external token — trades happen on the DEX links below, not our curve.
+            </p>
+          )}
           {!PERSONAL_MODE && (token.mint || token.source === 'dexscreener') && (
             <div className="mt-2 flex flex-wrap justify-center gap-2 text-[10px]">
               <a

@@ -47,11 +47,6 @@ export function TokenCard({ token }: { token: Token }) {
               🚀 BUY ONLY {mult.toFixed(1)}×
             </span>
           )}
-          {token.source === 'dexscreener' && (
-            <span className="rounded-md bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-bold text-white">
-              DEX
-            </span>
-          )}
           {token.complete && (
             <span className="rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
               🎓 GRAD

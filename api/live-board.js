@@ -40,8 +40,8 @@ function authorized(req) {
   return false
 }
 
-function buildLiveCoin(board) {
-  const meme = pickUniqueMeme(board.usedMemeUrls)
+async function buildLiveCoin(board) {
+  const meme = await pickUniqueMeme(board.usedMemeUrls)
   if (!meme) return null
   const seq = (board.launched || 0) + 1
   const name = memeToName(meme.title, `Meme ${seq}`)
@@ -102,7 +102,7 @@ function buildLiveCoin(board) {
 async function withRetryWrite(mutate) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const { board, sha } = await readBoard()
-    const next = mutate(structuredClone(board))
+    const next = await mutate(structuredClone(board))
     if (next === null) return { ok: false, error: 'mutate rejected', board }
     if (next.error) return { ok: false, error: next.error, board }
     const result = await writeBoard(next.board, sha)
@@ -146,11 +146,11 @@ export default async function handler(req, res) {
         res.status(401).json({ ok: false, error: 'Unauthorized' })
         return
       }
-      const out = await withRetryWrite((board) => {
-        const token = buildLiveCoin(board)
-        if (!token) return { error: 'Unique meme pool exhausted' }
+      const out = await withRetryWrite(async (board) => {
+        const token = await buildLiveCoin(board)
+        if (!token) return { error: 'No fresh meme found across every safe subreddit — try again shortly' }
         board.tokens = [token, ...(board.tokens || [])].slice(0, 300)
-        board.usedMemeUrls = [...(board.usedMemeUrls || []), token.imageUrl].slice(-500)
+        board.usedMemeUrls = [...(board.usedMemeUrls || []), token.imageUrl].slice(-5000)
         board.launched = (board.launched || 0) + 1
         return { board, extra: { token } }
       })
@@ -187,7 +187,7 @@ export default async function handler(req, res) {
         }
         board.tokens = [t, ...(board.tokens || [])].slice(0, 300)
         if (t.imageUrl) {
-          board.usedMemeUrls = [...(board.usedMemeUrls || []), t.imageUrl].slice(-500)
+          board.usedMemeUrls = [...(board.usedMemeUrls || []), t.imageUrl].slice(-5000)
         }
         board.launched = (board.launched || 0) + 1
         return { board, extra: { token: t } }
