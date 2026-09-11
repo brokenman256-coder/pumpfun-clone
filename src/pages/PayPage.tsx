@@ -62,9 +62,9 @@ export function PayPage() {
         Official SOL checkout · Phantom, Solflare & Wallet Standard · {CHAIN_LABEL}
       </p>
 
-      <div className="mt-4 rounded-2xl border border-[#86efac]/25 bg-[#0c1f14] p-4 text-xs text-[#8b8d97]">
+      <div className="mt-4 rounded-2xl border border-[#7c3aed]/25 bg-[#0c1f14] p-4 text-xs text-[#8b8d97]">
         Treasury (recipient)
-        <p className="mt-1 break-all font-mono text-[#86efac]">{FEE_RECIPIENT}</p>
+        <p className="mt-1 break-all font-mono text-[#7c3aed]">{FEE_RECIPIENT}</p>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
@@ -92,7 +92,7 @@ export function PayPage() {
             }}
             className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left ${
               purpose === p.id
-                ? 'border-[#86efac]/50 bg-[#86efac]/10'
+                ? 'border-[#7c3aed]/50 bg-[#7c3aed]/10'
                 : 'border-[#26272e] bg-[#0e0f13]'
             }`}
           >
@@ -100,7 +100,7 @@ export function PayPage() {
               <p className="text-sm font-bold text-white">{p.label}</p>
               <p className="text-[11px] text-[#8b8d97]">{p.desc}</p>
             </div>
-            <span className="font-bold text-[#86efac]">{p.amountSol} SOL</span>
+            <span className="font-bold text-[#7c3aed]">{p.amountSol} SOL</span>
           </button>
         ))}
 
@@ -116,14 +116,14 @@ export function PayPage() {
           </p>
         </div>
 
-        {status && <p className="text-center text-sm text-[#86efac]">{status}</p>}
+        {status && <p className="text-center text-sm text-[#7c3aed]">{status}</p>}
         {error && <p className="text-center text-sm text-[#f87171]">{error}</p>}
 
         <button
           type="button"
           disabled={loading}
           onClick={() => void pay()}
-          className="w-full rounded-full bg-[#86efac] py-3.5 text-sm font-bold text-black disabled:opacity-50"
+          className="w-full rounded-full bg-[#7c3aed] py-3.5 text-sm font-bold text-white disabled:opacity-50"
         >
           {loading ? 'Processing…' : connected ? 'Pay with wallet' : 'Connect wallet to pay'}
         </button>
@@ -145,7 +145,7 @@ export function PayPage() {
                   href={EXPLORER_TX(p.signature)}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-[10px] text-[#86efac]"
+                  className="font-mono text-[10px] text-[#7c3aed]"
                 >
                   {shortAddr(p.signature, 8)}
                 </a>

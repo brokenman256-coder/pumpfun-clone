@@ -43,6 +43,8 @@ export function Chart({ token }: { token: Token }) {
   const volRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const [tf, setTf] = useState<Tf>('1m')
   const [hoverPx, setHoverPx] = useState<number | null>(null)
+  const [flash, setFlash] = useState<'up' | 'down' | null>(null)
+  const prevPx = useRef<number | null>(null)
 
   const lastPx = token.priceSol
   const lastUsd = lastPx * SOL_PRICE_USD
@@ -69,13 +71,13 @@ export function Chart({ token }: { token: Token }) {
       crosshair: {
         mode: 1,
         vertLine: {
-          color: 'rgba(134,239,172,0.35)',
+          color: 'rgba(124,58,237,0.35)',
           width: 1,
           style: 2,
           labelBackgroundColor: '#1a1d24',
         },
         horzLine: {
-          color: 'rgba(134,239,172,0.35)',
+          color: 'rgba(124,58,237,0.35)',
           width: 1,
           style: 2,
           labelBackgroundColor: '#1a1d24',
@@ -189,6 +191,16 @@ export function Chart({ token }: { token: Token }) {
     chart.timeScale().scrollToRealTime()
   }, [token.candles, token.id, tf, token.priceSol])
 
+  useEffect(() => {
+    if (prevPx.current !== null && lastPx !== prevPx.current) {
+      setFlash(lastPx > prevPx.current ? 'up' : 'down')
+      const t = window.setTimeout(() => setFlash(null), 700)
+      prevPx.current = lastPx
+      return () => clearTimeout(t)
+    }
+    prevPx.current = lastPx
+  }, [lastPx])
+
   const displayPx = hoverPx ?? lastPx
   const displayUsd = displayPx * SOL_PRICE_USD
 
@@ -197,11 +209,19 @@ export function Chart({ token }: { token: Token }) {
       {/* pump.fun-style header strip */}
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-[#1a1d24] px-3 py-2.5">
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-wide text-[#5d6573]">
+          <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-[#5d6573]">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7c3aed] opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#7c3aed]" />
+            </span>
             Price · {token.symbol}/SOL
           </p>
           <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
-            <span className={`font-mono text-lg font-bold tabular-nums sm:text-xl ${up ? 'text-[#00c805]' : 'text-[#f23645]'}`}>
+            <span
+              className={`font-mono text-lg font-bold tabular-nums sm:text-xl ${up ? 'text-[#00c805]' : 'text-[#f23645]'} ${
+                flash === 'up' ? 'price-flash-up' : flash === 'down' ? 'price-flash-down' : ''
+              }`}
+            >
               {displayPx < 0.0001 ? displayPx.toExponential(4) : displayPx.toFixed(8)}
             </span>
             <span className="text-xs text-[#848e9c]">≈ {formatUsd(displayUsd)}</span>

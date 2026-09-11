@@ -115,13 +115,13 @@ export function AdminPage() {
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && login()}
             placeholder="Admin key"
-            className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 text-sm outline-none focus:border-[#86efac]/40"
+            className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 text-sm outline-none focus:border-[#7c3aed]/40"
           />
           {error && <p className="text-center text-xs text-[#f87171]">{error}</p>}
           <button
             type="button"
             onClick={login}
-            className="w-full rounded-full bg-[#86efac] py-3 text-sm font-bold text-black"
+            className="w-full rounded-full bg-[#7c3aed] py-3 text-sm font-bold text-white"
           >
             Unlock dashboard
           </button>
@@ -183,8 +183,8 @@ export function AdminPage() {
       </div>
 
       {/* Real on-chain program */}
-      <section className="mt-6 rounded-2xl border border-[#86efac]/30 bg-[#0c1f14] p-5">
-        <h2 className="text-lg font-bold text-[#86efac]">🔒 On-chain bonding-curve program</h2>
+      <section className="mt-6 rounded-2xl border border-[#7c3aed]/30 bg-[#0c1f14] p-5">
+        <h2 className="text-lg font-bold text-[#7c3aed]">🔒 On-chain bonding-curve program</h2>
         <p className="mt-1 text-xs text-[#8b8d97]">
           Real deployed Solana program — create/buy/sell instructions move real SOL and real SPL
           tokens through an on-chain PDA vault. Not a simulation.
@@ -204,7 +204,7 @@ export function AdminPage() {
               href={EXPLORER_ADDR(LAUNCHPAD_PROGRAM_ID.toBase58())}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[#86efac] underline"
+              className="font-mono text-[#7c3aed] underline"
             >
               {LAUNCHPAD_PROGRAM_ID.toBase58()}
             </a>
@@ -215,7 +215,7 @@ export function AdminPage() {
               href={EXPLORER_ADDR(FEE_RECIPIENT)}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[#86efac] underline"
+              className="font-mono text-[#7c3aed] underline"
             >
               {FEE_RECIPIENT}
             </a>
@@ -225,11 +225,11 @@ export function AdminPage() {
       </section>
 
       {/* Real scheduled bot launcher (GitHub Actions) */}
-      <section className="mt-6 rounded-2xl border border-[#86efac]/30 bg-[#0c1f14] p-5">
-        <h2 className="text-lg font-bold text-[#86efac]">🤖 Scheduled bot launcher</h2>
+      <section className="mt-6 rounded-2xl border border-[#7c3aed]/30 bg-[#0c1f14] p-5">
+        <h2 className="text-lg font-bold text-[#7c3aed]">🤖 Scheduled bot launcher</h2>
         <p className="mt-1 text-xs text-[#8b8d97]">
           Runs outside this browser via a GitHub Actions workflow (
-          <code className="text-[#86efac]">.github/workflows/bot-launch.yml</code>, every 5 minutes) —
+          <code className="text-[#7c3aed]">.github/workflows/bot-launch.yml</code>, every 5 minutes) —
           creates one real on-chain coin per run using a real internet meme image (safe/curated
           subreddits only), signed by a dedicated bot wallet. Anyone can trade the coins it creates;
           this dashboard can't override their price or curve — only turn the schedule itself off (via
@@ -256,7 +256,7 @@ export function AdminPage() {
               href={EXPLORER_ADDR(BOT_WALLET_ADDRESS)}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[#86efac] underline"
+              className="font-mono text-[#7c3aed] underline"
             >
               {BOT_WALLET_ADDRESS}
             </a>{' '}
@@ -306,7 +306,7 @@ export function AdminPage() {
               type="button"
               onClick={armFleet}
               disabled={botConfig.enabled}
-              className="rounded-full bg-[#86efac] py-2 text-sm font-bold text-black disabled:opacity-40"
+              className="rounded-full bg-[#7c3aed] py-2 text-sm font-bold text-white disabled:opacity-40"
             >
               {botConfig.enabled ? 'Fleet running…' : 'ARM fleet (signed)'}
             </button>
@@ -367,7 +367,7 @@ export function AdminPage() {
             value={tokenSearch}
             onChange={(e) => setTokenSearch(e.target.value)}
             placeholder="search name or ticker"
-            className="w-40 rounded-lg border border-[#26272e] bg-[#0e0f13] px-2.5 py-1.5 text-xs outline-none focus:border-[#86efac]/40"
+            className="w-40 rounded-lg border border-[#26272e] bg-[#0e0f13] px-2.5 py-1.5 text-xs outline-none focus:border-[#7c3aed]/40"
           />
         </div>
         <div className="mt-3 max-h-96 space-y-1 overflow-y-auto text-xs">

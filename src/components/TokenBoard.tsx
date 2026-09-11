@@ -4,6 +4,7 @@ import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
 import { BountiesStrip } from './BountiesStrip'
 import { KingOfHill } from './KingOfHill'
+import { FeaturedSlideshow } from './FeaturedSlideshow'
 import { LiveMarketHero } from './LiveMarketHero'
 import { LiveTradeTape } from './LiveTradeTape'
 import { useTokenFeed } from '../hooks/useTokenFeed'
@@ -49,6 +50,7 @@ export function TokenBoard() {
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
       <LiveTradeTape />
+      <FeaturedSlideshow />
       <LiveMarketHero />
 
       <div className="no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto">
@@ -59,7 +61,7 @@ export function TokenBoard() {
             onClick={() => setSort(c.id)}
             className={`chip-press shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition duration-200 ${
               sort === c.id
-                ? 'bg-[#86efac] text-black shadow-[0_0_20px_rgba(134,239,172,0.25)]'
+                ? 'bg-[#7c3aed] text-white shadow-[0_0_20px_rgba(124,58,237,0.25)]'
                 : 'bg-[#1a1b22] text-[#9a9ba3] hover:bg-[#22232c] hover:text-white'
             }`}
           >

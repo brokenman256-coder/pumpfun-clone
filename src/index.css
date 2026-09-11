@@ -6,8 +6,8 @@
   --border: #1f2028;
   --text: #e8e8ed;
   --muted: #8b8d97;
-  --green: #86efac;
-  --green2: #4ade80;
+  --green: #7c3aed;
+  --green2: #6d28d9;
 }
 
 * {
@@ -29,11 +29,13 @@ body {
 }
 
 .font-logo {
-  font-family: "Press Start 2P", monospace;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 
 ::selection {
-  background: rgba(134, 239, 172, 0.35);
+  background: rgba(124, 58, 237, 0.35);
   color: #fff;
 }
 
@@ -69,13 +71,33 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(134, 239, 172, 0); }
-  50% { box-shadow: 0 0 24px 0 rgba(134, 239, 172, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+  50% { box-shadow: 0 0 24px 0 rgba(124, 58, 237, 0.12); }
 }
 
 @keyframes float-soft {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
+}
+
+@keyframes price-flash-up {
+  0% { background-color: rgba(0, 200, 5, 0.35); }
+  100% { background-color: transparent; }
+}
+
+@keyframes price-flash-down {
+  0% { background-color: rgba(242, 54, 69, 0.35); }
+  100% { background-color: transparent; }
+}
+
+.price-flash-up {
+  animation: price-flash-up 700ms ease-out;
+  border-radius: 6px;
+}
+
+.price-flash-down {
+  animation: price-flash-down 700ms ease-out;
+  border-radius: 6px;
 }
 
 .fade-up {
@@ -97,7 +119,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .shake-buy {
   animation: shake 0.5s ease;
-  box-shadow: 0 0 0 1px rgba(134, 239, 172, 0.5);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.5);
 }
 
 .shake-sell {
@@ -168,7 +190,7 @@ html {
 }
 
 .bond-fill {
-  background: linear-gradient(90deg, #86efac, #4ade80);
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
   transform-origin: left;
 }
 

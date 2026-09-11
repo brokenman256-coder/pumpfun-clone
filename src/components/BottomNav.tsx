@@ -59,7 +59,7 @@ export function BottomNav() {
             aria-label="Create"
             onClick={() => navigate('/create')}
             className={`flex h-11 w-11 items-center justify-center rounded-full border text-2xl ${
-              createActive ? 'border-[#86efac] text-[#86efac]' : 'border-[#2a2b33] text-white'
+              createActive ? 'border-[#7c3aed] text-[#7c3aed]' : 'border-[#2a2b33] text-white'
             } bg-[#15161b]`}
           >
             +
@@ -72,7 +72,7 @@ export function BottomNav() {
             type="button"
             aria-label="More"
             onClick={() => setMore((v) => !v)}
-            className={`flex h-11 w-11 items-center justify-center ${more ? 'text-[#86efac]' : 'text-[#6b6d78]'}`}
+            className={`flex h-11 w-11 items-center justify-center ${more ? 'text-[#7c3aed]' : 'text-[#6b6d78]'}`}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="6" cy="12" r="1.6" />
@@ -102,7 +102,7 @@ function IconBtn({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`flex h-11 w-11 items-center justify-center ${active ? 'text-[#86efac]' : 'text-[#6b6d78]'}`}
+      className={`flex h-11 w-11 items-center justify-center ${active ? 'text-[#7c3aed]' : 'text-[#6b6d78]'}`}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         {children}

@@ -11,7 +11,7 @@ export function GraduationToast() {
       <p className="font-bold text-yellow-300">🎓 ${toast.symbol} graduated!</p>
       <p className="mt-1 text-xs text-[#8b8d97]">Liquidity moving to Raydium…</p>
       <div className="mt-3 flex gap-2">
-        <Link to={`/coin/${toast.id}`} className="rounded-full bg-[#86efac] px-3 py-1.5 text-xs font-bold text-black" onClick={clear}>
+        <Link to={`/coin/${toast.id}`} className="rounded-full bg-[#7c3aed] px-3 py-1.5 text-xs font-bold text-white" onClick={clear}>
           View coin
         </Link>
         <button type="button" onClick={clear} className="rounded-full border border-[#26272e] px-3 py-1.5 text-xs">

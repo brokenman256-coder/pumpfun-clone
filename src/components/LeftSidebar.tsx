@@ -26,15 +26,15 @@ export function LeftSidebar() {
   return (
     <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#1f2028] bg-[#0a0b0f] min-h-screen sticky top-0 h-screen">
       <div className="flex items-center gap-2.5 border-b border-[#1f2028] px-4 py-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#86efac] to-[#4ade80] text-lg shadow-[0_0_16px_rgba(134,239,172,0.35)]">
-          🔥
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] font-black text-white shadow-[0_0_16px_rgba(124,58,237,0.35)]">
+          N
         </span>
         <div>
           <p className="text-sm font-black tracking-tight text-white">
-            IGNITE
+            NOVA
           </p>
           <p className="flex items-center gap-1 text-[10px] text-[#6b6d78]">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#86efac]" />
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#7c3aed]" />
             Live board
           </p>
         </div>
@@ -56,7 +56,7 @@ export function LeftSidebar() {
               }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
                 active
-                  ? 'bg-[#86efac]/15 text-[#86efac]'
+                  ? 'bg-[#7c3aed]/15 text-[#7c3aed]'
                   : 'text-[#9a9ba3] hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -82,7 +82,7 @@ export function LeftSidebar() {
             }}
             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm ${
               pathname === '/' && homeTab === t.id
-                ? 'text-[#86efac]'
+                ? 'text-[#7c3aed]'
                 : 'text-[#6b6d78] hover:text-white'
             }`}
           >
@@ -109,7 +109,7 @@ export function LeftSidebar() {
           </button>
         ) : (
           <div className="rounded-xl border border-[#1f2028] bg-[#14151b] p-3">
-            <p className="font-mono text-[11px] text-[#86efac]">{shortAddr(address!, 4)}</p>
+            <p className="font-mono text-[11px] text-[#7c3aed]">{shortAddr(address!, 4)}</p>
             <p className="text-xs text-white">{formatSol(solBalance)} SOL</p>
             <div className="mt-2 flex gap-1">
               <LinkBtn onClick={() => navigate('/profile')}>Bag</LinkBtn>
@@ -117,7 +117,7 @@ export function LeftSidebar() {
             </div>
           </div>
         )}
-        <Link to="/pay" className="block text-center text-[11px] text-[#6b6d78] hover:text-[#86efac]">
+        <Link to="/pay" className="block text-center text-[11px] text-[#6b6d78] hover:text-[#7c3aed]">
           Payment gateway →
         </Link>
       </div>

@@ -20,7 +20,7 @@ export function HoldersList({ holders }: { holders: Holder[] }) {
             </span>
           </div>
           <div className="shrink-0 text-right">
-            <p className="font-semibold text-[#86efac]">{h.pct.toFixed(2)}%</p>
+            <p className="font-semibold text-[#7c3aed]">{h.pct.toFixed(2)}%</p>
             <p className="text-[10px] text-[#6b6d78]">{formatTokens(h.amount)}</p>
           </div>
         </div>

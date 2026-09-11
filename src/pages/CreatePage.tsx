@@ -94,7 +94,7 @@ export function CreatePage() {
           curvePda: curve,
         })
         if (!id) throw new Error('Launch failed')
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#86efac', '#fff'] })
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#7c3aed', '#fff'] })
         await refreshBalance()
         navigate(`/coin/${id}`)
         return
@@ -126,7 +126,7 @@ export function CreatePage() {
         mint: res.mint,
       })
       await refreshBalance()
-      confetti({ particleCount: 140, spread: 90, origin: { y: 0.5 }, colors: ['#86efac', '#facc15'] })
+      confetti({ particleCount: 140, spread: 90, origin: { y: 0.5 }, colors: ['#7c3aed', '#facc15'] })
       setStatus('Your coin is live on Solana!')
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed'
@@ -140,7 +140,7 @@ export function CreatePage() {
   return (
     <div className="mx-auto max-w-lg px-3 py-6">
       <div className="mb-2 text-center">
-        <span className="rounded-full bg-[#86efac]/15 px-3 py-1 text-[11px] font-bold text-[#86efac]">
+        <span className="rounded-full bg-[#7c3aed]/15 px-3 py-1 text-[11px] font-bold text-[#7c3aed]">
           ⛓ {CHAIN_LABEL}
         </span>
       </div>
@@ -153,14 +153,14 @@ export function CreatePage() {
         <button
           type="button"
           onClick={() => setMode('spl')}
-          className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'spl' ? 'bg-[#86efac] text-black' : 'text-[#8b8d97]'}`}
+          className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'spl' ? 'bg-[#7c3aed] text-white' : 'text-[#8b8d97]'}`}
         >
           Real SPL mint
         </button>
         <button
           type="button"
           onClick={() => setMode('board')}
-          className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'board' ? 'bg-[#86efac] text-black' : 'text-[#8b8d97]'}`}
+          className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'board' ? 'bg-[#7c3aed] text-white' : 'text-[#8b8d97]'}`}
         >
           Bonding curve
         </button>
@@ -183,7 +183,7 @@ export function CreatePage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="w-full resize-none rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2 text-sm outline-none focus:border-[#86efac]/40"
+            className="w-full resize-none rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2 text-sm outline-none focus:border-[#7c3aed]/40"
           />
         </div>
 
@@ -195,7 +195,7 @@ export function CreatePage() {
                 type="button"
                 onClick={() => void fillRandomMeme()}
                 disabled={memeLoading}
-                className="text-[10px] font-semibold text-[#86efac] hover:underline disabled:opacity-50"
+                className="text-[10px] font-semibold text-[#7c3aed] hover:underline disabled:opacity-50"
               >
                 {memeLoading ? 'fetching…' : '🎲 random meme'}
               </button>
@@ -204,7 +204,7 @@ export function CreatePage() {
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="https://... (leave blank for a generated avatar)"
-              className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2.5 text-sm outline-none focus:border-[#86efac]/40"
+              className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2.5 text-sm outline-none focus:border-[#7c3aed]/40"
             />
             {imageUrl && (
               <img
@@ -221,7 +221,7 @@ export function CreatePage() {
           <p>
             Wallet:{' '}
             {connected ? (
-              <span className="text-[#86efac]">{address?.slice(0, 8)}…</span>
+              <span className="text-[#7c3aed]">{address?.slice(0, 8)}…</span>
             ) : (
               'not connected'
             )}
@@ -230,20 +230,20 @@ export function CreatePage() {
             Balance: <span className="text-white">{solBalance.toFixed(4)} SOL</span>
           </p>
           {CLUSTER === 'devnet' && (
-            <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="mt-1 inline-block text-[#86efac] underline">
+            <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="mt-1 inline-block text-[#7c3aed] underline">
               Get free devnet SOL →
             </a>
           )}
         </div>
 
-        {status && <p className="text-center text-sm text-[#86efac]">{status}</p>}
+        {status && <p className="text-center text-sm text-[#7c3aed]">{status}</p>}
         {error && <p className="text-center text-sm text-[#f87171]">{error}</p>}
 
         <button
           type="button"
           disabled={loading}
           onClick={() => void submit()}
-          className="btn-press w-full rounded-full bg-[#86efac] py-3.5 text-sm font-bold text-black disabled:opacity-50"
+          className="btn-press w-full rounded-full bg-[#7c3aed] py-3.5 text-sm font-bold text-white disabled:opacity-50"
         >
           {loading
             ? status || 'Working…'
@@ -256,8 +256,8 @@ export function CreatePage() {
       </div>
 
       {result && (
-        <div className="fade-up mt-5 space-y-2 rounded-2xl border border-[#86efac]/40 bg-[#0c1f14] p-5">
-          <p className="text-lg font-bold text-[#86efac]">✅ Live on Solana</p>
+        <div className="fade-up mt-5 space-y-2 rounded-2xl border border-[#7c3aed]/40 bg-[#0c1f14] p-5">
+          <p className="text-lg font-bold text-[#7c3aed]">✅ Live on Solana</p>
           <p className="break-all font-mono text-xs text-white">{result.mint}</p>
           <div className="flex flex-wrap gap-2 pt-2">
             <a
@@ -268,7 +268,7 @@ export function CreatePage() {
               }
               target="_blank"
               rel="noreferrer"
-              className="rounded-full bg-[#86efac] px-4 py-2 text-sm font-bold text-black"
+              className="rounded-full bg-[#7c3aed] px-4 py-2 text-sm font-bold text-white"
             >
               Solscan
             </a>
@@ -276,7 +276,7 @@ export function CreatePage() {
               href={EXPLORER_TX(result.signature)}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-[#86efac]/40 px-4 py-2 text-sm text-[#86efac]"
+              className="rounded-full border border-[#7c3aed]/40 px-4 py-2 text-sm text-[#7c3aed]"
             >
               Tx
             </a>
@@ -312,7 +312,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2.5 text-sm outline-none focus:border-[#86efac]/40"
+        className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-3 py-2.5 text-sm outline-none focus:border-[#7c3aed]/40"
       />
     </div>
   )

@@ -16,7 +16,7 @@ export function JackpotToast() {
       particleCount: 100,
       spread: 80,
       origin: { y: 0.55 },
-      colors: ['#a78bfa', '#86efac', '#fff', '#fbbf24'],
+      colors: ['#7c3aed', '#7c3aed', '#fff', '#fbbf24'],
     })
     const id = window.setTimeout(clear, 12_000)
     return () => clearTimeout(id)
@@ -27,7 +27,7 @@ export function JackpotToast() {
   const unlock = token?.jackpotUnlockAt
 
   return (
-    <div className="fixed bottom-20 left-1/2 z-[90] w-[min(92vw,380px)] -translate-x-1/2 animate-bounce lg:bottom-8 lg:animate-none">
+    <div className="fixed bottom-20 left-1/2 z-[90] w-[min(92vw,380px)] -translate-x-1/2 lg:bottom-8">
       <div className="rounded-2xl border border-violet-400/50 bg-[#14081a] p-4 shadow-2xl shadow-violet-500/25">
         <p className="text-xs font-bold uppercase tracking-wide text-violet-300">
           🚀 Past 2× — freeze button up

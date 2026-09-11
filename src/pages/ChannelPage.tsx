@@ -9,21 +9,21 @@ export function ChannelPage() {
   return (
     <div className="mx-auto max-w-lg px-3 py-8">
       <div className="text-center">
-        <span className="rounded-full bg-[#86efac]/15 px-3 py-1 text-[11px] font-bold text-[#86efac]">
+        <span className="rounded-full bg-[#7c3aed]/15 px-3 py-1 text-[11px] font-bold text-[#7c3aed]">
           ⛓ OFFICIAL CHANNEL · {CHAIN_LABEL}
         </span>
         <h1 className="mt-3 text-2xl font-black">
-          Ignite Channel <span className="text-[#86efac]">$IGNT</span>
+          Nova Channel <span className="text-[#7c3aed]">$NOVA</span>
         </h1>
         <p className="mt-2 text-sm text-[#8b8d97]">
           Platform treasury for create fees and buy volume.
         </p>
       </div>
 
-      <div className="mt-6 space-y-4 rounded-2xl border border-[#86efac]/30 bg-[#14151b] p-5">
+      <div className="mt-6 space-y-4 rounded-2xl border border-[#7c3aed]/30 bg-[#14151b] p-5">
         <div>
           <p className="text-[10px] uppercase text-[#8b8d97]">Treasury wallet</p>
-          <p className="mt-1 break-all font-mono text-sm text-[#86efac]">{CHANNEL_WALLET}</p>
+          <p className="mt-1 break-all font-mono text-sm text-[#7c3aed]">{CHANNEL_WALLET}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
@@ -36,7 +36,7 @@ export function ChannelPage() {
               href={EXPLORER_ADDR(CHANNEL_WALLET)}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full bg-[#86efac] px-3 py-1 text-xs font-bold text-black"
+              className="rounded-full bg-[#7c3aed] px-3 py-1 text-xs font-bold text-white"
             >
               Solscan
             </a>
@@ -51,7 +51,7 @@ export function ChannelPage() {
           Fee recipient: {FEE_RECIPIENT.slice(0, 8)}…
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link to="/create" className="rounded-full bg-[#86efac] px-5 py-2.5 text-sm font-bold text-black">
+          <Link to="/create" className="rounded-full bg-[#7c3aed] px-5 py-2.5 text-sm font-bold text-white">
             Mint channel token
           </Link>
           {!connected && (

@@ -246,7 +246,7 @@ export function TradePanel({ token }: { token: Token }) {
             particleCount: 80,
             spread: 55,
             origin: { y: 0.7 },
-            colors: ['#86efac', '#fff'],
+            colors: ['#7c3aed', '#fff'],
           })
         } else if (!error) {
           setStatus((s) => s || 'Sell filled ✓')
@@ -352,13 +352,13 @@ export function TradePanel({ token }: { token: Token }) {
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#86efac] opacity-50" />
-            <span className="relative h-2 w-2 rounded-full bg-[#86efac]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7c3aed] opacity-50" />
+            <span className="relative h-2 w-2 rounded-full bg-[#7c3aed]" />
           </span>
           <span className="text-xs font-bold text-white">Trade</span>
           <span className="text-[10px] text-[#6b6d78]">{PLATFORM_MARGIN_BPS / 100}% fee</span>
         </div>
-        <span className="rounded-full bg-[#0e0f13] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#86efac]">
+        <span className="rounded-full bg-[#0e0f13] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#7c3aed]">
           {formatSol(solBalance)} SOL
         </span>
       </div>
@@ -387,7 +387,7 @@ export function TradePanel({ token }: { token: Token }) {
             className={`flex-1 rounded-lg py-2.5 text-sm font-bold capitalize transition duration-200 ${
               mode === m
                 ? m === 'buy'
-                  ? 'bg-[#86efac] text-black shadow-[0_0_20px_rgba(134,239,172,0.25)]'
+                  ? 'bg-[#7c3aed] text-white shadow-[0_0_20px_rgba(124,58,237,0.25)]'
                   : 'bg-[#f87171] text-white shadow-[0_0_20px_rgba(248,113,113,0.2)]'
                 : 'text-[#8b8d97] hover:text-white'
             }`}
@@ -428,7 +428,7 @@ export function TradePanel({ token }: { token: Token }) {
                   type="button"
                   disabled={loading}
                   onClick={() => void place(v)}
-                  className="rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#86efac]/40"
+                  className="rounded-lg border border-[#26272e] py-1.5 text-xs font-semibold text-[#8b8d97] hover:border-[#7c3aed]/40"
                 >
                   {v}
                 </button>
@@ -447,7 +447,7 @@ export function TradePanel({ token }: { token: Token }) {
           {mode === 'sell' && !sellLocked && (
             <button
               type="button"
-              className="mb-2 text-xs text-[#86efac]"
+              className="mb-2 text-xs text-[#7c3aed]"
               onClick={() => setAmount(String(holding))}
             >
               balance: {formatTokens(holding)} · max
@@ -464,7 +464,7 @@ export function TradePanel({ token }: { token: Token }) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-4 py-3.5 pr-16 text-lg font-semibold outline-none focus:border-[#86efac]/40"
+              className="w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-4 py-3.5 pr-16 text-lg font-semibold outline-none focus:border-[#7c3aed]/40"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#8b8d97]">
               {mode === 'buy' ? 'SOL' : token.symbol}
@@ -475,14 +475,14 @@ export function TradePanel({ token }: { token: Token }) {
               {mode === 'buy' && tokensOut != null ? (
                 <>
                   you get ≈{' '}
-                  <span className="text-[#86efac]">
+                  <span className="text-[#7c3aed]">
                     {formatTokens(tokensOut)} {token.symbol}
                   </span>
                 </>
               ) : solOutEst != null ? (
                 <>
                   you get ≈{' '}
-                  <span className="text-[#86efac]">{formatSol(solOutEst)} SOL</span>
+                  <span className="text-[#7c3aed]">{formatSol(solOutEst)} SOL</span>
                 </>
               ) : null}
               {' · '}
@@ -492,14 +492,14 @@ export function TradePanel({ token }: { token: Token }) {
               )}
             </p>
           )}
-          {status && <p className="mt-2 text-xs text-[#86efac]">{status}</p>}
+          {status && <p className="mt-2 text-xs text-[#7c3aed]">{status}</p>}
           {error && <p className="mt-2 text-xs text-[#f87171]">{error}</p>}
           {txSig && isRealTrader && (
             <a
               href={EXPLORER_TX(txSig)}
               target="_blank"
               rel="noreferrer"
-              className="mt-1 block text-[10px] text-[#86efac] underline"
+              className="mt-1 block text-[10px] text-[#7c3aed] underline"
             >
               view tx on Solscan →
             </a>
@@ -509,7 +509,7 @@ export function TradePanel({ token }: { token: Token }) {
             disabled={loading}
             onClick={() => void place()}
             className={`btn-press mt-3 w-full rounded-lg py-3.5 text-sm font-bold disabled:opacity-50 ${
-              mode === 'buy' ? 'bg-[#86efac] text-black' : 'bg-[#f87171] text-white'
+              mode === 'buy' ? 'bg-[#7c3aed] text-white' : 'bg-[#f87171] text-white'
             }`}
           >
             {loading

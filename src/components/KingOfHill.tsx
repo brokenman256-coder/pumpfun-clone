@@ -37,7 +37,7 @@ export function KingOfHill() {
         <p className="truncate text-sm font-bold text-white">
           {king.emoji} {king.name} <span className="text-[#8b8d97]">${king.symbol}</span>
         </p>
-        <p className="text-xs text-[#86efac]">{formatUsd(king.marketCapUsd)} MC · {progress.toFixed(0)}% to Raydium</p>
+        <p className="text-xs text-[#7c3aed]">{formatUsd(king.marketCapUsd)} MC · {progress.toFixed(0)}% to Raydium</p>
       </div>
       <span className="text-2xl">🔥</span>
     </Link>

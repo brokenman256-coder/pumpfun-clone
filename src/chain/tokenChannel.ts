@@ -1,7 +1,7 @@
 export const PLATFORM_CHANNEL = {
   treasury: 'E9M6EVwNW8k6jogJ6PRmbeJUR6dhtPuDzWrWH71PwTAw',
-  name: 'Ignite Channel',
-  symbol: 'IGNT',
+  name: 'Nova Channel',
+  symbol: 'NOVA',
   description: 'Official channel treasury for platform fees.',
   cluster: 'devnet' as const,
   mint: '' as string,

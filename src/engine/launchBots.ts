@@ -86,7 +86,7 @@ export function memeToBio(meme: CuratedMeme, symbol: string): string {
   return [
     `${meme.title}`,
     ``,
-    `Born from ${sub}. Community-driven meme on the IGNITE curve.`,
+    `Born from ${sub}. Community-driven meme on the NOVA curve.`,
     `Fixed supply · fair launch · no team dump · NFA DYOR.`,
     `$${symbol} is managed on-curve — trade with Phantom anytime.`,
   ].join('\n')

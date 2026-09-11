@@ -55,7 +55,7 @@ export function SiteControlPage() {
       <div className="mt-6 space-y-3 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
         <p className="text-center text-xs text-[#8b8d97]">
           Current status:{' '}
-          <span className={current ? 'text-red-400' : 'text-[#86efac]'}>
+          <span className={current ? 'text-red-400' : 'text-[#7c3aed]'}>
             {current === null ? 'checking…' : current ? 'DOWN' : 'LIVE'}
           </span>
         </p>
@@ -64,10 +64,10 @@ export function SiteControlPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 text-sm outline-none focus:border-[#86efac]/40"
+          className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 text-sm outline-none focus:border-[#7c3aed]/40"
         />
         {error && <p className="text-center text-xs text-[#f87171]">{error}</p>}
-        {message && <p className="text-center text-xs text-[#86efac]">{message}</p>}
+        {message && <p className="text-center text-xs text-[#7c3aed]">{message}</p>}
         <div className="flex gap-2">
           <button
             type="button"
@@ -81,7 +81,7 @@ export function SiteControlPage() {
             type="button"
             disabled={loading || !password}
             onClick={() => void toggle(false)}
-            className="flex-1 rounded-full bg-[#86efac] py-3 text-sm font-bold text-black disabled:opacity-40"
+            className="flex-1 rounded-full bg-[#7c3aed] py-3 text-sm font-bold text-white disabled:opacity-40"
           >
             Bring back up
           </button>

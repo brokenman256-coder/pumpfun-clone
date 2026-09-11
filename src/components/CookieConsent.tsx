@@ -39,7 +39,7 @@ export function CookieConsent() {
           <button type="button" className="rounded-full border border-[#3a3b44] px-3.5 py-2 text-[12px] font-semibold">
             Customize
           </button>
-          <button type="button" onClick={() => done('1')} className="ml-auto rounded-full bg-[#86efac] px-4 py-2 text-[12px] font-bold text-black">
+          <button type="button" onClick={() => done('1')} className="ml-auto rounded-full bg-[#7c3aed] px-4 py-2 text-[12px] font-bold text-white">
             Accept all
           </button>
         </div>

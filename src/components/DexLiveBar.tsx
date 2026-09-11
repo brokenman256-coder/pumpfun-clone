@@ -19,7 +19,7 @@ export function DexLiveBar() {
       <span
         className={`inline-flex h-2 w-2 rounded-full ${
           dexStatus === 'ok'
-            ? 'animate-pulse bg-[#86efac]'
+            ? 'animate-pulse bg-[#7c3aed]'
             : dexStatus === 'loading'
               ? 'bg-yellow-400'
               : dexStatus === 'error'
@@ -42,7 +42,7 @@ export function DexLiveBar() {
           type="button"
           onClick={() => void refresh()}
           disabled={dexStatus === 'loading'}
-          className="rounded-full border border-[#26272e] px-2.5 py-1 font-semibold text-[#86efac] hover:border-[#86efac]/40 disabled:opacity-50"
+          className="rounded-full border border-[#26272e] px-2.5 py-1 font-semibold text-[#7c3aed] hover:border-[#7c3aed]/40 disabled:opacity-50"
         >
           Refresh
         </button>
@@ -50,7 +50,7 @@ export function DexLiveBar() {
           type="button"
           onClick={() => setLiveMode(!liveMode)}
           className={`rounded-full px-2.5 py-1 font-semibold ${
-            liveMode ? 'bg-[#86efac]/15 text-[#86efac]' : 'bg-[#1a1b22] text-[#8b8d97]'
+            liveMode ? 'bg-[#7c3aed]/15 text-[#7c3aed]' : 'bg-[#1a1b22] text-[#8b8d97]'
           }`}
         >
           {liveMode ? 'Live ON' : 'Live OFF'}
