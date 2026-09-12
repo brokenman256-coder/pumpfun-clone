@@ -39,6 +39,16 @@ function nativeQuote(chainId?: string) {
   return NATIVE_QUOTE[chainId || 'solana'] || NATIVE_QUOTE.solana
 }
 
+/** Never show these as if they were fresh meme launches — wrapped/major
+ * assets and stables slip in through broad chain search otherwise. */
+const MAJOR_ASSETS = new Set([
+  'BTC', 'WBTC', 'ETH', 'WETH', 'BNB', 'WBNB', 'SOL', 'WSOL',
+  'MATIC', 'WMATIC', 'POL', 'AVAX', 'TON', 'TRX', 'ADA', 'XRP', 'DOT', 'LTC',
+  'USDT', 'USDC', 'USDC.E', 'DAI', 'BUSD', 'TUSD', 'FDUSD',
+])
+/** Keeps the board feeling like fresh pump.fun-style launches, not blue chips. */
+const MAX_FEATURED_MCAP_USD = 50_000_000
+
 export type DexStatus = 'idle' | 'loading' | 'ok' | 'error'
 
 type DexProfile = {
@@ -296,15 +306,16 @@ export async function fetchLiveMemes(): Promise<{
   tokens: Token[]
   fetchedAt: number
 }> {
-  const [profiles, boosts, pumpSearch, solSearch, ethSearch, bscSearch] = await Promise.all([
+  // "pump"/"meme" surface small fresh launches on every chain; deliberately
+  // not searching bare "ETH"/"BNB" etc — that pulls in wrapped majors, not memes.
+  const [profiles, boosts, pumpSearch, memeSearch, solSearch] = await Promise.all([
     fetchLatestProfiles().catch(() => [] as DexProfile[]),
     fetchLatestBoosts().catch(() => [] as DexProfile[]),
     searchPairs('pump').catch(() => [] as DexPair[]),
+    searchPairs('meme').catch(() => [] as DexPair[]),
     searchPairs('SOL').catch(() => [] as DexPair[]),
-    searchPairs('ETH').catch(() => [] as DexPair[]),
-    searchPairs('BNB').catch(() => [] as DexPair[]),
   ])
-  const otherSearch = [...ethSearch, ...bscSearch]
+  const otherSearch = memeSearch
 
   const profileByMint = new Map<string, DexProfile>()
   for (const p of [...profiles, ...boosts]) {
@@ -321,12 +332,17 @@ export async function fetchLiveMemes(): Promise<{
 
   const pairs = await fetchTokenPairs(uniqueMints).catch(() => [] as DexPair[])
 
-  // Index pairs by base mint
+  // Index pairs by base mint — skip anything that isn't a fresh small meme:
+  // wrapped/major assets, stables, or anything past a "still looks new" mcap.
   const byMint = new Map<string, DexPair[]>()
   for (const pair of [...pairs, ...pumpSearch, ...solSearch, ...otherSearch]) {
     const addr = pair.baseToken?.address
     if (!addr) continue
-    if (pair.baseToken?.symbol === nativeQuote(pair.chainId).symbol) continue
+    const symbol = (pair.baseToken?.symbol || '').toUpperCase()
+    if (symbol === nativeQuote(pair.chainId).symbol) continue
+    if (MAJOR_ASSETS.has(symbol)) continue
+    const mcap = pair.marketCap || pair.fdv || 0
+    if (mcap > MAX_FEATURED_MCAP_USD) continue
     const arr = byMint.get(addr) || []
     arr.push(pair)
     byMint.set(addr, arr)
