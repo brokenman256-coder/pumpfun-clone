@@ -81,6 +81,7 @@ export type Token = {
   pairUrl?: string
   pairAddress?: string
   dexId?: string
+  chainId?: string
   liquidityUsd?: number
 }
 

@@ -1,5 +1,5 @@
 /**
- * DexScreener public API — live Solana meme / new token feed.
+ * DexScreener public API — live meme / new token feed across chains.
  * Docs: https://docs.dexscreener.com/api/reference
  * Rate limits: keep polls ~30–60s.
  */
@@ -15,6 +15,29 @@ import { tokenEmoji } from './tokenImage'
 import { realTokenImageUrl } from './realTokenImages'
 
 const BASE = 'https://api.dexscreener.com'
+
+/** Chains we'll show meme coins from — kept to well-known, liquid EVM chains + Solana. */
+const ALLOWED_CHAINS = new Set([
+  'solana',
+  'ethereum',
+  'bsc',
+  'base',
+  'polygon',
+  'arbitrum',
+])
+
+/** Each chain's wrapped-native symbol/address, so we can tell "meme vs. quote" apart. */
+const NATIVE_QUOTE: Record<string, { symbol: string; address: string }> = {
+  solana: { symbol: 'SOL', address: 'So11111111111111111111111111111111111111112' },
+  ethereum: { symbol: 'WETH', address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' },
+  base: { symbol: 'WETH', address: '0x4200000000000000000000000000000000000006' },
+  arbitrum: { symbol: 'WETH', address: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' },
+  bsc: { symbol: 'WBNB', address: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c' },
+  polygon: { symbol: 'WMATIC', address: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270' },
+}
+function nativeQuote(chainId?: string) {
+  return NATIVE_QUOTE[chainId || 'solana'] || NATIVE_QUOTE.solana
+}
 
 export type DexStatus = 'idle' | 'loading' | 'ok' | 'error'
 
@@ -70,13 +93,13 @@ async function getJson<T>(path: string): Promise<T> {
 /** Latest token profiles (boosted / profiled) */
 export async function fetchLatestProfiles(): Promise<DexProfile[]> {
   const data = await getJson<DexProfile[]>('/token-profiles/latest/v1')
-  return Array.isArray(data) ? data.filter((p) => p.chainId === 'solana') : []
+  return Array.isArray(data) ? data.filter((p) => ALLOWED_CHAINS.has(p.chainId || '')) : []
 }
 
 /** Latest boosts */
 export async function fetchLatestBoosts(): Promise<DexProfile[]> {
   const data = await getJson<DexProfile[]>('/token-boosts/latest/v1')
-  return Array.isArray(data) ? data.filter((p) => p.chainId === 'solana') : []
+  return Array.isArray(data) ? data.filter((p) => ALLOWED_CHAINS.has(p.chainId || '')) : []
 }
 
 /** Pair data for up to ~30 token mints */
@@ -87,15 +110,15 @@ export async function fetchTokenPairs(addresses: string[]): Promise<DexPair[]> {
     `/latest/dex/tokens/${unique.join(',')}`,
   )
   const pairs = data.pairs || []
-  return pairs.filter((p) => p.chainId === 'solana')
+  return pairs.filter((p) => ALLOWED_CHAINS.has(p.chainId || ''))
 }
 
-/** Search Solana pairs (e.g. pump, sol) */
+/** Search pairs across allowed chains (e.g. pump, meme, eth) */
 export async function searchPairs(q: string): Promise<DexPair[]> {
   const data = await getJson<{ pairs?: DexPair[] | null }>(
     `/latest/dex/search?q=${encodeURIComponent(q)}`,
   )
-  return (data.pairs || []).filter((p) => p.chainId === 'solana')
+  return (data.pairs || []).filter((p) => ALLOWED_CHAINS.has(p.chainId || ''))
 }
 
 function linkOf(
@@ -117,13 +140,15 @@ function pickBestPair(pairs: DexPair[], mint: string): DexPair | undefined {
       p.baseToken?.address === mint ||
       p.quoteToken?.address === mint,
   )
-  // Prefer SOL quote pairs, then highest liquidity
-  const sol = forMint.filter(
-    (p) =>
-      p.quoteToken?.symbol === 'SOL' ||
-      p.quoteToken?.address === 'So11111111111111111111111111111111111111112',
-  )
-  const pool = sol.length ? sol : forMint
+  // Prefer pairs quoted in the chain's native token, then highest liquidity
+  const native = forMint.filter((p) => {
+    const q = nativeQuote(p.chainId)
+    return (
+      p.quoteToken?.symbol === q.symbol ||
+      p.quoteToken?.address?.toLowerCase() === q.address.toLowerCase()
+    )
+  })
+  const pool = native.length ? native : forMint
   return pool.sort(
     (a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0),
   )[0]
@@ -161,12 +186,13 @@ export function pairToToken(
   const base = pair.baseToken
   if (!base?.address || !base.symbol) return null
 
-  // Prefer non-SOL as the meme
+  // Prefer the non-native side as "the meme"
+  const q = nativeQuote(pair.chainId)
   let meme = base
   let isQuoteMeme = false
   if (
-    base.symbol === 'SOL' ||
-    base.address === 'So11111111111111111111111111111111111111112'
+    base.symbol === q.symbol ||
+    base.address?.toLowerCase() === q.address.toLowerCase()
   ) {
     if (!pair.quoteToken?.address) return null
     meme = pair.quoteToken
@@ -199,12 +225,18 @@ export function pairToToken(
     profile?.links?.find((l) => l.type === 'website' || l.label === 'Website')
       ?.url
 
+  const chainId = pair.chainId || 'solana'
   const labels = pair.labels || []
   const tags = [
     pair.dexId || 'dex',
+    chainId !== 'solana' ? chainId : null,
     ...labels.slice(0, 2),
     'live',
   ].filter(Boolean) as string[]
+  // "priceSol" is used app-wide as a SOL-equivalent unit — for Solana pairs the
+  // real native price is accurate; for other chains, derive an equivalent from
+  // USD so it stays comparable instead of mixing in raw ETH/BNB/MATIC units.
+  const priceSolEquivalent = chainId === 'solana' && priceNative ? priceNative : priceUsd / SOL_PRICE_USD
 
   return {
     id: mint,
@@ -213,7 +245,7 @@ export function pairToToken(
     emoji,
     description:
       profile?.description ||
-      `${name} ($${symbol}) live on ${pair.dexId || 'DEX'} · data via DexScreener. NFA.`,
+      `${name} ($${symbol}) live on ${pair.dexId || 'DEX'}${chainId !== 'solana' ? ` (${chainId})` : ''} · data via DexScreener. NFA.`,
     imageUrl: icon || realTokenImageUrl(mint + symbol),
     imageHue: Math.abs(mint.charCodeAt(0) * 13) % 360,
     creator: mint.slice(0, 32) + '…',
@@ -222,7 +254,7 @@ export function pairToToken(
     virtualTokens,
     realSol: (pair.liquidity?.quote || 0) / (isQuoteMeme ? 1 : 1),
     realTokens: REAL_TOKEN_RESERVES,
-    priceSol: priceNative || priceUsd / SOL_PRICE_USD,
+    priceSol: priceSolEquivalent,
     marketCapUsd: mcap,
     change24h: change,
     athUsd: Math.max(mcap, mcap * (1 + Math.max(0, change) / 100)),
@@ -244,31 +276,36 @@ export function pairToToken(
     mint,
     // extra live fields stored via optional extension on Token — use tags + description
     // pair URL for UI
-    pairUrl: pair.url || profile?.url || `https://dexscreener.com/solana/${pair.pairAddress}`,
+    pairUrl: pair.url || profile?.url || `https://dexscreener.com/${chainId}/${pair.pairAddress}`,
     pairAddress: pair.pairAddress,
     dexId: pair.dexId,
+    chainId,
     liquidityUsd: pair.liquidity?.usd || 0,
     source: 'dexscreener' as const,
   } as Token & {
     pairUrl?: string
     pairAddress?: string
     dexId?: string
+    chainId?: string
     liquidityUsd?: number
     source?: 'dexscreener' | 'local'
   }
 }
 
-/** Full sync: profiles + boosts + pair metrics */
-export async function fetchLiveSolanaMemes(): Promise<{
+/** Full sync: profiles + boosts + pair metrics, across all allowed chains */
+export async function fetchLiveMemes(): Promise<{
   tokens: Token[]
   fetchedAt: number
 }> {
-  const [profiles, boosts, pumpSearch, solSearch] = await Promise.all([
+  const [profiles, boosts, pumpSearch, solSearch, ethSearch, bscSearch] = await Promise.all([
     fetchLatestProfiles().catch(() => [] as DexProfile[]),
     fetchLatestBoosts().catch(() => [] as DexProfile[]),
     searchPairs('pump').catch(() => [] as DexPair[]),
     searchPairs('SOL').catch(() => [] as DexPair[]),
+    searchPairs('ETH').catch(() => [] as DexPair[]),
+    searchPairs('BNB').catch(() => [] as DexPair[]),
   ])
+  const otherSearch = [...ethSearch, ...bscSearch]
 
   const profileByMint = new Map<string, DexProfile>()
   for (const p of [...profiles, ...boosts]) {
@@ -287,10 +324,10 @@ export async function fetchLiveSolanaMemes(): Promise<{
 
   // Index pairs by base mint
   const byMint = new Map<string, DexPair[]>()
-  for (const pair of [...pairs, ...pumpSearch, ...solSearch]) {
+  for (const pair of [...pairs, ...pumpSearch, ...solSearch, ...otherSearch]) {
     const addr = pair.baseToken?.address
     if (!addr) continue
-    if (pair.baseToken?.symbol === 'SOL') continue
+    if (pair.baseToken?.symbol === nativeQuote(pair.chainId).symbol) continue
     const arr = byMint.get(addr) || []
     arr.push(pair)
     byMint.set(addr, arr)
@@ -311,16 +348,17 @@ export async function fetchLiveSolanaMemes(): Promise<{
   // Profiles without pairs still show with profile icon
   for (const [mint, prof] of profileByMint) {
     if (seen.has(mint)) continue
+    const q = nativeQuote(prof.chainId)
     const fakePair: DexPair = {
-      chainId: 'solana',
-      dexId: 'pumpfun',
+      chainId: prof.chainId || 'solana',
+      dexId: prof.chainId === 'solana' || !prof.chainId ? 'pumpfun' : 'dex',
       url: prof.url,
       baseToken: {
         address: mint,
         name: mint.slice(0, 6),
         symbol: mint.slice(0, 4).toUpperCase(),
       },
-      quoteToken: { symbol: 'SOL', address: 'So11111111111111111111111111111111111111112' },
+      quoteToken: { symbol: q.symbol, address: q.address },
       priceUsd: '0',
       volume: { h24: 0 },
       priceChange: { h24: 0 },

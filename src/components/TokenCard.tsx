@@ -29,7 +29,7 @@ export function TokenCard({ token }: { token: Token }) {
       to={`/coin/${token.id}`}
       className={`block overflow-hidden rounded-2xl border bg-[#111827] transition ${
         sellLocked
-          ? 'border-violet-400/60 shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/30'
+          ? 'border-[#3b82f6]/60 shadow-lg shadow-blue-500/20 ring-1 ring-[#3b82f6]/30'
           : 'border-[#1a1b22] hover:border-[#3b82f6]/35'
       } ${shake}`}
     >
@@ -43,7 +43,7 @@ export function TokenCard({ token }: { token: Token }) {
         />
         <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
           {sellLocked && (
-            <span className="rounded-md bg-violet-600 px-1.5 py-0.5 text-[9px] font-black text-white shadow-lg shadow-violet-500/50">
+            <span className="rounded-md bg-[#2563eb] px-1.5 py-0.5 text-[9px] font-black text-white shadow-lg shadow-blue-500/50">
               🚀 BUY ONLY {mult.toFixed(1)}×
             </span>
           )}
@@ -87,7 +87,7 @@ export function TokenCard({ token }: { token: Token }) {
 
         <p className="text-[14px] font-black text-[#3b82f6]">{formatUsd(mcap)} MC</p>
         {sellLocked && token.jackpotUnlockAt ? (
-          <p className="text-[10px] font-semibold text-violet-300">
+          <p className="text-[10px] font-semibold text-[#60a5fa]">
             buy only · vanishes {formatJackpotCountdown(token.jackpotUnlockAt)}
           </p>
         ) : mult >= 1.5 ? (
@@ -118,6 +118,11 @@ export function TokenCard({ token }: { token: Token }) {
           {token.dexId && (
             <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[9px] text-blue-300">
               {token.dexId}
+            </span>
+          )}
+          {token.chainId && token.chainId !== 'solana' && (
+            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-300">
+              {token.chainId}
             </span>
           )}
           {token.tags?.slice(0, 2).map((t) => (

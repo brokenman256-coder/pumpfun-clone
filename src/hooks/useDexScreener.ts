@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { fetchLiveSolanaMemes } from '../lib/dexscreener'
+import { fetchLiveMemes } from '../lib/dexscreener'
 import { PERSONAL_MODE } from '../chain/config'
 
 const POLL_MS = 45_000
 let pollStarted = false
 
 /**
- * Polls DexScreener for latest Solana meme / new pairs and merges into the board.
- * Safe to call from multiple components — only one poll loop runs.
+ * Polls DexScreener for latest meme / new pairs (Solana + a few EVM chains)
+ * and merges into the board. Safe to call from multiple components — only
+ * one poll loop runs.
  */
 export function useDexScreener() {
   const liveMode = useStore((s) => s.liveMode)
@@ -21,9 +22,9 @@ export function useDexScreener() {
     busy.current = true
     setDexStatus('loading')
     try {
-      const { tokens } = await fetchLiveSolanaMemes()
+      const { tokens } = await fetchLiveMemes()
       if (tokens.length === 0) {
-        setDexStatus('error', 'No Solana pairs returned')
+        setDexStatus('error', 'No pairs returned')
       } else {
         mergeDexTokens(tokens)
       }
