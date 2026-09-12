@@ -1,9 +1,11 @@
 /**
- * Rising coin lock:
- * - Past 2× launch → "FREEZE" button up, bots hype
- * - People can BUY but cannot SELL
- * - No SOL threshold
- * - 24h after lock → coin completely disappears
+ * Rising coin lock — DISABLED.
+ *
+ * This used to sell-lock a coin past 2x and delete it 24h later. That's
+ * fine for a fake demo curve, but not once real wallets/SOL are involved:
+ * it would trap a real user's real position and then destroy it outright.
+ * The functions below are kept (many call sites reference them) but now
+ * always report "not armed" so nothing is ever locked or vanished.
  */
 
 /** Lock sells when multiple exceeds this */
@@ -26,55 +28,45 @@ export function rollJackpotTriggerX(): number {
   return JACKPOT_ARM_X
 }
 
-/** Past 2× — sells locked, buys still open */
-export function isJackpotArmed(t: {
+/** Disabled — always false, see file header. */
+export function isJackpotArmed(_t: {
   jackpotArmed?: boolean
   jackpotFrozen?: boolean
   priceSol?: number
   launchPriceSol?: number
 }): boolean {
-  if (t.jackpotArmed || t.jackpotFrozen) return true
-  const mult = multipleFromLaunch(t.launchPriceSol || 0, t.priceSol || 0)
-  return mult > JACKPOT_ARM_X
+  return false
 }
 
-/**
- * "Frozen" for UI = sell-locked rising coin (same as armed).
- * Buys still allowed until vanish.
- */
-export function isJackpotFrozen(t: {
+/** Disabled — always false, see file header. */
+export function isJackpotFrozen(_t: {
   jackpotArmed?: boolean
   jackpotFrozen?: boolean
   jackpotUnlockAt?: number
   priceSol?: number
   launchPriceSol?: number
 }): boolean {
-  // Sell lock while armed/frozen and timer not expired
-  if (!isJackpotArmed(t) && !t.jackpotFrozen) return false
-  if (t.jackpotUnlockAt && Date.now() >= t.jackpotUnlockAt) return false
-  return Boolean(t.jackpotArmed || t.jackpotFrozen)
+  return false
 }
 
-/** Sells blocked; buys OK */
-export function isSellLocked(t: {
+/** Disabled — sells are never locked, see file header. */
+export function isSellLocked(_t: {
   jackpotArmed?: boolean
   jackpotFrozen?: boolean
   jackpotUnlockAt?: number
   priceSol?: number
   launchPriceSol?: number
 }): boolean {
-  return isJackpotFrozen(t)
+  return false
 }
 
-/** After 24h lock window → delete coin */
-export function shouldJackpotVanish(t: {
+/** Disabled — coins are never auto-deleted, see file header. */
+export function shouldJackpotVanish(_t: {
   jackpotArmed?: boolean
   jackpotFrozen?: boolean
   jackpotUnlockAt?: number
 }): boolean {
-  if (!t.jackpotUnlockAt) return false
-  if (!(t.jackpotArmed || t.jackpotFrozen)) return false
-  return Date.now() >= t.jackpotUnlockAt
+  return false
 }
 
 export function formatJackpotCountdown(unlockAt: number): string {

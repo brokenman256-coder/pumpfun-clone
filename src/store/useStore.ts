@@ -49,7 +49,6 @@ import {
 } from '../lib/tradePersist'
 import { PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
 import {
-  JACKPOT_ARM_X,
   JACKPOT_FREEZE_MS,
   isSellLocked,
   shouldJackpotVanish,
@@ -623,10 +622,11 @@ export const useStore = create<Store>((set, get) => ({
 
         const mult = multipleFromLaunch(launchPx, newPrice)
         const now = Date.now()
-        // Past 2× → sell-lock arms, 24h timer to vanish (buys still work)
-        const justArmed =
-          managed && !token.jackpotArmed && !token.jackpotFrozen && mult > JACKPOT_ARM_X
-        const stayArmed = justArmed || token.jackpotArmed || token.jackpotFrozen
+        // Jackpot sell-lock/vanish disabled — not safe with real money: it would
+        // block a real user from selling a real position and then delete the
+        // coin outright, destroying whatever they had in it.
+        const justArmed = false
+        const stayArmed = false
 
         return {
           tokens: s.tokens.map((t) =>
@@ -769,9 +769,8 @@ export const useStore = create<Store>((set, get) => ({
     const tradeSig = signature || sig()
     const sellMult = multipleFromLaunch(launchPx, newPrice)
     const nowSell = Date.now()
-    // Sells don't count toward 10 SOL; arm only on price >2×
-    const justArmedSell =
-      managed && !token.jackpotArmed && !token.jackpotFrozen && sellMult > JACKPOT_ARM_X
+    // Jackpot disabled — see buy handler above for why.
+    const justArmedSell = false
 
     const trade: Trade = {
       id: tradeSig,
