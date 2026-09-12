@@ -229,7 +229,6 @@ export function pairToToken(
   const labels = pair.labels || []
   const tags = [
     pair.dexId || 'dex',
-    chainId !== 'solana' ? chainId : null,
     ...labels.slice(0, 2),
     'live',
   ].filter(Boolean) as string[]
@@ -245,7 +244,7 @@ export function pairToToken(
     emoji,
     description:
       profile?.description ||
-      `${name} ($${symbol}) live on ${pair.dexId || 'DEX'}${chainId !== 'solana' ? ` (${chainId})` : ''} · data via DexScreener. NFA.`,
+      `${name} ($${symbol}) live on ${pair.dexId || 'DEX'} · data via DexScreener. NFA.`,
     imageUrl: icon || realTokenImageUrl(mint + symbol),
     imageHue: Math.abs(mint.charCodeAt(0) * 13) % 360,
     creator: mint.slice(0, 32) + '…',

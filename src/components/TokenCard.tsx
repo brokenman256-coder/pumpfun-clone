@@ -120,11 +120,6 @@ export function TokenCard({ token }: { token: Token }) {
               {token.dexId}
             </span>
           )}
-          {token.chainId && token.chainId !== 'solana' && (
-            <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-amber-300">
-              {token.chainId}
-            </span>
-          )}
           {token.tags?.slice(0, 2).map((t) => (
             <span key={t} className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-[#8b8d97]">
               #{t}
