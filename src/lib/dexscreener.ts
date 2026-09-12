@@ -46,8 +46,9 @@ const MAJOR_ASSETS = new Set([
   'MATIC', 'WMATIC', 'POL', 'AVAX', 'TON', 'TRX', 'ADA', 'XRP', 'DOT', 'LTC',
   'USDT', 'USDC', 'USDC.E', 'DAI', 'BUSD', 'TUSD', 'FDUSD',
 ])
-/** Keeps the board feeling like fresh pump.fun-style launches, not blue chips. */
-const MAX_FEATURED_MCAP_USD = 50_000_000
+/** Floor, not ceiling — "good" coins means real established liquidity/volume,
+ * not brand-new tiny launches. Still excludes actual blue chips via MAJOR_ASSETS. */
+const MIN_FEATURED_LIQUIDITY_USD = 20_000
 
 export type DexStatus = 'idle' | 'loading' | 'ok' | 'error'
 
@@ -332,8 +333,9 @@ export async function fetchLiveMemes(): Promise<{
 
   const pairs = await fetchTokenPairs(uniqueMints).catch(() => [] as DexPair[])
 
-  // Index pairs by base mint — skip anything that isn't a fresh small meme:
-  // wrapped/major assets, stables, or anything past a "still looks new" mcap.
+  // Index pairs by base mint — skip wrapped/major assets, stables, Raydium
+  // listings (already-graduated, doesn't fit the pre-graduation curve story
+  // this board tells), and anything too thin to call "established."
   const byMint = new Map<string, DexPair[]>()
   for (const pair of [...pairs, ...pumpSearch, ...solSearch, ...otherSearch]) {
     const addr = pair.baseToken?.address
@@ -341,8 +343,9 @@ export async function fetchLiveMemes(): Promise<{
     const symbol = (pair.baseToken?.symbol || '').toUpperCase()
     if (symbol === nativeQuote(pair.chainId).symbol) continue
     if (MAJOR_ASSETS.has(symbol)) continue
-    const mcap = pair.marketCap || pair.fdv || 0
-    if (mcap > MAX_FEATURED_MCAP_USD) continue
+    if ((pair.dexId || '').toLowerCase() === 'raydium') continue
+    const liquidity = pair.liquidity?.usd || 0
+    if (liquidity < MIN_FEATURED_LIQUIDITY_USD) continue
     const arr = byMint.get(addr) || []
     arr.push(pair)
     byMint.set(addr, arr)
@@ -388,7 +391,16 @@ export async function fetchLiveMemes(): Promise<{
     }
   }
 
-  tokens.sort((a, b) => (b.volumeUsd || 0) - (a.volumeUsd || 0))
+  // Solana-first: this is a Solana-style launchpad board, other chains are
+  // a light garnish, not the main course.
+  const solanaTokens = tokens
+    .filter((t) => t.chainId === 'solana')
+    .sort((a, b) => (b.volumeUsd || 0) - (a.volumeUsd || 0))
+  const otherTokens = tokens
+    .filter((t) => t.chainId !== 'solana')
+    .sort((a, b) => (b.volumeUsd || 0) - (a.volumeUsd || 0))
+    .slice(0, Math.ceil(solanaTokens.length * 0.2))
+  const ordered = [...solanaTokens, ...otherTokens]
 
-  return { tokens, fetchedAt: Date.now() }
+  return { tokens: ordered, fetchedAt: Date.now() }
 }

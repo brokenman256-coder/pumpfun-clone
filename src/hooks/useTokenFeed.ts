@@ -3,8 +3,8 @@ import { useStore } from '../store/useStore'
 import type { Token } from '../types'
 import { isDisplayable } from '../lib/tokenFilters'
 
-/** Target board mix: ~70% real DexScreener coins, ~30% our own (bot/local/on-chain). */
-const DEX_SHARE = 0.7
+/** Target board mix: ~60% real DexScreener coins, ~40% our own (bot/local/on-chain). */
+const DEX_SHARE = 0.6
 
 /**
  * Caps how many "our own" coins ride alongside the DexScreener set so the
@@ -56,7 +56,13 @@ export function useTokenFeed() {
           .sort((a, b) => b.marketCapUsd - a.marketCapUsd)
       case 'movers':
       default:
-        return copy.sort((a, b) => b.marketCapUsd - a.marketCapUsd)
+        // Default landing view — DexScreener coins lead, our own follow.
+        return copy.sort((a, b) => {
+          const aDex = a.source === 'dexscreener' ? 1 : 0
+          const bDex = b.source === 'dexscreener' ? 1 : 0
+          if (aDex !== bDex) return bDex - aDex
+          return b.marketCapUsd - a.marketCapUsd
+        })
     }
   }, [tokens, sort, search])
 
