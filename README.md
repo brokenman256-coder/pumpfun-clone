@@ -41,7 +41,7 @@ VITE_FEE_RECIPIENT=YourTreasuryPublicKey
 VITE_ADMIN_KEY=change-me
 ```
 
-### Vercel (server)
+### Netlify (server)
 
 ```env
 # Durable board writes (contents:write PAT)
@@ -57,12 +57,12 @@ LIVE_BOARD_OPEN=1
 ## Coin bot
 
 1. **Browser** — `useLiveBoard` POSTs `action: launch` every 30s while open  
-2. **Vercel cron** — `/api/cron-coin-bot` every minute  
-3. **GitHub Actions** — `managed-board-bot.yml` loops every 30s for ~6h  
+2. **GitHub Actions** — `managed-board-bot.yml` loops every 2 min for ~6h  
+3. **Manual trigger** — `/api/cron-coin-bot` (optional, calls the same launch endpoint)  
 
 ```bash
 # Manual loop against production
-LIVE_BOARD_URL=https://your-app.vercel.app node scripts/managed-board-bot.mjs
+LIVE_BOARD_URL=https://your-app.netlify.app node scripts/managed-board-bot.mjs
 ```
 
 ## Scripts

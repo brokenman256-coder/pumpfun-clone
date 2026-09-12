@@ -1,5 +1,5 @@
 /**
- * Managed-market sell payout.
+ * Managed-market sell payout (Netlify Function, v2 request/response).
  *
  * After the client-side curve books a sell (with 5% platform margin already
  * deducted from solOut), this function sends the net SOL to the trader from
@@ -27,8 +27,17 @@ import {
 } from '@solana/web3.js'
 import bs58 from 'bs58'
 
+export const config = { path: '/api/managed-sell' }
+
 const MAX_SOL = 2
 const MIN_SOL = 0.001
+
+function json(body, init = {}) {
+  return new Response(JSON.stringify(body), {
+    status: init.status || 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
 
 function rpcUrl() {
   if (process.env.SOLANA_RPC) return process.env.SOLANA_RPC
@@ -53,59 +62,53 @@ function loadPayer() {
   }
 }
 
-export default async function handler(req, res) {
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    res.status(405).json({ ok: false, error: 'Method not allowed' })
-    return
+    return json({ ok: false, error: 'Method not allowed' }, { status: 405 })
   }
 
   const payer = loadPayer()
   if (!payer) {
-    res.status(503).json({
-      ok: false,
-      error:
-        'Sell payout wallet not configured. Set BOT_WALLET_SECRET on the server (base58 key). Buys still work.',
-    })
-    return
+    return json(
+      {
+        ok: false,
+        error:
+          'Sell payout wallet not configured. Set BOT_WALLET_SECRET on the server (base58 key). Buys still work.',
+      },
+      { status: 503 },
+    )
   }
 
-  const { to, amountSol, tokenId, symbol } = req.body || {}
+  const { to, amountSol, tokenId, symbol } = await req.json().catch(() => ({}))
 
   if (typeof to !== 'string' || to.length < 32) {
-    res.status(400).json({ ok: false, error: 'Invalid recipient' })
-    return
+    return json({ ok: false, error: 'Invalid recipient' }, { status: 400 })
   }
   if (typeof amountSol !== 'number' || !Number.isFinite(amountSol)) {
-    res.status(400).json({ ok: false, error: 'Invalid amount' })
-    return
+    return json({ ok: false, error: 'Invalid amount' }, { status: 400 })
   }
   if (amountSol < MIN_SOL) {
-    res.status(400).json({ ok: false, error: `Minimum payout is ${MIN_SOL} SOL` })
-    return
+    return json({ ok: false, error: `Minimum payout is ${MIN_SOL} SOL` }, { status: 400 })
   }
   if (amountSol > MAX_SOL) {
-    res.status(400).json({ ok: false, error: `Max payout is ${MAX_SOL} SOL per trade` })
-    return
+    return json({ ok: false, error: `Max payout is ${MAX_SOL} SOL per trade` }, { status: 400 })
   }
 
   let toPk
   try {
     toPk = new PublicKey(to)
   } catch {
-    res.status(400).json({ ok: false, error: 'Invalid Solana address' })
-    return
+    return json({ ok: false, error: 'Invalid Solana address' }, { status: 400 })
   }
 
   // Never pay the bot wallet to itself in a loop
   if (toPk.equals(payer.publicKey)) {
-    res.status(400).json({ ok: false, error: 'Invalid recipient' })
-    return
+    return json({ ok: false, error: 'Invalid recipient' }, { status: 400 })
   }
 
   const lamports = Math.round(amountSol * LAMPORTS_PER_SOL)
   if (lamports < 1) {
-    res.status(400).json({ ok: false, error: 'Amount too small' })
-    return
+    return json({ ok: false, error: 'Amount too small' }, { status: 400 })
   }
 
   try {
@@ -114,11 +117,13 @@ export default async function handler(req, res) {
     // Keep ~0.01 SOL for fees + safety
     const reserve = Math.round(0.01 * LAMPORTS_PER_SOL)
     if (bal < lamports + reserve) {
-      res.status(503).json({
-        ok: false,
-        error: `Treasury low on SOL for payouts (need ~${amountSol.toFixed(4)} + fees). Fund the bot wallet.`,
-      })
-      return
+      return json(
+        {
+          ok: false,
+          error: `Treasury low on SOL for payouts (need ~${amountSol.toFixed(4)} + fees). Fund the bot wallet.`,
+        },
+        { status: 503 },
+      )
     }
 
     const { blockhash, lastValidBlockHeight } =
@@ -148,14 +153,13 @@ export default async function handler(req, res) {
       'confirmed',
     )
     if (conf.value.err) {
-      res.status(502).json({
-        ok: false,
-        error: `Payout tx failed: ${JSON.stringify(conf.value.err)}`,
-      })
-      return
+      return json(
+        { ok: false, error: `Payout tx failed: ${JSON.stringify(conf.value.err)}` },
+        { status: 502 },
+      )
     }
 
-    res.status(200).json({
+    return json({
       ok: true,
       signature,
       amountSol,
@@ -165,9 +169,6 @@ export default async function handler(req, res) {
       from: payer.publicKey.toBase58(),
     })
   } catch (e) {
-    res.status(500).json({
-      ok: false,
-      error: e?.message || 'Payout failed',
-    })
+    return json({ ok: false, error: e?.message || 'Payout failed' }, { status: 500 })
   }
 }

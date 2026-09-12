@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# SPA fallback — Netlify checks real files (including the static
+# live-board.json / site-status.json in dist/) and function paths first,
+# so this only catches actual client-side routes.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

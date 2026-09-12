@@ -1,40 +1,48 @@
 /**
- * Serverless function (Vercel) — the only place that can flip the site's
- * maintenance flag. Password check and the GitHub write both happen here,
- * server-side, using env vars that are never shipped to the browser:
+ * Netlify Function — the only place that can flip the site's maintenance
+ * flag. Password check and the GitHub write both happen here, server-side,
+ * using env vars that are never shipped to the browser:
  *   - MAINTENANCE_KEY: the password checked against what's submitted
  *   - GITHUB_TOKEN: a PAT with contents:write on this repo only
  *
- * On success, commits public/site-status.json with the new flag, which
- * triggers Vercel to redeploy — every visitor's browser picks up the new
- * static file within roughly a minute, no per-visitor function calls.
+ * On success, commits public/site-status.json with the new flag. Netlify
+ * rebuilds on every push to the repo, so every visitor's browser picks up
+ * the new static file within roughly a minute, no per-visitor function calls.
  */
 const OWNER = 'brokenman256-coder'
 const REPO = 'pumpfun-clone'
 const BRANCH = 'main'
 const FILE_PATH = 'public/site-status.json'
 
-export default async function handler(req, res) {
+export const config = { path: '/api/toggle-maintenance' }
+
+function json(body, init = {}) {
+  return new Response(JSON.stringify(body), {
+    status: init.status || 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' })
-    return
+    return json({ error: 'Method not allowed' }, { status: 405 })
   }
 
-  const { password, maintenance } = req.body || {}
+  const { password, maintenance } = await req.json().catch(() => ({}))
   const expected = process.env.MAINTENANCE_KEY
   const token = process.env.GITHUB_TOKEN
 
   if (!expected || !token) {
-    res.status(500).json({ error: 'Server not configured (missing MAINTENANCE_KEY or GITHUB_TOKEN)' })
-    return
+    return json(
+      { error: 'Server not configured (missing MAINTENANCE_KEY or GITHUB_TOKEN)' },
+      { status: 500 },
+    )
   }
   if (typeof password !== 'string' || password !== expected) {
-    res.status(401).json({ error: 'Wrong password' })
-    return
+    return json({ error: 'Wrong password' }, { status: 401 })
   }
   if (typeof maintenance !== 'boolean') {
-    res.status(400).json({ error: 'maintenance must be true or false' })
-    return
+    return json({ error: 'maintenance must be true or false' }, { status: 400 })
   }
 
   const apiBase = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`
@@ -48,8 +56,10 @@ export default async function handler(req, res) {
     const getRes = await fetch(`${apiBase}?ref=${BRANCH}`, { headers })
     if (!getRes.ok) {
       const body = await getRes.text()
-      res.status(502).json({ error: `Could not read current status file: ${getRes.status} ${body}` })
-      return
+      return json(
+        { error: `Could not read current status file: ${getRes.status} ${body}` },
+        { status: 502 },
+      )
     }
     const current = await getRes.json()
     const content = Buffer.from(
@@ -68,11 +78,10 @@ export default async function handler(req, res) {
     })
     if (!putRes.ok) {
       const body = await putRes.text()
-      res.status(502).json({ error: `Could not update status file: ${putRes.status} ${body}` })
-      return
+      return json({ error: `Could not update status file: ${putRes.status} ${body}` }, { status: 502 })
     }
-    res.status(200).json({ ok: true, maintenance })
+    return json({ ok: true, maintenance })
   } catch (e) {
-    res.status(500).json({ error: e.message || 'Unknown error' })
+    return json({ error: e.message || 'Unknown error' }, { status: 500 })
   }
 }

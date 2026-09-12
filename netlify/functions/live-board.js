@@ -1,5 +1,5 @@
 /**
- * Shared live board API.
+ * Shared live board API (Netlify Function, v2 request/response).
  *
  * GET  /api/live-board          → full board (tokens, trades, meta)
  * POST /api/live-board
@@ -25,17 +25,26 @@ import {
 } from './lib/market.js'
 import { pickUniqueMeme, memeToName, memeToSymbol, memeToBio } from './lib/memePool.js'
 
-function cors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-bot-secret')
+export const config = { path: '/api/live-board' }
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-bot-secret',
+}
+
+function json(body, init = {}) {
+  return new Response(JSON.stringify(body), {
+    status: init.status || 200,
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...init.headers },
+  })
 }
 
 function authorized(req) {
   if (process.env.LIVE_BOARD_OPEN === '1') return true
   const secret = process.env.BOT_API_SECRET || process.env.CRON_SECRET
   if (!secret) return true // no secret configured → allow (dev / first deploy)
-  const hdr = req.headers['x-bot-secret'] || req.headers['authorization']
+  const hdr = req.headers.get('x-bot-secret') || req.headers.get('authorization')
   if (hdr === secret || hdr === `Bearer ${secret}`) return true
   return false
 }
@@ -113,38 +122,30 @@ async function withRetryWrite(mutate) {
   return { ok: false, error: 'Conflict — try again' }
 }
 
-export default async function handler(req, res) {
-  cors(res)
+export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    res.status(204).end()
-    return
+    return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
   try {
     if (req.method === 'GET') {
       const { board, source } = await readBoard()
-      res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=15')
-      res.status(200).json({
-        ok: true,
-        source,
-        marginBps: PLATFORM_MARGIN_BPS,
-        ...board,
-      })
-      return
+      return json(
+        { ok: true, source, marginBps: PLATFORM_MARGIN_BPS, ...board },
+        { headers: { 'Cache-Control': 's-maxage=5, stale-while-revalidate=15' } },
+      )
     }
 
     if (req.method !== 'POST') {
-      res.status(405).json({ ok: false, error: 'Method not allowed' })
-      return
+      return json({ ok: false, error: 'Method not allowed' }, { status: 405 })
     }
 
-    const body = req.body || {}
+    const body = await req.json().catch(() => ({}))
     const action = body.action || 'launch'
 
     if (action === 'launch') {
       if (!authorized(req)) {
-        res.status(401).json({ ok: false, error: 'Unauthorized' })
-        return
+        return json({ ok: false, error: 'Unauthorized' }, { status: 401 })
       }
       const out = await withRetryWrite(async (board) => {
         const token = await buildLiveCoin(board)
@@ -155,26 +156,20 @@ export default async function handler(req, res) {
         return { board, extra: { token } }
       })
       if (!out.ok) {
-        res.status(409).json(out)
-        return
+        return json(out, { status: 409 })
       }
-      res.status(200).json({
+      return json({
         ok: true,
         token: out.token,
         launched: out.board.launched,
         total: out.board.tokens.length,
       })
-      return
     }
 
     if (action === 'publish') {
-      if (!authorized(req) && process.env.LIVE_BOARD_OPEN !== '1') {
-        // Allow publish of client bot coins in open mode only
-      }
       const token = body.token
       if (!token?.id || !token?.imageUrl) {
-        res.status(400).json({ ok: false, error: 'token required' })
-        return
+        return json({ ok: false, error: 'token required' }, { status: 400 })
       }
       const out = await withRetryWrite((board) => {
         if ((board.tokens || []).some((t) => t.id === token.id || t.imageUrl === token.imageUrl)) {
@@ -192,15 +187,13 @@ export default async function handler(req, res) {
         board.launched = (board.launched || 0) + 1
         return { board, extra: { token: t } }
       })
-      res.status(200).json({ ok: out.ok, skipped: out.skipped, token: out.token })
-      return
+      return json({ ok: out.ok, skipped: out.skipped, token: out.token })
     }
 
     if (action === 'trade') {
       const { tokenId, side, amount, wallet, signature } = body
       if (!tokenId || !side || !(amount > 0)) {
-        res.status(400).json({ ok: false, error: 'tokenId, side, amount required' })
-        return
+        return json({ ok: false, error: 'tokenId, side, amount required' }, { status: 400 })
       }
       const out = await withRetryWrite((board) => {
         const idx = (board.tokens || []).findIndex((t) => t.id === tokenId)
@@ -300,10 +293,9 @@ export default async function handler(req, res) {
         }
       })
       if (!out.ok) {
-        res.status(out.error === 'Token not found on live board' ? 404 : 400).json(out)
-        return
+        return json(out, { status: out.error === 'Token not found on live board' ? 404 : 400 })
       }
-      res.status(200).json({
+      return json({
         ok: true,
         marginBps: PLATFORM_MARGIN_BPS,
         trade: out.trade,
@@ -313,7 +305,6 @@ export default async function handler(req, res) {
         margin: out.margin,
         canPayout: out.canPayout,
       })
-      return
     }
 
     if (action === 'sim-tick') {
@@ -371,12 +362,11 @@ export default async function handler(req, res) {
         }
         return { board, extra: {} }
       })
-      res.status(200).json({ ok: out.ok })
-      return
+      return json({ ok: out.ok })
     }
 
-    res.status(400).json({ ok: false, error: `Unknown action: ${action}` })
+    return json({ ok: false, error: `Unknown action: ${action}` }, { status: 400 })
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || 'Server error' })
+    return json({ ok: false, error: e?.message || 'Server error' }, { status: 500 })
   }
 }

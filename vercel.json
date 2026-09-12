@@ -1,9 +1,0 @@
-{
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/((?!api/|live-board\\.json|site-status\\.json).*)",
-      "destination": "/index.html"
-    }
-  ]
-}
