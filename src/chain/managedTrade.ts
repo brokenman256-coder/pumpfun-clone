@@ -8,6 +8,9 @@ import { paySolOnChain } from './pay'
 import { PLATFORM_MARGIN_BPS } from '../engine/managedMarket'
 
 export type ManagedSellRequest = {
+  /** One-time token from the /api/live-board sell response — the server
+   * looks up who/how-much from this, request body fields below are informational only. */
+  payoutToken: string
   to: string
   amountSol: number
   tokenId: string

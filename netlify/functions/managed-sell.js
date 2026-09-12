@@ -5,6 +5,12 @@
  * deducted from solOut), this function sends the net SOL to the trader from
  * the bot/treasury wallet.
  *
+ * Auth: requires a `payoutToken` minted by /api/live-board's sell action —
+ * that's the only source of truth for who gets paid how much. The token is
+ * single-use and looked up server-side; a request's own `to`/`amountSol`
+ * fields are informational only and never trusted for the actual transfer,
+ * so nobody can call this endpoint with an arbitrary address/amount.
+ *
  * Env (server-only — never VITE_):
  *   BOT_WALLET_SECRET  base58 secret key of the payout wallet
  *   SOLANA_RPC         optional RPC override
@@ -26,11 +32,33 @@ import {
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js'
 import bs58 from 'bs58'
+import { readBoard, writeBoard } from './lib/boardStore.js'
 
 export const config = { path: '/api/managed-sell' }
 
 const MAX_SOL = 2
 const MIN_SOL = 0.001
+const TOKEN_TTL_MS = 15 * 60 * 1000
+
+/** Marks a payout token used, atomically-ish via the same retry-on-conflict
+ * pattern live-board.js uses. Returns the consumed token record, or an
+ * error string if it's missing/expired/already used. */
+async function consumePayoutToken(token) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { board, sha } = await readBoard()
+    const list = board.payoutTokens || []
+    const rec = list.find((p) => p.token === token)
+    if (!rec) return { error: 'Unknown or expired payout token' }
+    if (rec.used) return { error: 'This payout has already been claimed' }
+    if (Date.now() - rec.createdAt > TOKEN_TTL_MS) return { error: 'Payout token expired — sell again' }
+    board.payoutTokens = list.map((p) => (p.token === token ? { ...p, used: true } : p))
+    const result = await writeBoard(board, sha)
+    if (result.ok) return { rec }
+    if (result.conflict) continue
+    return { error: result.error || 'Could not claim payout' }
+  }
+  return { error: 'Conflict — try again' }
+}
 
 function json(body, init = {}) {
   return new Response(JSON.stringify(body), {
@@ -79,7 +107,20 @@ export default async function handler(req) {
     )
   }
 
-  const { to, amountSol, tokenId, symbol } = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => ({}))
+  const { payoutToken } = body
+
+  if (typeof payoutToken !== 'string' || payoutToken.length < 8) {
+    return json(
+      { ok: false, error: 'Missing payoutToken — sell on /api/live-board first, then pass its payoutToken here.' },
+      { status: 400 },
+    )
+  }
+  const claim = await consumePayoutToken(payoutToken)
+  if (claim.error) {
+    return json({ ok: false, error: claim.error }, { status: 400 })
+  }
+  const { to, amountSol, tokenId, symbol } = claim.rec
 
   if (typeof to !== 'string' || to.length < 32) {
     return json({ ok: false, error: 'Invalid recipient' }, { status: 400 })

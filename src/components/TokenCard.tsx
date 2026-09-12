@@ -115,11 +115,6 @@ export function TokenCard({ token }: { token: Token }) {
         </p>
 
         <div className="flex flex-wrap items-center gap-1 pt-0.5">
-          {token.dexId && (
-            <span className="rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[9px] text-blue-300">
-              {token.dexId}
-            </span>
-          )}
           {token.tags?.slice(0, 2).map((t) => (
             <span key={t} className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-[#8b8d97]">
               #{t}

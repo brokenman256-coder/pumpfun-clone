@@ -77,6 +77,7 @@ export async function postLiveTrade(params: {
   solOut?: number
   margin?: number
   canPayout?: boolean
+  payoutToken?: string
 }> {
   try {
     const res = await fetch('/api/live-board', {

@@ -11,6 +11,7 @@
  * or open launch when LIVE_BOARD_OPEN=1 (demo mode).
  */
 
+import crypto from 'node:crypto'
 import { readBoard, writeBoard } from './lib/boardStore.js'
 import {
   managedBuyQuote,
@@ -281,6 +282,22 @@ export default async function handler(req) {
           signature: signature || '',
         }
         board.recentTrades = [trade, ...(board.recentTrades || [])].slice(0, 100)
+        // One-time payout token: /api/managed-sell only pays out against a
+        // token minted here, by a sell that actually happened — it can't be
+        // called with an arbitrary to/amount by anyone who finds the URL.
+        const payoutToken = crypto.randomBytes(16).toString('hex')
+        board.payoutTokens = [
+          {
+            token: payoutToken,
+            to: wallet || null,
+            amountSol: q.solOut,
+            tokenId,
+            symbol: t.symbol,
+            used: false,
+            createdAt: Date.now(),
+          },
+          ...(board.payoutTokens || []),
+        ].slice(0, 300)
         return {
           board,
           extra: {
@@ -289,6 +306,7 @@ export default async function handler(req) {
             margin: q.margin,
             canPayout: q.canPayout,
             token: board.tokens[idx],
+            payoutToken,
           },
         }
       })
@@ -304,6 +322,7 @@ export default async function handler(req) {
         solOut: out.solOut,
         margin: out.margin,
         canPayout: out.canPayout,
+        payoutToken: out.payoutToken,
       })
     }
 

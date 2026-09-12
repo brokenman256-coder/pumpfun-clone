@@ -238,11 +238,9 @@ export function pairToToken(
 
   const chainId = pair.chainId || 'solana'
   const labels = pair.labels || []
-  const tags = [
-    pair.dexId || 'dex',
-    ...labels.slice(0, 2),
-    'live',
-  ].filter(Boolean) as string[]
+  // Never surface the real dex/chain name in tags — cards should look
+  // identical whether a coin is ours or a real DexScreener listing.
+  const tags = [...labels.slice(0, 2), 'live'].filter(Boolean) as string[]
   // "priceSol" is used app-wide as a SOL-equivalent unit — for Solana pairs the
   // real native price is accurate; for other chains, derive an equivalent from
   // USD so it stays comparable instead of mixing in raw ETH/BNB/MATIC units.

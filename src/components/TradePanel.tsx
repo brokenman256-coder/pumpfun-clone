@@ -196,9 +196,11 @@ export function TradePanel({ token }: { token: Token }) {
             wallet: address || undefined,
           })
           let solOut = q.solOut
+          let payoutToken: string | undefined
           if (live.ok && live.token) {
             applyLiveToken(live.token)
             solOut = live.solOut ?? q.solOut
+            payoutToken = live.payoutToken
             bookHolding(token.id, 'sell', a, solOut, live.trade?.signature)
           } else {
             const res = executeTrade(token.id, 'sell', a, address || undefined, false)
@@ -210,8 +212,9 @@ export function TradePanel({ token }: { token: Token }) {
           }
 
           setStatus(`Sending ${solOut.toFixed(4)} SOL to your Phantom…`)
-          if (address) {
+          if (address && payoutToken) {
             const payout = await requestManagedSellPayout({
+              payoutToken,
               to: address,
               amountSol: solOut,
               tokenId: token.id,
@@ -236,6 +239,8 @@ export function TradePanel({ token }: { token: Token }) {
                 setError(payout.error)
               }
             }
+          } else if (address) {
+            setStatus('Sell booked on the shared market (no live-board connection for an auto-payout right now).')
           }
         }
         setAmount('')
