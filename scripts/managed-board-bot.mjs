@@ -3,13 +3,13 @@
  * Posts { action: 'launch' } to /api/live-board every LOOP_INTERVAL_MS.
  *
  * Env:
- *   LIVE_BOARD_URL   e.g. https://your-app.vercel.app
+ *   LIVE_BOARD_URL   e.g. https://your-app.netlify.app
  *   BOT_API_SECRET   optional x-bot-secret
  *   LOOP_INTERVAL_MS default 30000
  *   LOOP_BUDGET_MS   0 = single shot; >0 loop until budget
  */
 
-const BASE = (process.env.LIVE_BOARD_URL || 'https://pumpfun-clone-mw7z.vercel.app').replace(
+const BASE = (process.env.LIVE_BOARD_URL || 'https://nova-memecoin-launch.netlify.app').replace(
   /\/$/,
   '',
 )

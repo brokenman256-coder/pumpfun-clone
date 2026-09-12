@@ -62,7 +62,7 @@ LIVE_BOARD_OPEN=1
 
 ```bash
 # Manual loop against production
-LIVE_BOARD_URL=https://your-app.netlify.app node scripts/managed-board-bot.mjs
+LIVE_BOARD_URL=https://nova-memecoin-launch.netlify.app node scripts/managed-board-bot.mjs
 ```
 
 ## Scripts

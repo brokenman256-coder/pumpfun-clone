@@ -44,7 +44,7 @@ jobs:
           LOOP_BUDGET_MS: ${{ steps.loopcfg.outputs.budget_ms }}
         run: |
           if [ -z "$LIVE_BOARD_URL" ]; then
-            export LIVE_BOARD_URL="https://pumpfun-clone-mw7z.vercel.app"
+            export LIVE_BOARD_URL="https://nova-memecoin-launch.netlify.app"
           fi
           echo "Target: $LIVE_BOARD_URL"
           node scripts/managed-board-bot.mjs
