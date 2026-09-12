@@ -13,10 +13,10 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0e0f13]/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 bg-[#0a0e1a]/95 backdrop-blur-md">
       <div className="mx-auto flex h-12 max-w-lg items-center gap-2 px-3 sm:max-w-5xl">
         <Link to="/" aria-label="Home" className="shrink-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] font-black text-white shadow-[0_0_12px_rgba(124,58,237,0.45)]">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#2563eb] font-black text-white shadow-[0_0_12px_rgba(59,130,246,0.45)]">
             N
           </span>
         </Link>
@@ -55,13 +55,13 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMenu((m) => !m)}
-              className="rounded-full border border-[#2a2b33] bg-[#15161b] px-3 py-1.5 text-[12px] font-semibold text-[#7c3aed]"
+              className="rounded-full border border-[#334155] bg-[#111827] px-3 py-1.5 text-[12px] font-semibold text-[#3b82f6]"
             >
               <span className="hidden sm:inline">{formatSol(solBalance)} · </span>
               {shortAddr(address!)}
             </button>
             {menu && (
-              <div className="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl border border-[#2a2b33] bg-[#15161b] py-1 shadow-xl">
+              <div className="absolute right-0 mt-2 w-36 overflow-hidden rounded-xl border border-[#334155] bg-[#111827] py-1 shadow-xl">
                 <button
                   type="button"
                   className="block w-full px-3 py-2 text-left text-sm hover:bg-white/5"
@@ -94,7 +94,7 @@ export function Navbar() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="search for token"
-            className="w-full rounded-full border border-[#2a2b33] bg-[#15161b] px-4 py-2 text-sm outline-none focus:border-[#7c3aed]/40"
+            className="w-full rounded-full border border-[#334155] bg-[#111827] px-4 py-2 text-sm outline-none focus:border-[#3b82f6]/40"
           />
         </div>
       )}

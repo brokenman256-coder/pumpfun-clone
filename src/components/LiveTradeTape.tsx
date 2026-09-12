@@ -8,7 +8,7 @@ export function LiveTradeTape() {
 
   if (trades.length === 0) {
     return (
-      <div className="mb-3 overflow-hidden rounded-xl border border-[#1a1d24] bg-[#0b0e11] px-3 py-2">
+      <div className="mb-3 overflow-hidden rounded-xl border border-[#1e293b] bg-[#0a0e1a] px-3 py-2">
         <p className="text-[11px] text-[#5d6573]">Waiting for trades…</p>
       </div>
     )
@@ -17,9 +17,9 @@ export function LiveTradeTape() {
   const items = [...trades, ...trades] // seamless loop
 
   return (
-    <div className="relative mb-4 overflow-hidden rounded-xl border border-[#1a1d24] bg-[#0b0e11]">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#0b0e11] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#0b0e11] to-transparent" />
+    <div className="relative mb-4 overflow-hidden rounded-xl border border-[#1e293b] bg-[#0a0e1a]">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#0a0e1a] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#0a0e1a] to-transparent" />
       <div className="tape-scroll flex gap-6 whitespace-nowrap py-2.5 pl-3">
         {items.map((tr, i) => {
           const tok = tokens.find((t) => t.id === tr.tokenId)

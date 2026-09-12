@@ -3,7 +3,7 @@
  */
 
 const PALETTES: [string, string, string][] = [
-  ['#052e16', '#7c3aed', '#bbf7d0'],
+  ['#052e16', '#3b82f6', '#bbf7d0'],
   ['#0c4a6e', '#38bdf8', '#e0f2fe'],
   ['#4a044e', '#e879f9', '#f5d0fe'],
   ['#7c2d12', '#fb923c', '#fed7aa'],

@@ -49,7 +49,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <MaintenanceGate>
-        <div className="min-h-screen bg-[#0e0f13] text-[#e8e8ed]">
+        <div className="min-h-screen bg-[#0a0e1a] text-[#e8e8ed]">
           <div className="flex min-h-screen">
             <LeftSidebar />
             <div className="flex min-w-0 flex-1 flex-col pb-16 lg:pb-0">

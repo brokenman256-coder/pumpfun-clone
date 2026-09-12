@@ -27,10 +27,10 @@ export function TokenCard({ token }: { token: Token }) {
   return (
     <Link
       to={`/coin/${token.id}`}
-      className={`block overflow-hidden rounded-2xl border bg-[#14151b] transition ${
+      className={`block overflow-hidden rounded-2xl border bg-[#111827] transition ${
         sellLocked
           ? 'border-violet-400/60 shadow-lg shadow-violet-500/20 ring-1 ring-violet-400/30'
-          : 'border-[#1a1b22] hover:border-[#7c3aed]/35'
+          : 'border-[#1a1b22] hover:border-[#3b82f6]/35'
       } ${shake}`}
     >
       <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
@@ -53,7 +53,7 @@ export function TokenCard({ token }: { token: Token }) {
             </span>
           )}
           {!token.complete && !armed && progress > 70 && token.source !== 'dexscreener' && (
-            <span className="rounded-md bg-[#7c3aed] px-1.5 py-0.5 text-[9px] font-bold text-white">
+            <span className="rounded-md bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-bold text-white">
               HOT
             </span>
           )}
@@ -61,7 +61,7 @@ export function TokenCard({ token }: { token: Token }) {
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-8">
           <div className="h-1 overflow-hidden rounded-full bg-white/20">
             <div
-              className={`h-full rounded-full ${token.complete ? 'bg-yellow-400' : 'bg-[#7c3aed]'}`}
+              className={`h-full rounded-full ${token.complete ? 'bg-yellow-400' : 'bg-[#3b82f6]'}`}
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -79,19 +79,19 @@ export function TokenCard({ token }: { token: Token }) {
             </p>
             <p className="truncate text-[12px] text-[#8b8d97]">${token.symbol}</p>
           </div>
-          <span className={`shrink-0 text-[11px] font-bold ${up ? 'text-[#7c3aed]' : 'text-[#f87171]'}`}>
+          <span className={`shrink-0 text-[11px] font-bold ${up ? 'text-[#3b82f6]' : 'text-[#f87171]'}`}>
             {up ? '▲' : '▼'}
             {Math.abs(token.change24h).toFixed(1)}%
           </span>
         </div>
 
-        <p className="text-[14px] font-black text-[#7c3aed]">{formatUsd(mcap)} MC</p>
+        <p className="text-[14px] font-black text-[#3b82f6]">{formatUsd(mcap)} MC</p>
         {sellLocked && token.jackpotUnlockAt ? (
           <p className="text-[10px] font-semibold text-violet-300">
             buy only · vanishes {formatJackpotCountdown(token.jackpotUnlockAt)}
           </p>
         ) : mult >= 1.5 ? (
-          <p className="text-[10px] font-semibold text-[#7c3aed]/80">{mult.toFixed(1)}× from launch</p>
+          <p className="text-[10px] font-semibold text-[#3b82f6]/80">{mult.toFixed(1)}× from launch</p>
         ) : null}
 
         <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#6b6d78]">
@@ -105,12 +105,12 @@ export function TokenCard({ token }: { token: Token }) {
         </div>
 
         <p className="flex items-center gap-1 truncate text-[11px] text-[#6b6d78]">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#7c3aed]" />
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#3b82f6]" />
           @{token.creatorName || shortAddr(token.creator)}
           <span>·</span>
           {timeAgo(token.createdAt)}
           {token.lastTradeAt > Date.now() - 15_000 && (
-            <span className="ml-1 font-semibold text-[#7c3aed]">LIVE</span>
+            <span className="ml-1 font-semibold text-[#3b82f6]">LIVE</span>
           )}
         </p>
 

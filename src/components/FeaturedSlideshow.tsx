@@ -45,7 +45,7 @@ export function FeaturedSlideshow() {
 
   return (
     <section
-      className="relative mb-4 overflow-hidden rounded-2xl border border-[#1f2028] fade-up"
+      className="relative mb-4 overflow-hidden rounded-2xl border border-[#1e293b] fade-up"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
@@ -71,7 +71,7 @@ export function FeaturedSlideshow() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10" />
             <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
-              <span className="mb-2 inline-block rounded-full bg-[#7c3aed]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#7c3aed]">
+              <span className="mb-2 inline-block rounded-full bg-[#3b82f6]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#3b82f6]">
                 Featured
               </span>
               <h3 className="text-xl font-black text-white drop-shadow sm:text-3xl">
@@ -86,7 +86,7 @@ export function FeaturedSlideshow() {
               </div>
               <div className="mt-3 h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/15">
                 <div
-                  className="h-full rounded-full bg-[#7c3aed] transition-all duration-500"
+                  className="h-full rounded-full bg-[#3b82f6] transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -104,7 +104,7 @@ export function FeaturedSlideshow() {
               aria-label={`Go to slide ${i + 1}`}
               onClick={() => setIndex(i)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === index ? 'w-6 bg-[#7c3aed]' : 'w-1.5 bg-white/30 hover:bg-white/50'
+                i === index ? 'w-6 bg-[#3b82f6]' : 'w-1.5 bg-white/30 hover:bg-white/50'
               }`}
             />
           ))}

@@ -57,19 +57,19 @@ export function CommunityFeed() {
 
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3">
-      <div className="mb-4 rounded-2xl border border-[#7c3aed]/15 bg-gradient-to-b from-[#0f1f16] to-[#14151b] p-4">
+      <div className="mb-4 rounded-2xl border border-[#3b82f6]/15 bg-gradient-to-b from-[#0f1f16] to-[#111827] p-4">
         <h1 className="text-lg font-bold text-white">◎ Coin communities</h1>
         <p className="mt-1 text-[13px] text-[#8b8d97]">
           Latest posts from every coin community, in one timeline.
         </p>
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#7c3aed]">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#7c3aed]" />
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#3b82f6]">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3b82f6]" />
           LIVE
         </p>
       </div>
       <div className="space-y-3">
         {posts.map((p) => (
-          <article key={p.id} className="rounded-2xl border border-[#1f2028] bg-[#14151b] p-3.5">
+          <article key={p.id} className="rounded-2xl border border-[#1e293b] bg-[#111827] p-3.5">
             <div className="flex gap-2.5">
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#1a1b22]">
                 <TokenImage
@@ -83,7 +83,7 @@ export function CommunityFeed() {
                 <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
                   <span className="font-semibold">@{p.handle}</span>
                   <span className="text-[#6b6d78]">· {p.followers} followers</span>
-                  <Link to={`/coin/${p.tokenId}`} className="rounded-full bg-[#7c3aed]/10 px-2 py-0.5 text-[11px] font-bold text-[#7c3aed]">
+                  <Link to={`/coin/${p.tokenId}`} className="rounded-full bg-[#3b82f6]/10 px-2 py-0.5 text-[11px] font-bold text-[#3b82f6]">
                     ${p.symbol}
                   </Link>
                 </div>

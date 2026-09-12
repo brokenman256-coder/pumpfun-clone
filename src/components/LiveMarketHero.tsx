@@ -44,7 +44,7 @@ function Sparkline({
     return `${line} L${width},${height} L0,${height} Z`
   }, [points, width, height])
 
-  const stroke = up ? '#7c3aed' : '#f87171'
+  const stroke = up ? '#3b82f6' : '#f87171'
   const gradId = up ? 'gUp' : 'gDn'
 
   return (
@@ -113,23 +113,23 @@ export function LiveMarketHero() {
   const livePulse = trades[0]
 
   return (
-    <section className="mb-5 overflow-hidden rounded-2xl border border-[#1f2028] bg-gradient-to-br from-[#12131a] via-[#14151b] to-[#0e1218] p-3 sm:p-4 fade-up">
+    <section className="mb-5 overflow-hidden rounded-2xl border border-[#1e293b] bg-gradient-to-br from-[#12131a] via-[#111827] to-[#0e1218] p-3 sm:p-4 fade-up">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7c3aed] opacity-60" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#7c3aed]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3b82f6] opacity-60" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#3b82f6]" />
           </span>
           <h2 className="text-sm font-black tracking-tight text-white sm:text-base">
             Live markets
           </h2>
-          <span className="rounded-full bg-[#7c3aed]/10 px-2 py-0.5 text-[10px] font-bold text-[#7c3aed]">
+          <span className="rounded-full bg-[#3b82f6]/10 px-2 py-0.5 text-[10px] font-bold text-[#3b82f6]">
             {tokens.length.toLocaleString()} pairs
           </span>
         </div>
         {livePulse && (
           <p className="max-w-[55%] truncate text-[11px] text-[#8b8d97] animate-fade-in">
-            <span className={livePulse.side === 'buy' ? 'text-[#7c3aed]' : 'text-[#f87171]'}>
+            <span className={livePulse.side === 'buy' ? 'text-[#3b82f6]' : 'text-[#f87171]'}>
               {livePulse.side === 'buy' ? '▲ buy' : '▼ sell'}
             </span>{' '}
             {livePulse.solAmount.toFixed(3)} SOL
@@ -145,7 +145,7 @@ export function LiveMarketHero() {
             <Link
               key={t.id}
               to={`/coin/${t.id}`}
-              className="group min-w-[148px] shrink-0 rounded-xl border border-[#26272e] bg-[#0e0f13]/80 p-2.5 transition duration-300 hover:-translate-y-0.5 hover:border-[#7c3aed]/40 hover:shadow-[0_8px_24px_rgba(124,58,237,0.08)]"
+              className="group min-w-[148px] shrink-0 rounded-xl border border-[#334155] bg-[#0a0e1a]/80 p-2.5 transition duration-300 hover:-translate-y-0.5 hover:border-[#3b82f6]/40 hover:shadow-[0_8px_24px_rgba(59,130,246,0.08)]"
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <div className="mb-1.5 flex items-center gap-1.5">
@@ -162,7 +162,7 @@ export function LiveMarketHero() {
                   <p className="truncate text-[10px] text-[#6b6d78]">{formatUsd(t.marketCapUsd)}</p>
                 </div>
                 <span
-                  className={`ml-auto text-[10px] font-bold ${up ? 'text-[#7c3aed]' : 'text-[#f87171]'}`}
+                  className={`ml-auto text-[10px] font-bold ${up ? 'text-[#3b82f6]' : 'text-[#f87171]'}`}
                 >
                   {up ? '▲' : '▼'}
                   {Math.abs(t.change24h).toFixed(1)}%

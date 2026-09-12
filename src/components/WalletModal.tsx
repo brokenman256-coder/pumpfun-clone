@@ -75,10 +75,10 @@ export function WalletModal() {
       }}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl border border-[#1a1d24] bg-[#0b0e11] shadow-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl border border-[#1e293b] bg-[#0a0e1a] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[#1a1d24] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[#1e293b] px-5 py-4">
           <div>
             <h2 className="text-sm font-black text-white">Connect wallet</h2>
             <p className="mt-0.5 text-[11px] text-[#5d6573]">
@@ -110,7 +110,7 @@ export function WalletModal() {
             return (
               <div
                 key={w.id}
-                className="flex items-center gap-3 rounded-xl border border-[#1a1d24] bg-[#12151a] p-3 transition hover:border-[#00c805]/35"
+                className="flex items-center gap-3 rounded-xl border border-[#1e293b] bg-[#0f172a] p-3 transition hover:border-[#00c805]/35"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1e2329] text-xl">
                   {w.emoji}
@@ -132,7 +132,7 @@ export function WalletModal() {
                     href={w.joinUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg border border-[#1a1d24] px-3 py-1.5 text-center text-[11px] font-semibold text-[#848e9c] transition hover:border-[#00c805]/40 hover:text-[#00c805]"
+                    className="rounded-lg border border-[#1e293b] px-3 py-1.5 text-center text-[11px] font-semibold text-[#848e9c] transition hover:border-[#00c805]/40 hover:text-[#00c805]"
                   >
                     Join →
                   </a>
@@ -150,7 +150,7 @@ export function WalletModal() {
             return (
               <div
                 key={w.id}
-                className="flex items-center gap-3 rounded-xl border border-[#1a1d24] bg-[#0e1116] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl border border-[#1e293b] bg-[#0e1116] px-3 py-2.5"
               >
                 <span className="text-lg">{w.emoji}</span>
                 <div className="min-w-0 flex-1">
@@ -171,7 +171,7 @@ export function WalletModal() {
                     href={w.joinUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg border border-[#1a1d24] px-3 py-1.5 text-[11px] font-semibold text-[#00c805]"
+                    className="rounded-lg border border-[#1e293b] px-3 py-1.5 text-[11px] font-semibold text-[#00c805]"
                   >
                     Join →
                   </a>
@@ -192,7 +192,7 @@ export function WalletModal() {
                 type="button"
                 disabled={connecting}
                 onClick={() => selectAndConnect(w.adapter.name as WalletName)}
-                className="flex w-full items-center gap-3 rounded-xl border border-[#1a1d24] bg-[#12151a] px-3 py-3 text-left"
+                className="flex w-full items-center gap-3 rounded-xl border border-[#1e293b] bg-[#0f172a] px-3 py-3 text-left"
               >
                 {w.adapter.icon ? (
                   <img src={w.adapter.icon} alt="" className="h-9 w-9 rounded-full" />
@@ -215,7 +215,7 @@ export function WalletModal() {
                   connectPersonal?.()
                   closeModal()
                 }}
-                className="flex w-full items-center gap-3 rounded-xl border border-[#1a1d24] px-3 py-3 text-left transition hover:border-[#00c805]/25"
+                className="flex w-full items-center gap-3 rounded-xl border border-[#1e293b] px-3 py-3 text-left transition hover:border-[#00c805]/25"
               >
                 <span className="text-lg">👁</span>
                 <span>

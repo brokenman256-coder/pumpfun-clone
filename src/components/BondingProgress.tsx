@@ -11,7 +11,7 @@ export function BondingProgress({ mcap, complete }: { mcap: number; complete: bo
           {formatUsd(mcap)} · {p.toFixed(0)}%
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-[#26272e]">
+      <div className="h-2 overflow-hidden rounded-full bg-[#334155]">
         <div
           className={`h-full rounded-full ${complete ? 'bg-yellow-400' : 'bond-fill'}`}
           style={{ width: `${p}%` }}

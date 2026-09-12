@@ -24,9 +24,9 @@ export function LeftSidebar() {
   const trades = useStore((s) => s.tickerTrades)
 
   return (
-    <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#1f2028] bg-[#0a0b0f] min-h-screen sticky top-0 h-screen">
-      <div className="flex items-center gap-2.5 border-b border-[#1f2028] px-4 py-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] font-black text-white shadow-[0_0_16px_rgba(124,58,237,0.35)]">
+    <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#1e293b] bg-[#0a0e1a] min-h-screen sticky top-0 h-screen">
+      <div className="flex items-center gap-2.5 border-b border-[#1e293b] px-4 py-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.35)]">
           N
         </span>
         <div>
@@ -34,7 +34,7 @@ export function LeftSidebar() {
             NOVA
           </p>
           <p className="flex items-center gap-1 text-[10px] text-[#6b6d78]">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#7c3aed]" />
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#3b82f6]" />
             Live board
           </p>
         </div>
@@ -56,7 +56,7 @@ export function LeftSidebar() {
               }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
                 active
-                  ? 'bg-[#7c3aed]/15 text-[#7c3aed]'
+                  ? 'bg-[#3b82f6]/15 text-[#3b82f6]'
                   : 'text-[#9a9ba3] hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -66,7 +66,7 @@ export function LeftSidebar() {
           )
         })}
 
-        <div className="my-3 border-t border-[#1f2028]" />
+        <div className="my-3 border-t border-[#1e293b]" />
         <p className="px-3 text-[10px] font-bold uppercase tracking-wide text-[#555]">Board</p>
         {[
           { id: 'board' as const, label: 'Trending' },
@@ -82,7 +82,7 @@ export function LeftSidebar() {
             }}
             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm ${
               pathname === '/' && homeTab === t.id
-                ? 'text-[#7c3aed]'
+                ? 'text-[#3b82f6]'
                 : 'text-[#6b6d78] hover:text-white'
             }`}
           >
@@ -91,8 +91,8 @@ export function LeftSidebar() {
         ))}
       </nav>
 
-      <div className="space-y-2 border-t border-[#1f2028] p-3">
-        <div className="rounded-xl border border-[#1f2028] bg-[#14151b]/80 px-3 py-2">
+      <div className="space-y-2 border-t border-[#1e293b] p-3">
+        <div className="rounded-xl border border-[#1e293b] bg-[#111827]/80 px-3 py-2">
           <p className="text-[10px] text-[#6b6d78]">Markets</p>
           <p className="text-sm font-bold text-white">{tokens.length.toLocaleString()}</p>
           <p className="mt-0.5 text-[10px] text-[#555]">
@@ -108,8 +108,8 @@ export function LeftSidebar() {
             Connect wallet
           </button>
         ) : (
-          <div className="rounded-xl border border-[#1f2028] bg-[#14151b] p-3">
-            <p className="font-mono text-[11px] text-[#7c3aed]">{shortAddr(address!, 4)}</p>
+          <div className="rounded-xl border border-[#1e293b] bg-[#111827] p-3">
+            <p className="font-mono text-[11px] text-[#3b82f6]">{shortAddr(address!, 4)}</p>
             <p className="text-xs text-white">{formatSol(solBalance)} SOL</p>
             <div className="mt-2 flex gap-1">
               <LinkBtn onClick={() => navigate('/profile')}>Bag</LinkBtn>
@@ -117,7 +117,7 @@ export function LeftSidebar() {
             </div>
           </div>
         )}
-        <Link to="/pay" className="block text-center text-[11px] text-[#6b6d78] hover:text-[#7c3aed]">
+        <Link to="/pay" className="block text-center text-[11px] text-[#6b6d78] hover:text-[#3b82f6]">
           Payment gateway →
         </Link>
       </div>

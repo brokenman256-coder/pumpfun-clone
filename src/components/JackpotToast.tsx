@@ -16,7 +16,7 @@ export function JackpotToast() {
       particleCount: 100,
       spread: 80,
       origin: { y: 0.55 },
-      colors: ['#7c3aed', '#7c3aed', '#fff', '#fbbf24'],
+      colors: ['#3b82f6', '#3b82f6', '#fff', '#fbbf24'],
     })
     const id = window.setTimeout(clear, 12_000)
     return () => clearTimeout(id)

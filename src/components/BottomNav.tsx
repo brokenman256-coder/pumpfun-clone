@@ -19,7 +19,7 @@ export function BottomNav() {
       {more && (
         <div className="fixed inset-0 z-[55]" onClick={() => setMore(false)}>
           <div
-            className="absolute bottom-[4.25rem] left-1/2 w-44 -translate-x-1/2 overflow-hidden rounded-2xl border border-[#2a2b33] bg-[#1a1b22] py-1 shadow-2xl"
+            className="absolute bottom-[4.25rem] left-1/2 w-44 -translate-x-1/2 overflow-hidden rounded-2xl border border-[#334155] bg-[#1a1b22] py-1 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {[
@@ -44,7 +44,7 @@ export function BottomNav() {
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#1f2028] bg-[#0e0f13]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#1e293b] bg-[#0a0e1a]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-lg items-center justify-around px-2">
           <IconBtn active={homeActive} label="Home" onClick={() => { setHomeTab('board'); navigate('/') }}>
             <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z" />
@@ -59,8 +59,8 @@ export function BottomNav() {
             aria-label="Create"
             onClick={() => navigate('/create')}
             className={`flex h-11 w-11 items-center justify-center rounded-full border text-2xl ${
-              createActive ? 'border-[#7c3aed] text-[#7c3aed]' : 'border-[#2a2b33] text-white'
-            } bg-[#15161b]`}
+              createActive ? 'border-[#3b82f6] text-[#3b82f6]' : 'border-[#334155] text-white'
+            } bg-[#111827]`}
           >
             +
           </button>
@@ -72,7 +72,7 @@ export function BottomNav() {
             type="button"
             aria-label="More"
             onClick={() => setMore((v) => !v)}
-            className={`flex h-11 w-11 items-center justify-center ${more ? 'text-[#7c3aed]' : 'text-[#6b6d78]'}`}
+            className={`flex h-11 w-11 items-center justify-center ${more ? 'text-[#3b82f6]' : 'text-[#6b6d78]'}`}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="6" cy="12" r="1.6" />
@@ -102,7 +102,7 @@ function IconBtn({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`flex h-11 w-11 items-center justify-center ${active ? 'text-[#7c3aed]' : 'text-[#6b6d78]'}`}
+      className={`flex h-11 w-11 items-center justify-center ${active ? 'text-[#3b82f6]' : 'text-[#6b6d78]'}`}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         {children}

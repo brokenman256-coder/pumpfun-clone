@@ -61,7 +61,7 @@ export function TokenBoard() {
             onClick={() => setSort(c.id)}
             className={`chip-press shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition duration-200 ${
               sort === c.id
-                ? 'bg-[#7c3aed] text-white shadow-[0_0_20px_rgba(124,58,237,0.25)]'
+                ? 'bg-[#3b82f6] text-white shadow-[0_0_20px_rgba(59,130,246,0.25)]'
                 : 'bg-[#1a1b22] text-[#9a9ba3] hover:bg-[#22232c] hover:text-white'
             }`}
           >
@@ -102,7 +102,7 @@ export function TokenBoard() {
           ))}
         </div>
       ) : shown.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#2a2b33] py-16 text-center fade-up">
+        <div className="rounded-2xl border border-dashed border-[#334155] py-16 text-center fade-up">
           <p className="text-3xl">🔥</p>
           <p className="mt-2 font-semibold">Markets loading…</p>
         </div>

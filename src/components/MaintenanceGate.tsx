@@ -28,7 +28,7 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
 
   if (down) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0e0f13] px-6 text-center text-[#e8e8ed]">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0e1a] px-6 text-center text-[#e8e8ed]">
         <p className="text-5xl">🛠️</p>
         <h1 className="mt-4 text-2xl font-black">Down for maintenance</h1>
         <p className="mt-2 max-w-sm text-sm text-[#8b8d97]">

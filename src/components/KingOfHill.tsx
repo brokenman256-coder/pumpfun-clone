@@ -18,7 +18,7 @@ export function KingOfHill() {
   return (
     <Link
       to={`/coin/${king.id}`}
-      className="mb-4 flex items-center gap-3 rounded-2xl border border-yellow-400/30 bg-gradient-to-r from-[#1a1508] to-[#14151b] p-3"
+      className="mb-4 flex items-center gap-3 rounded-2xl border border-yellow-400/30 bg-gradient-to-r from-[#1a1508] to-[#111827] p-3"
     >
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-2 ring-yellow-400/50">
         <TokenImage
@@ -37,7 +37,7 @@ export function KingOfHill() {
         <p className="truncate text-sm font-bold text-white">
           {king.emoji} {king.name} <span className="text-[#8b8d97]">${king.symbol}</span>
         </p>
-        <p className="text-xs text-[#7c3aed]">{formatUsd(king.marketCapUsd)} MC · {progress.toFixed(0)}% to Raydium</p>
+        <p className="text-xs text-[#3b82f6]">{formatUsd(king.marketCapUsd)} MC · {progress.toFixed(0)}% to Raydium</p>
       </div>
       <span className="text-2xl">🔥</span>
     </Link>

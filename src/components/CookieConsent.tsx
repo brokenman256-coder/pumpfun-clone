@@ -26,7 +26,7 @@ export function CookieConsent() {
 
   return (
     <div className="fixed inset-x-0 bottom-[4.5rem] z-[70] px-3 sm:bottom-6 sm:left-1/2 sm:max-w-md sm:-translate-x-1/2">
-      <div className="rounded-2xl border border-[#2a2b33] bg-[#1a1b22] p-4 shadow-2xl">
+      <div className="rounded-2xl border border-[#334155] bg-[#1a1b22] p-4 shadow-2xl">
         <p className="text-[15px] font-semibold text-white">We value your privacy</p>
         <p className="mt-1.5 text-[12px] leading-relaxed text-[#9a9ba3]">
           This site uses cookies to improve your browsing experience, analyze site traffic, and show
@@ -39,7 +39,7 @@ export function CookieConsent() {
           <button type="button" className="rounded-full border border-[#3a3b44] px-3.5 py-2 text-[12px] font-semibold">
             Customize
           </button>
-          <button type="button" onClick={() => done('1')} className="ml-auto rounded-full bg-[#7c3aed] px-4 py-2 text-[12px] font-bold text-white">
+          <button type="button" onClick={() => done('1')} className="ml-auto rounded-full bg-[#3b82f6] px-4 py-2 text-[12px] font-bold text-white">
             Accept all
           </button>
         </div>

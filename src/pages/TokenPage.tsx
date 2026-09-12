@@ -105,7 +105,7 @@ export function TokenPage() {
         <button
           type="button"
           onClick={share}
-          className="rounded-full border border-[#1a1d24] bg-[#12151a] px-3 py-1 text-[11px] font-semibold text-[#848e9c] transition hover:text-white"
+          className="rounded-full border border-[#1e293b] bg-[#0f172a] px-3 py-1 text-[11px] font-semibold text-[#848e9c] transition hover:text-white"
         >
           {shared ? 'Link copied ✓' : 'Share'}
         </button>
@@ -123,7 +123,7 @@ export function TokenPage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-lg font-black sm:text-xl">{token.name}</h1>
-            <span className="rounded-md bg-[#12151a] px-2 py-0.5 text-xs font-bold text-[#848e9c]">
+            <span className="rounded-md bg-[#0f172a] px-2 py-0.5 text-xs font-bold text-[#848e9c]">
               ${token.symbol}
             </span>
             {token.complete && (
@@ -159,7 +159,7 @@ export function TokenPage() {
         <button
           type="button"
           onClick={copyCa}
-          className="rounded-lg border border-[#1a1d24] bg-[#12151a] px-3 py-1.5 font-mono text-[11px] text-[#00c805] transition hover:border-[#00c805]/40"
+          className="rounded-lg border border-[#1e293b] bg-[#0f172a] px-3 py-1.5 font-mono text-[11px] text-[#00c805] transition hover:border-[#00c805]/40"
         >
           {copied ? 'Copied ✓' : `CA ${shortAddr(ca, 6)}`}
         </button>
@@ -168,7 +168,7 @@ export function TokenPage() {
             href={safeHref(token.twitter)}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-[#1a1d24] px-3 py-1.5 text-[11px] text-[#848e9c] hover:text-white"
+            className="rounded-lg border border-[#1e293b] px-3 py-1.5 text-[11px] text-[#848e9c] hover:text-white"
           >
             𝕏
           </a>
@@ -178,7 +178,7 @@ export function TokenPage() {
             href={safeHref(token.telegram)}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-[#1a1d24] px-3 py-1.5 text-[11px] text-[#848e9c] hover:text-white"
+            className="rounded-lg border border-[#1e293b] px-3 py-1.5 text-[11px] text-[#848e9c] hover:text-white"
           >
             TG
           </a>
@@ -188,7 +188,7 @@ export function TokenPage() {
             href={safeHref(token.website)}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-[#1a1d24] px-3 py-1.5 text-[11px] text-[#848e9c] hover:text-white"
+            className="rounded-lg border border-[#1e293b] px-3 py-1.5 text-[11px] text-[#848e9c] hover:text-white"
           >
             Web
           </a>
@@ -197,7 +197,7 @@ export function TokenPage() {
           href={EXPLORER_ADDR(token.mint || token.creator)}
           target="_blank"
           rel="noreferrer"
-          className="rounded-lg border border-[#1a1d24] px-3 py-1.5 text-[11px] text-[#5d6573] hover:text-white"
+          className="rounded-lg border border-[#1e293b] px-3 py-1.5 text-[11px] text-[#5d6573] hover:text-white"
         >
           Explorer
         </a>
@@ -217,7 +217,7 @@ export function TokenPage() {
             {stats.map((s) => (
               <div
                 key={s.label}
-                className="rounded-xl border border-[#1a1d24] bg-[#0b0e11] px-3 py-2.5"
+                className="rounded-xl border border-[#1e293b] bg-[#0a0e1a] px-3 py-2.5"
               >
                 <p className="text-[10px] uppercase tracking-wide text-[#5d6573]">{s.label}</p>
                 <p className={`mt-0.5 text-sm font-bold tabular-nums ${s.color || 'text-white'}`}>
@@ -229,7 +229,7 @@ export function TokenPage() {
 
           <p className="text-sm leading-relaxed text-[#848e9c]">{token.description}</p>
 
-          <div className="flex gap-1 rounded-xl bg-[#0b0e11] p-1">
+          <div className="flex gap-1 rounded-xl bg-[#0a0e1a] p-1">
             {(['trades', 'thread', 'holders'] as const).map((t) => (
               <button
                 key={t}
@@ -245,8 +245,8 @@ export function TokenPage() {
           </div>
 
           {tab === 'trades' && (
-            <section className="overflow-hidden rounded-2xl border border-[#1a1d24] bg-[#0b0e11]">
-              <div className="grid grid-cols-[64px_1fr_1fr_1fr_auto] gap-2 border-b border-[#1a1d24] px-3 py-2 text-[10px] font-semibold uppercase text-[#5d6573]">
+            <section className="overflow-hidden rounded-2xl border border-[#1e293b] bg-[#0a0e1a]">
+              <div className="grid grid-cols-[64px_1fr_1fr_1fr_auto] gap-2 border-b border-[#1e293b] px-3 py-2 text-[10px] font-semibold uppercase text-[#5d6573]">
                 <span>Side</span>
                 <span>Amount</span>
                 <span>USD</span>
@@ -260,7 +260,7 @@ export function TokenPage() {
                 {tokenTrades.map((t) => (
                   <div
                     key={t.id}
-                    className="grid grid-cols-[64px_1fr_1fr_1fr_auto] gap-2 border-b border-[#12151a] px-3 py-2 text-xs tabular-nums"
+                    className="grid grid-cols-[64px_1fr_1fr_1fr_auto] gap-2 border-b border-[#0f172a] px-3 py-2 text-xs tabular-nums"
                   >
                     <span className={`font-bold ${t.side === 'buy' ? 'text-[#00c805]' : 'text-[#f23645]'}`}>
                       {t.side.toUpperCase()}
@@ -276,13 +276,13 @@ export function TokenPage() {
           )}
 
           {tab === 'thread' && (
-            <section className="rounded-2xl border border-[#1a1d24] bg-[#0b0e11] p-4">
+            <section className="rounded-2xl border border-[#1e293b] bg-[#0a0e1a] p-4">
               <div className="mb-3 flex gap-2">
                 <input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder={connected ? 'Add a comment…' : 'Connect to comment'}
-                  className="flex-1 rounded-xl border border-[#1a1d24] bg-[#12151a] px-4 py-2.5 text-sm outline-none focus:border-[#00c805]/40"
+                  className="flex-1 rounded-xl border border-[#1e293b] bg-[#0f172a] px-4 py-2.5 text-sm outline-none focus:border-[#00c805]/40"
                 />
                 <button
                   type="button"
@@ -304,7 +304,7 @@ export function TokenPage() {
                   <p className="text-xs text-[#5d6573]">No comments yet</p>
                 )}
                 {tokenComments.map((c) => (
-                  <div key={c.id} className="rounded-xl bg-[#12151a] p-3 text-sm">
+                  <div key={c.id} className="rounded-xl bg-[#0f172a] p-3 text-sm">
                     <p className="text-[11px] text-[#5d6573]">
                       {shortAddr(c.author)} · {timeAgo(c.createdAt)}
                     </p>
@@ -323,7 +323,7 @@ export function TokenPage() {
           )}
 
           {tab === 'holders' && (
-            <section className="rounded-2xl border border-[#1a1d24] bg-[#0b0e11] p-4">
+            <section className="rounded-2xl border border-[#1e293b] bg-[#0a0e1a] p-4">
               <HoldersList holders={token.holders} />
             </section>
           )}

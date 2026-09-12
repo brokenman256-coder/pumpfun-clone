@@ -31,8 +31,8 @@ const TF_SEC: Record<Tf, number> = {
 // pump.fun palette
 const UP = '#00c805'
 const DOWN = '#f23645'
-const BG = '#0b0e11'
-const GRID = '#1a1d24'
+const BG = '#0a0e1a'
+const GRID = '#1e293b'
 const TEXT = '#848e9c'
 
 export function Chart({ token }: { token: Token }) {
@@ -71,16 +71,16 @@ export function Chart({ token }: { token: Token }) {
       crosshair: {
         mode: 1,
         vertLine: {
-          color: 'rgba(124,58,237,0.35)',
+          color: 'rgba(59,130,246,0.35)',
           width: 1,
           style: 2,
-          labelBackgroundColor: '#1a1d24',
+          labelBackgroundColor: '#1e293b',
         },
         horzLine: {
-          color: 'rgba(124,58,237,0.35)',
+          color: 'rgba(59,130,246,0.35)',
           width: 1,
           style: 2,
-          labelBackgroundColor: '#1a1d24',
+          labelBackgroundColor: '#1e293b',
         },
       },
       width: wrap.current.clientWidth,
@@ -205,14 +205,14 @@ export function Chart({ token }: { token: Token }) {
   const displayUsd = displayPx * SOL_PRICE_USD
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#1a1d24] bg-[#0b0e11] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="overflow-hidden rounded-2xl border border-[#1e293b] bg-[#0a0e1a] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       {/* pump.fun-style header strip */}
-      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-[#1a1d24] px-3 py-2.5">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-[#1e293b] px-3 py-2.5">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-[#5d6573]">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7c3aed] opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#7c3aed]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3b82f6] opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3b82f6]" />
             </span>
             Price · {token.symbol}/SOL
           </p>
@@ -230,7 +230,7 @@ export function Chart({ token }: { token: Token }) {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-0.5 rounded-lg bg-[#12151a] p-0.5">
+        <div className="flex items-center gap-0.5 rounded-lg bg-[#0f172a] p-0.5">
           {(['1s', '1m', '5m', '15m', '1h'] as Tf[]).map((t) => (
             <button
               key={t}
@@ -248,7 +248,7 @@ export function Chart({ token }: { token: Token }) {
         </div>
       </div>
       <div ref={wrap} className="h-[320px] w-full sm:h-[400px]" />
-      <div className="flex items-center justify-between border-t border-[#1a1d24] px-3 py-1.5 text-[10px] text-[#5d6573]">
+      <div className="flex items-center justify-between border-t border-[#1e293b] px-3 py-1.5 text-[10px] text-[#5d6573]">
         <span>MC {formatUsd(token.marketCapUsd)}</span>
         <span>Vol {formatUsd(token.volumeUsd)}</span>
         <span>

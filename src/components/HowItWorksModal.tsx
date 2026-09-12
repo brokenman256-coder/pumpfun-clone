@@ -14,9 +14,9 @@ export function HowItWorksModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setHowOpen(false)}>
-      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#26272e] bg-[#15161b]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex h-28 items-center justify-center bg-gradient-to-b from-[#3b0764] to-[#15161b]">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] text-2xl font-black text-white shadow-[0_0_24px_rgba(124,58,237,0.4)]">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[#334155] bg-[#111827]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex h-28 items-center justify-center bg-gradient-to-b from-[#3b0764] to-[#111827]">
+          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-2xl font-black text-white shadow-[0_0_24px_rgba(59,130,246,0.4)]">
             N
           </span>
         </div>
@@ -28,7 +28,7 @@ export function HowItWorksModal() {
           <ol className="mt-5 space-y-3">
             {STEPS.map((text, i) => (
               <li key={text} className="flex gap-3 text-sm">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#7c3aed] text-xs font-bold text-white">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#3b82f6] text-xs font-bold text-white">
                   {i + 1}
                 </span>
                 <span className="pt-1">{text}</span>
@@ -38,7 +38,7 @@ export function HowItWorksModal() {
           <button
             type="button"
             onClick={() => setHowOpen(false)}
-            className="btn-press mt-6 w-full rounded-full bg-[#7c3aed] py-3 text-sm font-bold text-white"
+            className="btn-press mt-6 w-full rounded-full bg-[#3b82f6] py-3 text-sm font-bold text-white"
           >
             I&apos;m ready to launch 🚀
           </button>

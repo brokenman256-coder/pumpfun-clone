@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0e0f13;
-  --card: #14151b;
-  --border: #1f2028;
+  --bg: #0a0e1a;
+  --card: #111827;
+  --border: #1e293b;
   --text: #e8e8ed;
   --muted: #8b8d97;
-  --green: #7c3aed;
-  --green2: #6d28d9;
+  --green: #3b82f6;
+  --green2: #2563eb;
+  --cyan: #22d3ee;
 }
 
 * {
@@ -35,7 +36,7 @@ body {
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.35);
+  background: rgba(59, 130, 246, 0.35);
   color: #fff;
 }
 
@@ -71,8 +72,8 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
-  50% { box-shadow: 0 0 24px 0 rgba(124, 58, 237, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  50% { box-shadow: 0 0 24px 0 rgba(59, 130, 246, 0.12); }
 }
 
 @keyframes float-soft {
@@ -119,7 +120,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .shake-buy {
   animation: shake 0.5s ease;
-  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
 }
 
 .shake-sell {
@@ -128,7 +129,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #15161b 25%, #1f2028 50%, #15161b 75%);
+  background: linear-gradient(90deg, #111827 25%, #1e293b 50%, #111827 75%);
   background-size: 200% 100%;
   animation: skeleton 1.2s ease infinite;
 }
@@ -185,12 +186,12 @@ html {
 
 /* pump.fun-ish dark surface */
 .surface-dark {
-  background: #0b0e11;
-  border-color: #1a1d24;
+  background: #0a0e1a;
+  border-color: #1e293b;
 }
 
 .bond-fill {
-  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
   transform-origin: left;
 }
 

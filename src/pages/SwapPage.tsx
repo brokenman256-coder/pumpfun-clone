@@ -88,13 +88,13 @@ export function SwapPage() {
         Jupiter aggregator · routes through Raydium, Orca, Meteora & more · {CHAIN_LABEL}
       </p>
 
-      <div className="mt-5 space-y-3 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+      <div className="mt-5 space-y-3 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <div>
           <label className="mb-1 block text-xs text-[#8b8d97]">You pay (SOL)</label>
           <input
             value={amountSol}
             onChange={(e) => setAmountSol(e.target.value)}
-            className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 text-lg font-semibold outline-none focus:border-[#7c3aed]/40"
+            className="w-full rounded-xl border border-[#334155] bg-[#0a0e1a] px-3 py-3 text-lg font-semibold outline-none focus:border-[#3b82f6]/40"
           />
           <p className="mt-1 text-[11px] text-[#6b6d78]">Balance {solBalance.toFixed(4)} SOL</p>
         </div>
@@ -104,7 +104,7 @@ export function SwapPage() {
             value={mint}
             onChange={(e) => setMint(e.target.value)}
             placeholder="Paste SPL mint address"
-            className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 font-mono text-sm outline-none focus:border-[#7c3aed]/40"
+            className="w-full rounded-xl border border-[#334155] bg-[#0a0e1a] px-3 py-3 font-mono text-sm outline-none focus:border-[#3b82f6]/40"
           />
         </div>
         <div>
@@ -112,29 +112,29 @@ export function SwapPage() {
           <input
             value={slippage}
             onChange={(e) => setSlippage(e.target.value)}
-            className="w-24 rounded-lg border border-[#26272e] bg-[#0e0f13] px-2 py-1.5 text-sm"
+            className="w-24 rounded-lg border border-[#334155] bg-[#0a0e1a] px-2 py-1.5 text-sm"
           />
         </div>
 
         {quote && (
-          <div className="rounded-xl bg-[#0e0f13] p-3 text-xs text-[#8b8d97]">
+          <div className="rounded-xl bg-[#0a0e1a] p-3 text-xs text-[#8b8d97]">
             <p>
               Out amount (raw):{' '}
-              <span className="font-mono text-[#7c3aed]">{quote.outAmount}</span>
+              <span className="font-mono text-[#3b82f6]">{quote.outAmount}</span>
             </p>
             <p>Price impact: {quote.priceImpactPct}%</p>
             <p>Routes: {quote.routePlan?.length || 0} hop(s)</p>
           </div>
         )}
 
-        {status && <p className="text-center text-sm text-[#7c3aed]">{status}</p>}
+        {status && <p className="text-center text-sm text-[#3b82f6]">{status}</p>}
         {error && <p className="text-center text-sm text-[#f87171]">{error}</p>}
         {sig && (
           <a
             href={EXPLORER_TX(sig)}
             target="_blank"
             rel="noreferrer"
-            className="block text-center text-xs text-[#7c3aed] underline"
+            className="block text-center text-xs text-[#3b82f6] underline"
           >
             View swap tx →
           </a>
@@ -145,7 +145,7 @@ export function SwapPage() {
             type="button"
             disabled={loading}
             onClick={() => void doQuote()}
-            className="flex-1 rounded-full border border-[#7c3aed]/40 py-3 text-sm font-bold text-[#7c3aed] disabled:opacity-50"
+            className="flex-1 rounded-full border border-[#3b82f6]/40 py-3 text-sm font-bold text-[#3b82f6] disabled:opacity-50"
           >
             Get quote
           </button>
@@ -153,7 +153,7 @@ export function SwapPage() {
             type="button"
             disabled={loading || !quote}
             onClick={() => void doSwap()}
-            className="flex-1 rounded-full bg-[#7c3aed] py-3 text-sm font-bold text-white disabled:opacity-50"
+            className="flex-1 rounded-full bg-[#3b82f6] py-3 text-sm font-bold text-white disabled:opacity-50"
           >
             {connected ? 'Swap' : 'Sign in'}
           </button>
@@ -167,7 +167,7 @@ export function SwapPage() {
               href={jupiterTradeUrl(mint.trim())}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-[#26272e] px-3 py-1.5 text-[#8b8d97]"
+              className="rounded-full border border-[#334155] px-3 py-1.5 text-[#8b8d97]"
             >
               Open Jupiter ↗
             </a>
@@ -175,7 +175,7 @@ export function SwapPage() {
               href={raydiumTradeUrl(mint.trim())}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-[#26272e] px-3 py-1.5 text-[#8b8d97]"
+              className="rounded-full border border-[#334155] px-3 py-1.5 text-[#8b8d97]"
             >
               Open Raydium ↗
             </a>

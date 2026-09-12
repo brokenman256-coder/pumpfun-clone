@@ -15,11 +15,11 @@ export function DexLiveBar() {
   const liveCount = tokens.filter((t) => t.source === 'dexscreener').length
 
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#1f2028] bg-[#14151b] px-3 py-2 text-[11px]">
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#1e293b] bg-[#111827] px-3 py-2 text-[11px]">
       <span
         className={`inline-flex h-2 w-2 rounded-full ${
           dexStatus === 'ok'
-            ? 'animate-pulse bg-[#7c3aed]'
+            ? 'animate-pulse bg-[#3b82f6]'
             : dexStatus === 'loading'
               ? 'bg-yellow-400'
               : dexStatus === 'error'
@@ -42,7 +42,7 @@ export function DexLiveBar() {
           type="button"
           onClick={() => void refresh()}
           disabled={dexStatus === 'loading'}
-          className="rounded-full border border-[#26272e] px-2.5 py-1 font-semibold text-[#7c3aed] hover:border-[#7c3aed]/40 disabled:opacity-50"
+          className="rounded-full border border-[#334155] px-2.5 py-1 font-semibold text-[#3b82f6] hover:border-[#3b82f6]/40 disabled:opacity-50"
         >
           Refresh
         </button>
@@ -50,7 +50,7 @@ export function DexLiveBar() {
           type="button"
           onClick={() => setLiveMode(!liveMode)}
           className={`rounded-full px-2.5 py-1 font-semibold ${
-            liveMode ? 'bg-[#7c3aed]/15 text-[#7c3aed]' : 'bg-[#1a1b22] text-[#8b8d97]'
+            liveMode ? 'bg-[#3b82f6]/15 text-[#3b82f6]' : 'bg-[#1a1b22] text-[#8b8d97]'
           }`}
         >
           {liveMode ? 'Live ON' : 'Live OFF'}

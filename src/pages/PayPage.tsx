@@ -62,16 +62,16 @@ export function PayPage() {
         Official SOL checkout · Phantom, Solflare & Wallet Standard · {CHAIN_LABEL}
       </p>
 
-      <div className="mt-4 rounded-2xl border border-[#7c3aed]/25 bg-[#0c1f14] p-4 text-xs text-[#8b8d97]">
+      <div className="mt-4 rounded-2xl border border-[#3b82f6]/25 bg-[#0c1f14] p-4 text-xs text-[#8b8d97]">
         Treasury (recipient)
-        <p className="mt-1 break-all font-mono text-[#7c3aed]">{FEE_RECIPIENT}</p>
+        <p className="mt-1 break-all font-mono text-[#3b82f6]">{FEE_RECIPIENT}</p>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         {supportedWallets().map((w) => (
           <div
             key={w.id}
-            className="rounded-xl border border-[#1f2028] bg-[#14151b] p-3 text-center"
+            className="rounded-xl border border-[#1e293b] bg-[#111827] p-3 text-center"
           >
             <p className="text-xl">{w.icon}</p>
             <p className="mt-1 text-[11px] font-bold text-white">{w.id}</p>
@@ -80,7 +80,7 @@ export function PayPage() {
         ))}
       </div>
 
-      <div className="mt-5 space-y-3 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+      <div className="mt-5 space-y-3 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <p className="text-xs font-bold uppercase text-[#6b6d78]">Select product</p>
         {GATEWAY_PRESETS.map((p) => (
           <button
@@ -92,15 +92,15 @@ export function PayPage() {
             }}
             className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left ${
               purpose === p.id
-                ? 'border-[#7c3aed]/50 bg-[#7c3aed]/10'
-                : 'border-[#26272e] bg-[#0e0f13]'
+                ? 'border-[#3b82f6]/50 bg-[#3b82f6]/10'
+                : 'border-[#334155] bg-[#0a0e1a]'
             }`}
           >
             <div>
               <p className="text-sm font-bold text-white">{p.label}</p>
               <p className="text-[11px] text-[#8b8d97]">{p.desc}</p>
             </div>
-            <span className="font-bold text-[#7c3aed]">{p.amountSol} SOL</span>
+            <span className="font-bold text-[#3b82f6]">{p.amountSol} SOL</span>
           </button>
         ))}
 
@@ -109,21 +109,21 @@ export function PayPage() {
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-2.5 text-sm outline-none"
+            className="w-full rounded-xl border border-[#334155] bg-[#0a0e1a] px-3 py-2.5 text-sm outline-none"
           />
           <p className="mt-1 text-[11px] text-[#6b6d78]">
             Wallet bal {solBalance.toFixed(4)} SOL
           </p>
         </div>
 
-        {status && <p className="text-center text-sm text-[#7c3aed]">{status}</p>}
+        {status && <p className="text-center text-sm text-[#3b82f6]">{status}</p>}
         {error && <p className="text-center text-sm text-[#f87171]">{error}</p>}
 
         <button
           type="button"
           disabled={loading}
           onClick={() => void pay()}
-          className="w-full rounded-full bg-[#7c3aed] py-3.5 text-sm font-bold text-white disabled:opacity-50"
+          className="w-full rounded-full bg-[#3b82f6] py-3.5 text-sm font-bold text-white disabled:opacity-50"
         >
           {loading ? 'Processing…' : connected ? 'Pay with wallet' : 'Connect wallet to pay'}
         </button>
@@ -136,7 +136,7 @@ export function PayPage() {
             {payments.slice(0, 10).map((p) => (
               <div
                 key={p.signature}
-                className="rounded-xl border border-[#1f2028] bg-[#14151b] px-3 py-2 text-xs"
+                className="rounded-xl border border-[#1e293b] bg-[#111827] px-3 py-2 text-xs"
               >
                 <p className="font-semibold text-white">
                   {p.amountSol} SOL · {p.purpose}
@@ -145,7 +145,7 @@ export function PayPage() {
                   href={EXPLORER_TX(p.signature)}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-[10px] text-[#7c3aed]"
+                  className="font-mono text-[10px] text-[#3b82f6]"
                 >
                   {shortAddr(p.signature, 8)}
                 </a>

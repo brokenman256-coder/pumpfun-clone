@@ -47,7 +47,7 @@ export function ProfilePage() {
         <button
           type="button"
           onClick={openModal}
-          className="rounded-full bg-[#7c3aed] px-5 py-2 text-sm font-bold text-white"
+          className="rounded-full bg-[#3b82f6] px-5 py-2 text-sm font-bold text-white"
         >
           Sign in
         </button>
@@ -57,9 +57,9 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-lg px-3 py-6">
-      <div className="rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+      <div className="rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <p className="text-xs text-[#8b8d97]">your bag</p>
-        <p className="mt-1 font-mono text-sm text-[#7c3aed]">{shortAddr(address, 6)}</p>
+        <p className="mt-1 font-mono text-sm text-[#3b82f6]">{shortAddr(address, 6)}</p>
         <p className="mt-2 text-2xl font-black">{formatSol(solBalance)} SOL</p>
       </div>
 
@@ -70,7 +70,7 @@ export function ProfilePage() {
             type="button"
             onClick={() => setTab(t)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
-              tab === t ? 'bg-[#7c3aed] text-white' : 'bg-[#1a1b22] text-[#8b8d97]'
+              tab === t ? 'bg-[#3b82f6] text-white' : 'bg-[#1a1b22] text-[#8b8d97]'
             }`}
           >
             {t}
@@ -87,7 +87,7 @@ export function ProfilePage() {
               <Link
                 key={h.token.id}
                 to={`/coin/${h.token.id}`}
-                className="flex items-center justify-between rounded-xl border border-[#1f2028] bg-[#14151b] p-3"
+                className="flex items-center justify-between rounded-xl border border-[#1e293b] bg-[#111827] p-3"
               >
                 <div>
                   <p className="font-semibold">${h.token.symbol}</p>
@@ -95,7 +95,7 @@ export function ProfilePage() {
                 </div>
                 <div className="text-right text-sm">
                   <p>{formatSol(h.valueSol)} SOL</p>
-                  <p className={h.pnl >= 0 ? 'text-[#7c3aed]' : 'text-[#f87171]'}>
+                  <p className={h.pnl >= 0 ? 'text-[#3b82f6]' : 'text-[#f87171]'}>
                     {h.pnl >= 0 ? '+' : ''}
                     {formatSol(h.pnl)}
                   </p>
@@ -112,10 +112,10 @@ export function ProfilePage() {
               <Link
                 key={t.id}
                 to={`/coin/${t.id}`}
-                className="flex justify-between rounded-xl border border-[#1f2028] bg-[#14151b] p-3"
+                className="flex justify-between rounded-xl border border-[#1e293b] bg-[#111827] p-3"
               >
                 <span className="font-semibold">${t.symbol}</span>
-                <span className="text-[#7c3aed]">{formatUsd(t.marketCapUsd)}</span>
+                <span className="text-[#3b82f6]">{formatUsd(t.marketCapUsd)}</span>
               </Link>
             ))
           ))}
@@ -125,7 +125,7 @@ export function ProfilePage() {
             <p className="text-sm text-[#6b6d78]">no replies yet</p>
           ) : (
             replies.map((c) => (
-              <div key={c.id} className="rounded-xl border border-[#1f2028] bg-[#14151b] p-3 text-sm">
+              <div key={c.id} className="rounded-xl border border-[#1e293b] bg-[#111827] p-3 text-sm">
                 {c.text}
               </div>
             ))

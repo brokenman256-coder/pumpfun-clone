@@ -108,20 +108,20 @@ export function AdminPage() {
         <p className="mt-2 text-center text-xs text-[#8b8d97]">
           Master bot access · rate-limited · session expires in 4h
         </p>
-        <div className="mt-6 space-y-3 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+        <div className="mt-6 space-y-3 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && login()}
             placeholder="Admin key"
-            className="w-full rounded-xl border border-[#26272e] bg-[#0e0f13] px-3 py-3 text-sm outline-none focus:border-[#7c3aed]/40"
+            className="w-full rounded-xl border border-[#334155] bg-[#0a0e1a] px-3 py-3 text-sm outline-none focus:border-[#3b82f6]/40"
           />
           {error && <p className="text-center text-xs text-[#f87171]">{error}</p>}
           <button
             type="button"
             onClick={login}
-            className="w-full rounded-full bg-[#7c3aed] py-3 text-sm font-bold text-white"
+            className="w-full rounded-full bg-[#3b82f6] py-3 text-sm font-bold text-white"
           >
             Unlock dashboard
           </button>
@@ -161,7 +161,7 @@ export function AdminPage() {
         <button
           type="button"
           onClick={logout}
-          className="rounded-full border border-[#26272e] px-4 py-1.5 text-xs text-[#f87171]"
+          className="rounded-full border border-[#334155] px-4 py-1.5 text-xs text-[#f87171]"
         >
           Lock session
         </button>
@@ -183,8 +183,8 @@ export function AdminPage() {
       </div>
 
       {/* Real on-chain program */}
-      <section className="mt-6 rounded-2xl border border-[#7c3aed]/30 bg-[#0c1f14] p-5">
-        <h2 className="text-lg font-bold text-[#7c3aed]">🔒 On-chain bonding-curve program</h2>
+      <section className="mt-6 rounded-2xl border border-[#3b82f6]/30 bg-[#0c1f14] p-5">
+        <h2 className="text-lg font-bold text-[#3b82f6]">🔒 On-chain bonding-curve program</h2>
         <p className="mt-1 text-xs text-[#8b8d97]">
           Real deployed Solana program — create/buy/sell instructions move real SOL and real SPL
           tokens through an on-chain PDA vault. Not a simulation.
@@ -204,7 +204,7 @@ export function AdminPage() {
               href={EXPLORER_ADDR(LAUNCHPAD_PROGRAM_ID.toBase58())}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[#7c3aed] underline"
+              className="font-mono text-[#3b82f6] underline"
             >
               {LAUNCHPAD_PROGRAM_ID.toBase58()}
             </a>
@@ -215,7 +215,7 @@ export function AdminPage() {
               href={EXPLORER_ADDR(FEE_RECIPIENT)}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[#7c3aed] underline"
+              className="font-mono text-[#3b82f6] underline"
             >
               {FEE_RECIPIENT}
             </a>
@@ -225,11 +225,11 @@ export function AdminPage() {
       </section>
 
       {/* Real scheduled bot launcher (GitHub Actions) */}
-      <section className="mt-6 rounded-2xl border border-[#7c3aed]/30 bg-[#0c1f14] p-5">
-        <h2 className="text-lg font-bold text-[#7c3aed]">🤖 Scheduled bot launcher</h2>
+      <section className="mt-6 rounded-2xl border border-[#3b82f6]/30 bg-[#0c1f14] p-5">
+        <h2 className="text-lg font-bold text-[#3b82f6]">🤖 Scheduled bot launcher</h2>
         <p className="mt-1 text-xs text-[#8b8d97]">
           Runs outside this browser via a GitHub Actions workflow (
-          <code className="text-[#7c3aed]">.github/workflows/bot-launch.yml</code>, every 5 minutes) —
+          <code className="text-[#3b82f6]">.github/workflows/bot-launch.yml</code>, every 5 minutes) —
           creates one real on-chain coin per run using a real internet meme image (safe/curated
           subreddits only), signed by a dedicated bot wallet. Anyone can trade the coins it creates;
           this dashboard can't override their price or curve — only turn the schedule itself off (via
@@ -256,7 +256,7 @@ export function AdminPage() {
               href={EXPLORER_ADDR(BOT_WALLET_ADDRESS)}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[#7c3aed] underline"
+              className="font-mono text-[#3b82f6] underline"
             >
               {BOT_WALLET_ADDRESS}
             </a>{' '}
@@ -287,7 +287,7 @@ export function AdminPage() {
               max={100}
               value={botConfig.fleetSize}
               onChange={(e) => setBotFleet(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#334155] bg-[#0a0e1a] px-2 py-2 text-sm text-white"
             />
           </label>
           <label className="text-xs text-[#8b8d97]">
@@ -298,7 +298,7 @@ export function AdminPage() {
               step={1000}
               value={botConfig.intervalMs}
               onChange={(e) => setBotInterval(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-[#26272e] bg-[#0e0f13] px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#334155] bg-[#0a0e1a] px-2 py-2 text-sm text-white"
             />
           </label>
           <div className="flex flex-col justify-end gap-2">
@@ -306,7 +306,7 @@ export function AdminPage() {
               type="button"
               onClick={armFleet}
               disabled={botConfig.enabled}
-              className="rounded-full bg-[#7c3aed] py-2 text-sm font-bold text-white disabled:opacity-40"
+              className="rounded-full bg-[#3b82f6] py-2 text-sm font-bold text-white disabled:opacity-40"
             >
               {botConfig.enabled ? 'Fleet running…' : 'ARM fleet (signed)'}
             </button>
@@ -332,7 +332,7 @@ export function AdminPage() {
           <button
             type="button"
             onClick={() => botTick()}
-            className="rounded-full border border-[#26272e] px-2 py-1"
+            className="rounded-full border border-[#334155] px-2 py-1"
           >
             Force 1 launch
           </button>
@@ -347,7 +347,7 @@ export function AdminPage() {
       </section>
 
       {/* Security */}
-      <section className="mt-6 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+      <section className="mt-6 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <h2 className="font-bold text-white">Security posture</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-[#8b8d97]">
           <li>Admin session in sessionStorage (4h expiry)</li>
@@ -360,14 +360,14 @@ export function AdminPage() {
       </section>
 
       {/* Manage tokens */}
-      <section className="mt-6 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+      <section className="mt-6 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-bold">Manage tokens ({tokens.length})</h2>
           <input
             value={tokenSearch}
             onChange={(e) => setTokenSearch(e.target.value)}
             placeholder="search name or ticker"
-            className="w-40 rounded-lg border border-[#26272e] bg-[#0e0f13] px-2.5 py-1.5 text-xs outline-none focus:border-[#7c3aed]/40"
+            className="w-40 rounded-lg border border-[#334155] bg-[#0a0e1a] px-2.5 py-1.5 text-xs outline-none focus:border-[#3b82f6]/40"
           />
         </div>
         <div className="mt-3 max-h-96 space-y-1 overflow-y-auto text-xs">
@@ -409,7 +409,7 @@ export function AdminPage() {
       </section>
 
       {/* Recent payments */}
-      <section className="mt-6 rounded-2xl border border-[#1f2028] bg-[#14151b] p-5">
+      <section className="mt-6 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <h2 className="font-bold">Gateway ledger</h2>
         <div className="mt-2 space-y-1 text-xs">
           {payments.length === 0 && <p className="text-[#6b6d78]">No payments yet</p>}
@@ -429,7 +429,7 @@ export function AdminPage() {
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#1f2028] bg-[#14151b] p-3">
+    <div className="rounded-xl border border-[#1e293b] bg-[#111827] p-3">
       <p className="text-[10px] uppercase text-[#6b6d78]">{label}</p>
       <p className="mt-0.5 text-sm font-bold text-white">{value}</p>
     </div>
