@@ -4,7 +4,6 @@ import { Navbar } from './components/Navbar'
 import { LeftSidebar } from './components/LeftSidebar'
 import { MobileBanner } from './components/MobileBanner'
 import { BottomNav } from './components/BottomNav'
-import { CookieConsent } from './components/CookieConsent'
 import { WalletModal } from './components/WalletModal'
 import { HowItWorksModal } from './components/HowItWorksModal'
 import { GraduationToast } from './components/GraduationToast'
@@ -76,7 +75,6 @@ export default function App() {
           <div className="lg:hidden">
             <BottomNav />
           </div>
-          <CookieConsent />
           <WalletModal />
           <HowItWorksModal />
           <GraduationToast />

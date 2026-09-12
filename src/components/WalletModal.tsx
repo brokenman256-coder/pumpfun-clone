@@ -4,6 +4,7 @@ import { PERSONAL_MODE } from '../chain/config'
 import type { WalletName } from '@solana/wallet-adapter-base'
 import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { MEMECOIN_WALLETS, openWalletJoin } from '../lib/wallets'
+import { useExitTransition } from '../hooks/useExitTransition'
 
 /**
  * Connect modal — Phantom + other Solana wallets used for meme trading,
@@ -30,7 +31,7 @@ export function WalletModal() {
     return map
   }, [wallets])
 
-  if (!modalOpen) return null
+  const { mounted, state } = useExitTransition(modalOpen, 200)
 
   function statusFor(adapterName?: string): {
     ready: boolean
@@ -66,16 +67,19 @@ export function WalletModal() {
     selectAndConnect(adapterName as WalletName)
   }
 
+  if (!mounted) return null
+  const shown = state === 'entered'
+
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className={`fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm transition-opacity duration-200 ease-out ${shown ? 'opacity-100' : 'opacity-0'}`}
       onClick={() => {
         clearError()
         closeModal()
       }}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl border border-[#1e293b] bg-[#0a0e1a] shadow-2xl"
+        className={`max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl border border-[#1e293b] bg-[#0a0e1a] shadow-2xl transition-all duration-200 ease-out ${shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#1e293b] px-5 py-4">

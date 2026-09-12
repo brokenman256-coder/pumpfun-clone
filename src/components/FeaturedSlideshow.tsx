@@ -63,7 +63,7 @@ export function FeaturedSlideshow() {
             <img
               src={t.imageUrl}
               alt=""
-              className="h-full w-full object-cover transition-transform duration-[5000ms] ease-linear"
+              className="h-full w-full object-cover transition-transform duration-[5000ms] ease-out"
               style={{ transform: i === index ? 'scale(1.08)' : 'scale(1)' }}
               onError={(e) => {
                 ;(e.target as HTMLImageElement).style.opacity = '0'
