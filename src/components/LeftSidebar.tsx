@@ -11,9 +11,7 @@ const NAV = [
   // Admin is intentionally NOT in the public nav — open /admin privately
 ]
 
-/**
- * Desktop left rail — pump.fun style navigation panel
- */
+/** Desktop left rail — atlas salon nav */
 export function LeftSidebar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -24,18 +22,20 @@ export function LeftSidebar() {
   const trades = useStore((s) => s.tickerTrades)
 
   return (
-    <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#1e293b] bg-[#0a0e1a] min-h-screen sticky top-0 h-screen">
-      <div className="flex items-center gap-2.5 border-b border-[#1e293b] px-4 py-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] font-black text-white shadow-[0_0_16px_rgba(59,130,246,0.35)]">
-          N
-        </span>
+    <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#3a2433] bg-[#100814]/90 min-h-screen sticky top-0 h-screen">
+      <div className="flex items-center gap-2.5 border-b border-[#3a2433] px-4 py-4">
+        <img
+          src="/img/nova-mark.jpg"
+          alt=""
+          className="h-9 w-9 rounded-full object-cover ring-1 ring-[#e8a35a]/40"
+        />
         <div>
-          <p className="text-sm font-black tracking-tight text-white">
+          <p className="font-display text-lg tracking-tight text-[#f4ead8]">
             NOVA
           </p>
-          <p className="flex items-center gap-1 text-[10px] text-[#6b6d78]">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#3b82f6]" />
-            Live board
+          <p className="flex items-center gap-1 text-[10px] text-[#b7a99a]">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#e8a35a]" />
+            Atlas rooms
           </p>
         </div>
       </div>
@@ -56,8 +56,8 @@ export function LeftSidebar() {
               }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
                 active
-                  ? 'bg-[#3b82f6]/15 text-[#3b82f6]'
-                  : 'text-[#9a9ba3] hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#e8a35a]/15 text-[#e8a35a]'
+                  : 'text-[#b7a99a] hover:bg-white/5 hover:text-[#f4ead8]'
               }`}
             >
               <span>{item.icon}</span>

@@ -17,6 +17,7 @@ import {
 } from './managedMarket'
 import { priceSol, marketCapUsd, VIRTUAL_SOL, VIRTUAL_TOKENS } from './bondingCurve'
 import { generateUsername } from './traderBots'
+import { communityBio, paintCommunity } from './communityStudio'
 
 
 export type BotConfig = {
@@ -110,6 +111,7 @@ export type BuildBotOptions = {
   botIndex: number
   seq: number
   usedUrls: Set<string>
+  usedSymbols?: Set<string>
   targetMcapUsd?: number
   creatorLabel?: string
 }
@@ -118,14 +120,27 @@ export type BuildBotOptions = {
  * Build one managed board coin — never fails (procedural memes if needed).
  */
 export function buildBotToken(opts: BuildBotOptions): Token {
+  const look = paintCommunity(opts.seq, opts.usedUrls)
   const meme = pickAnyUniqueMeme(opts.usedUrls, opts.seq)
-  opts.usedUrls.add(meme.url)
+  if (meme.url && !opts.usedUrls.has(meme.url) && Math.random() > 0.55) {
+    look.imageUrl = meme.url
+    opts.usedUrls.add(meme.url)
+  }
 
   const seq = opts.seq
-  const name = memeToName(meme.title, `Meme ${opts.botIndex + 1}`)
-  const symbol = memeToSymbol(meme.title, seq)
-  const seed = `bot_${opts.botIndex}_${seq}_${meme.url.slice(0, 40)}`
-  const emoji = tokenEmoji(seed)
+  let name = memeToName(meme.title, look.community)
+  let symbol = memeToSymbol(meme.title + look.community, seq)
+  const usedSym = opts.usedSymbols
+  if (usedSym) {
+    let n = 0
+    while (usedSym.has(symbol) && n < 12) {
+      n++
+      symbol = `${symbol.slice(0, 5)}${n}`.slice(0, 8)
+    }
+    usedSym.add(symbol)
+  }
+  const seed = `bot_${opts.botIndex}_${seq}_${look.community}`
+  const emoji = look.emoji || tokenEmoji(seed)
   const id = `bot_${Date.now().toString(36)}_${seq.toString(36)}`
   const creator = opts.creatorLabel || generateUsername(opts.botIndex * 91 + seq)
 
@@ -149,9 +164,9 @@ export function buildBotToken(opts: BuildBotOptions): Token {
     name,
     symbol,
     emoji,
-    description: memeToBio(meme, symbol),
-    imageUrl: meme.url,
-    imageHue: (opts.botIndex * 37) % 360,
+    description: communityBio(look, symbol, meme.title),
+    imageUrl: look.imageUrl,
+    imageHue: look.imageHue,
     creator,
     creatorName: creator,
     virtualSol: seeded.virtualSol,
@@ -192,9 +207,12 @@ export function buildBotToken(opts: BuildBotOptions): Token {
       },
     ],
     shake: null,
-    tags: ['bot-launch', 'meme', 'managed', meme.subreddit].filter(Boolean) as string[],
+    tags: ['house', look.community, meme.subreddit].filter(Boolean) as string[],
     source: 'bot',
     managed: true,
+    community: look.community,
+    communityAccent: look.accent,
+    communityInk: look.ink,
     twitter: `https://x.com/search?q=%24${symbol}`,
   }
 }

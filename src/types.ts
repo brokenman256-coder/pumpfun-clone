@@ -83,6 +83,10 @@ export type Token = {
   dexId?: string
   chainId?: string
   liquidityUsd?: number
+  /** Unique community room this listing belongs to */
+  community?: string
+  communityAccent?: string
+  communityInk?: string
 }
 
 export type Trade = {

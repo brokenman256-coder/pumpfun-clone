@@ -50,10 +50,17 @@ import {
 import { PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
 import {
   JACKPOT_FREEZE_MS,
+  JACKPOT_USER_SOL_MIN,
   isSellLocked,
   shouldJackpotVanish,
   multipleFromLaunch,
 } from '../engine/jackpot'
+import {
+  AI_WALLET,
+  ambientBoostSol,
+  pickHouseTargets,
+  traderReactionPlan,
+} from '../engine/novaAiDesk'
 
 type Store = {
   tokens: Token[]
@@ -166,6 +173,12 @@ type Store = {
   traderTick: () => void
   /** After a real user buy — staggered human-like bot sells */
   scheduleHumanReaction: (tokenId: string, userSolIn: number) => void
+  /** House AI: boost our rooms, follow trader flow */
+  aiTick: () => void
+  scheduleAiReaction: (tokenId: string, side: TradeSide, userSol: number) => void
+  syncDeskHoldings: (
+    rows: { tokenId: string; tokens: number; costSol: number }[],
+  ) => void
   enterPersonalSession: () => void
   clearShake: (tokenId: string) => void
   /** Remove jackpot coins after 24h freeze; clear their holdings */
@@ -433,12 +446,16 @@ export const useStore = create<Store>((set, get) => ({
 
     const used = collectUsedMemeUrls(s.tokens)
     for (const u of s.usedMemeUrls) used.add(u)
+    const usedSymbols = new Set(
+      s.tokens.map((t) => (t.symbol || '').toUpperCase()).filter(Boolean),
+    )
 
     const idx = s.botConfig.launched
     const token = buildBotToken({
       botIndex: idx,
       seq: s.spawnSeq + idx + 1,
       usedUrls: used,
+      usedSymbols,
     })
 
     used.add(token.imageUrl)
@@ -709,6 +726,7 @@ export const useStore = create<Store>((set, get) => ({
         !isSellLocked(after)
       ) {
         window.setTimeout(() => get().scheduleHumanReaction(tokenId, amount), 400)
+        window.setTimeout(() => get().scheduleAiReaction(tokenId, 'buy', amount), 200)
       }
 
       return {
@@ -872,6 +890,9 @@ export const useStore = create<Store>((set, get) => ({
       }
     })
     window.setTimeout(() => get().clearShake(tokenId), 700)
+    if (!isSim && managed && amount > 0) {
+      window.setTimeout(() => get().scheduleAiReaction(tokenId, 'sell', solOut), 250)
+    }
     return {
       ok: true,
       signature: tradeSig,
@@ -1258,4 +1279,55 @@ export const useStore = create<Store>((set, get) => ({
         t.id === tokenId ? { ...t, shake: null } : t,
       ),
     })),
+
+  aiTick: () => {
+    const house = pickHouseTargets(get().tokens, 8)
+    if (!house.length) return
+    const n = 2 + ((Math.random() * 3) | 0)
+    for (let i = 0; i < n; i++) {
+      const token = house[i % house.length]
+      const age = Date.now() - (token.createdAt || Date.now())
+      const buy = Math.random() < (age < 8 * 60_000 ? 0.82 : 0.62)
+      if (buy) {
+        get().executeTrade(token.id, 'buy', ambientBoostSol(age), AI_WALLET, true)
+      } else {
+        const slice = Math.min((token.virtualTokens || 1) * 0.00035, 50_000)
+        get().executeTrade(token.id, 'sell', slice, AI_WALLET, true)
+      }
+    }
+  },
+
+  scheduleAiReaction: (tokenId, side, userSol) => {
+    const token = get().tokens.find((t) => t.id === tokenId)
+    if (!token || token.source === 'dexscreener') return
+    const clips = traderReactionPlan(side, userSol)
+    get().pushBotLog(
+      `NOVA AI · ${side} follow on $${token.symbol} · ${clips.length} clips`,
+    )
+    for (const clip of clips) {
+      window.setTimeout(() => {
+        const live = get().tokens.find((t) => t.id === tokenId)
+        if (!live || live.complete) return
+        if (clip.side === 'buy' && clip.sol) {
+          get().executeTrade(tokenId, 'buy', clip.sol, AI_WALLET, true)
+        } else if (clip.side === 'sell' && clip.tokenFrac) {
+          const amt = Math.min((live.virtualTokens || 1) * clip.tokenFrac * 0.002, 40_000)
+          get().executeTrade(tokenId, 'sell', amt, AI_WALLET, true)
+        }
+      }, clip.delayMs)
+    }
+  },
+
+  syncDeskHoldings: (rows) => {
+    set((s) => {
+      const holdings = { ...s.wallet.holdings }
+      const costBasis = { ...s.wallet.costBasis }
+      for (const r of rows) {
+        holdings[r.tokenId] = r.tokens
+        costBasis[r.tokenId] = r.costSol
+      }
+      saveWalletLedger(holdings, costBasis)
+      return { wallet: { ...s.wallet, holdings, costBasis } }
+    })
+  },
 }))

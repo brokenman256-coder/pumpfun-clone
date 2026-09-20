@@ -2,10 +2,10 @@ import { useStore } from '../store/useStore'
 import { useExitTransition } from '../hooks/useExitTransition'
 
 const STEPS = [
-  'pick a coin you like 👀',
-  'buy on the bonding curve 📈',
-  'sell anytime to lock profits (or losses 😅)',
-  'when market cap hits $69k, liquidity goes to Raydium 🔥',
+  'Walk the atlas — every room is its own community, with unique art.',
+  'House rooms are boosted by NOVA AI. Open-market coins sit further back.',
+  'Buy a Solana mint: your SOL hits the desk wallet, we buy it on Jupiter for you.',
+  'Sell: the desk sells that same bag and sends SOL back to Phantom.',
 ]
 
 export function HowItWorksModal() {
@@ -21,23 +21,29 @@ export function HowItWorksModal() {
       onClick={() => setHowOpen(false)}
     >
       <div
-        className={`w-full max-w-md overflow-hidden rounded-2xl border border-[#334155] bg-[#111827] transition-all duration-200 ease-out ${shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}
+        className={`w-full max-w-md overflow-hidden rounded-2xl border border-[#e8a35a]/25 bg-[#1a1018] transition-all duration-200 ease-out ${shown ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex h-28 items-center justify-center bg-gradient-to-b from-[#1d4ed8] to-[#111827]">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] text-2xl font-black text-white shadow-[0_0_24px_rgba(59,130,246,0.4)]">
-            N
-          </span>
+        <div
+          className="flex h-36 items-end p-5"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(16,8,20,0.1), rgba(16,8,20,0.85)), url(/img/hero-salon.jpg) center/cover',
+          }}
+        >
+          <img
+            src="/img/nova-mark.jpg"
+            alt=""
+            className="h-14 w-14 rounded-full object-cover ring-2 ring-[#e8a35a]/50"
+          />
         </div>
         <div className="p-6">
-          <h2 className="text-center font-logo text-lg text-white">
-            NOVA
-          </h2>
-          <p className="mt-3 text-center text-sm text-[#8b8d97]">how it works</p>
+          <h2 className="font-display text-center text-2xl text-[#f4ead8]">NOVA atlas</h2>
+          <p className="mt-2 text-center text-sm text-[#b7a99a]">how the rooms work</p>
           <ol className="mt-5 space-y-3">
             {STEPS.map((text, i) => (
-              <li key={text} className="flex gap-3 text-sm">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#3b82f6] text-xs font-bold text-white">
+              <li key={text} className="flex gap-3 text-sm text-[#f4ead8]/90">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e8a35a] text-xs font-bold text-[#100814]">
                   {i + 1}
                 </span>
                 <span className="pt-1">{text}</span>
@@ -47,9 +53,9 @@ export function HowItWorksModal() {
           <button
             type="button"
             onClick={() => setHowOpen(false)}
-            className="btn-press mt-6 w-full rounded-full bg-[#3b82f6] py-3 text-sm font-bold text-white"
+            className="btn-press mt-6 w-full rounded-full bg-[#e8a35a] py-3 text-sm font-bold text-[#100814]"
           >
-            I&apos;m ready to launch 🚀
+            Enter the salon
           </button>
         </div>
       </div>

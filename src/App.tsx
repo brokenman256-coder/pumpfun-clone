@@ -24,6 +24,7 @@ import { useLiveBoard } from './hooks/useLiveBoard'
 import { useJackpotWatch } from './hooks/useJackpotWatch'
 import { useSystemSupervisor } from './hooks/useSystemSupervisor'
 import { useOnChainTokens } from './hooks/useOnChainTokens'
+import { useDeskPositions } from './hooks/useDeskPositions'
 import { JackpotToast } from './components/JackpotToast'
 import { useStore } from './store/useStore'
 
@@ -35,6 +36,7 @@ export default function App() {
   useOnChainTokens()
   useJackpotWatch()
   useSystemSupervisor()
+  useDeskPositions()
   const setHowOpen = useStore((s) => s.setHowOpen)
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <MaintenanceGate>
-        <div className="min-h-screen bg-[#0a0e1a] text-[#e8e8ed]">
+        <div className="min-h-screen bg-transparent text-[#f4ead8]">
           <div className="flex min-h-screen">
             <LeftSidebar />
             <div className="flex min-w-0 flex-1 flex-col pb-16 lg:pb-0">

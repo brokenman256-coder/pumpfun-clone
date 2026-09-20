@@ -1,126 +1,74 @@
 import { Link } from 'react-router-dom'
 import type { Token } from '../types'
-import { formatUsd, shortAddr, timeAgo, formatSol } from '../lib/format'
+import { formatUsd, shortAddr, timeAgo } from '../lib/format'
 import { useCountUp } from '../hooks/useCountUp'
 import { TokenImage } from './TokenImage'
-import { progressToGraduation } from '../engine/bondingCurve'
-import {
-  formatJackpotCountdown,
-  isJackpotArmed,
-  isSellLocked,
-  multipleFromLaunch,
-} from '../engine/jackpot'
+import { isHouseCoin } from '../engine/novaAiDesk'
 
 export function TokenCard({ token }: { token: Token }) {
   const mcap = useCountUp(token.marketCapUsd, 300)
-  const progress = progressToGraduation(token.marketCapUsd)
   const shake =
     token.shake === 'buy' ? 'shake-buy' : token.shake === 'sell' ? 'shake-sell' : ''
   const up = token.change24h >= 0
-  const sellLocked = isSellLocked(token)
-  const armed = isJackpotArmed(token)
-  const mult = multipleFromLaunch(
-    token.launchPriceSol || token.priceSol,
-    token.priceSol,
-  )
+  const house = isHouseCoin(token)
+  const accent = token.communityAccent || (house ? '#e8a35a' : '#c084fc')
+  const room = token.community || token.tags?.[0] || (house ? 'House room' : 'Open market')
 
   return (
     <Link
       to={`/coin/${token.id}`}
-      className={`block overflow-hidden rounded-2xl border bg-[#111827] transition ${
-        sellLocked
-          ? 'border-[#3b82f6]/60 shadow-lg shadow-blue-500/20 ring-1 ring-[#3b82f6]/30'
-          : 'border-[#1a1b22] hover:border-[#3b82f6]/35'
-      } ${shake}`}
+      className={`room-card group relative block overflow-hidden ${shake}`}
+      style={{ ['--room-accent' as string]: accent }}
     >
-      <div className="relative aspect-square overflow-hidden bg-[#1a1b22]">
+      <div className="relative aspect-[5/6] overflow-hidden">
         <TokenImage
           src={token.imageUrl}
           seed={token.id}
           emoji={token.emoji}
           alt={token.name}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.06]"
         />
-        <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
-          {sellLocked && (
-            <span className="rounded-md bg-[#2563eb] px-1.5 py-0.5 text-[9px] font-black text-white shadow-lg shadow-blue-500/50">
-              🚀 BUY ONLY {mult.toFixed(1)}×
-            </span>
-          )}
-          {token.complete && (
-            <span className="rounded-md bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black">
-              🎓 GRAD
-            </span>
-          )}
-          {!token.complete && !armed && progress > 70 && token.source !== 'dexscreener' && (
-            <span className="rounded-md bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-bold text-white">
-              HOT
-            </span>
-          )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#100814] via-[#100814]/35 to-transparent" />
+        <div className="absolute left-2.5 top-2.5 flex items-center gap-1.5">
+          <span
+            className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#100814]"
+            style={{ background: accent }}
+          >
+            {room}
+          </span>
         </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-8">
-          <div className="h-1 overflow-hidden rounded-full bg-white/20">
-            <div
-              className={`h-full rounded-full ${token.complete ? 'bg-yellow-400' : 'bg-[#3b82f6]'}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="mt-1 text-[10px] font-medium text-white/80">
-            {progress.toFixed(0)}% to Raydium
+        {token.lastTradeAt > Date.now() - 15_000 && (
+          <span className="absolute right-2.5 top-2.5 rounded-full bg-[#100814]/80 px-2 py-0.5 text-[9px] font-bold tracking-widest text-[#e8a35a]">
+            LIVE
+          </span>
+        )}
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          <p className="font-display text-[17px] leading-tight text-[#f4ead8]">
+            {token.emoji} {token.name}
+          </p>
+          <p className="mt-0.5 font-mono text-[11px] tracking-wider text-[#e8a35a]/90">
+            ${token.symbol}
           </p>
         </div>
       </div>
 
-      <div className="space-y-1 p-2.5">
-        <div className="flex items-start justify-between gap-1">
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-bold text-white">
-              {token.emoji} {token.name}
-            </p>
-            <p className="truncate text-[12px] text-[#8b8d97]">${token.symbol}</p>
-          </div>
-          <span className={`shrink-0 text-[11px] font-bold ${up ? 'text-[#3b82f6]' : 'text-[#f87171]'}`}>
+      <div className="space-y-1.5 px-3 py-2.5">
+        <div className="flex items-end justify-between gap-2">
+          <p className="font-display text-lg text-[#f4ead8]">{formatUsd(mcap)}</p>
+          <span className={`text-[11px] font-bold ${up ? 'text-[#e8a35a]' : 'text-[#fb7185]'}`}>
             {up ? '▲' : '▼'}
             {Math.abs(token.change24h).toFixed(1)}%
           </span>
         </div>
-
-        <p className="text-[14px] font-black text-[#3b82f6]">{formatUsd(mcap)} MC</p>
-        {sellLocked && token.jackpotUnlockAt ? (
-          <p className="text-[10px] font-semibold text-[#60a5fa]">
-            buy only · vanishes {formatJackpotCountdown(token.jackpotUnlockAt)}
-          </p>
-        ) : mult >= 1.5 ? (
-          <p className="text-[10px] font-semibold text-[#3b82f6]/80">{mult.toFixed(1)}× from launch</p>
-        ) : null}
-
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-[#6b6d78]">
-          <span>vol {formatUsd(token.volumeUsd)}</span>
-          <span>·</span>
+        <div className="flex items-center justify-between text-[10px] text-[#b7a99a]">
           <span>
-            🟢{token.buyCount} 🔴{token.sellCount}
+            {token.buyCount} in · {token.sellCount} out
           </span>
-          <span>·</span>
-          <span>💬 {token.replies}</span>
+          <span>{timeAgo(token.createdAt)}</span>
         </div>
-
-        <p className="flex items-center gap-1 truncate text-[11px] text-[#6b6d78]">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#3b82f6]" />
+        <p className="truncate text-[10px] text-[#7c6f66]">
           @{token.creatorName || shortAddr(token.creator)}
-          <span>·</span>
-          {timeAgo(token.createdAt)}
-          {token.lastTradeAt > Date.now() - 15_000 && (
-            <span className="ml-1 font-semibold text-[#3b82f6]">LIVE</span>
-          )}
         </p>
-
-        <div className="flex flex-wrap items-center gap-1 pt-0.5">
-          {token.tags?.slice(0, 2).map((t) => (
-            <span key={t} className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-[#8b8d97]">
-              #{t}
-            </span>
-          ))}
-        </div>
       </div>
     </Link>
   )

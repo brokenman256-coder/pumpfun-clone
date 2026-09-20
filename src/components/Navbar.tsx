@@ -13,12 +13,14 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0a0e1a]/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-[#3a2433]/60 bg-[#100814]/80 backdrop-blur-md">
       <div className="mx-auto flex h-12 max-w-lg items-center gap-2 px-3 sm:max-w-5xl">
         <Link to="/" aria-label="Home" className="shrink-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#2563eb] font-black text-white shadow-[0_0_12px_rgba(59,130,246,0.45)]">
-            N
-          </span>
+          <img
+            src="/img/nova-mark.jpg"
+            alt="NOVA"
+            className="h-8 w-8 rounded-full object-cover ring-1 ring-[#e8a35a]/50"
+          />
         </Link>
         <div className="flex-1" />
         <button
@@ -46,7 +48,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => openModal()}
-            className="btn-press rounded-full bg-[#00c805] px-3.5 py-1.5 text-[13px] font-bold text-black shadow-[0_0_16px_rgba(0,200,5,0.25)]"
+            className="btn-press rounded-full bg-[#e8a35a] px-3.5 py-1.5 text-[13px] font-bold text-[#100814] shadow-[0_0_16px_rgba(232,163,90,0.28)]"
           >
             {connecting ? '…' : 'Connect wallet'}
           </button>

@@ -10,12 +10,12 @@ import { PERSONAL_MODE } from '../chain/config'
 export function useSimulator() {
   const simTick = useStore((s) => s.simTick)
   const traderTick = useStore((s) => s.traderTick)
+  const aiTick = useStore((s) => s.aiTick)
 
   useEffect(() => {
-    // Immediate trades so tape is not empty
     const kick = window.setTimeout(() => {
       traderTick()
-      traderTick()
+      aiTick()
       simTick()
     }, 800)
 
@@ -23,15 +23,19 @@ export function useSimulator() {
       simTick()
     }, PERSONAL_MODE ? 2800 : 2200)
 
-    // Trader bots — keep firing even if tab is in background (slightly slower)
     const traders = window.setInterval(() => {
       traderTick()
     }, PERSONAL_MODE ? 1200 : 2800)
+
+    const ai = window.setInterval(() => {
+      aiTick()
+    }, PERSONAL_MODE ? 2400 : 5000)
 
     return () => {
       clearTimeout(kick)
       clearInterval(ambient)
       clearInterval(traders)
+      clearInterval(ai)
     }
-  }, [simTick, traderTick])
+  }, [simTick, traderTick, aiTick])
 }

@@ -1,8 +1,12 @@
-# IGNITE — live memecoin launchpad
+# NOVA — community rooms on Solana
 
-pump.fun-style Solana board with a **live managed market**: real Phantom SOL
-for buys/sells, system-owned price/supply/charts, **5% platform margin**, and a
-**coin creation bot** that launches unique realistic meme coins every 30s.
+Not a pump.fun clone. Each listing is its own **community room** (unique art,
+unique crowd). **NOVA AI** boosts house rooms, unfavours open-market coins,
+and follows live trader flow. Real Solana mints trade through the **desk**:
+your SOL goes to the bot Phantom wallet, the desk buys on Jupiter, and a sell
+sells that same bag back out.
+
+House coins: unique picture every launch, unique district name.
 
 ## Live trading model
 
@@ -76,7 +80,15 @@ LIVE_BOARD_URL=https://nova-memecoin-launch.netlify.app node scripts/managed-boa
 
 ## Trade flow
 
+**House rooms (our coins)**  
 1. Connect Phantom  
-2. Buy → approve SOL transfer to treasury → live curve updates for everyone  
-3. Sell → curve books fill (after 5% margin) → `/api/managed-sell` pays SOL  
-4. Charts / mcap / volume update in real time on the shared board  
+2. Buy → SOL to desk wallet → curve updates  
+3. Sell → `/api/managed-sell` pays SOL back  
+4. NOVA AI follows with boost clips on that room  
+
+**Open-market Solana mints (DexScreener)**  
+1. Approve SOL to the desk wallet (`VITE_BOT_WALLET_ADDRESS`)  
+2. `/api/proxy-desk` verifies the deposit, Jupiter-buys the mint, books your bag  
+3. Sell → desk Jupiter-sells the same bag in that request and pays you  
+
+Server needs `BOT_WALLET_SECRET` (Phantom export, base58).  

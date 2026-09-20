@@ -62,6 +62,19 @@ export async function publishLiveCoin(token: Token): Promise<{ ok: boolean }> {
   }
 }
 
+export async function postAiTick(): Promise<{ ok: boolean }> {
+  try {
+    const res = await fetch('/api/live-board', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ action: 'ai-tick' }),
+    })
+    return await res.json()
+  } catch {
+    return { ok: false }
+  }
+}
+
 export async function postLiveTrade(params: {
   tokenId: string
   side: TradeSide

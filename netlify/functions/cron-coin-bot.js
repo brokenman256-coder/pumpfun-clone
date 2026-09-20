@@ -42,11 +42,16 @@ export default async function handler(req) {
     })
     const data = await launchRes.json().catch(() => ({}))
 
-    // Optional light market activity
     await fetch(`${base}/api/live-board`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ action: 'sim-tick' }),
+    }).catch(() => null)
+
+    await fetch(`${base}/api/live-board`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ action: 'ai-tick' }),
     }).catch(() => null)
 
     return json(

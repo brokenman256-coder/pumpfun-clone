@@ -25,6 +25,7 @@ import {
   marketCapUsd,
 } from './lib/market.js'
 import { pickUniqueMeme, memeToName, memeToSymbol, memeToBio } from './lib/memePool.js'
+import { AI_WALLET, pickHouseTargets, ambientBoostSol, reactionSol, isHouseCoin } from './lib/novaAi.js'
 
 export const config = { path: '/api/live-board' }
 
@@ -50,12 +51,26 @@ function authorized(req) {
   return false
 }
 
+const DISTRICTS = [
+  'Dusk Harbor', 'Kite District', 'Velvet Pier', 'Ash Arcade', 'Copper Row',
+  'Orchid Alley', 'Glass Market', 'Iris Dock', 'Salt Chapel', 'Neon Orchard',
+]
+
 async function buildLiveCoin(board) {
-  const meme = await pickUniqueMeme(board.usedMemeUrls)
+  const usedSym = new Set((board.tokens || []).map((t) => (t.symbol || '').toUpperCase()))
+  let meme = null
+  let name = ''
+  let symbol = ''
+  for (let i = 0; i < 10; i++) {
+    meme = await pickUniqueMeme(board.usedMemeUrls)
+    if (!meme) break
+    name = memeToName(meme.title, `Room ${i}`)
+    symbol = memeToSymbol(meme.title + String((board.launched || 0) + i), (board.launched || 0) + i)
+    if (!usedSym.has(symbol.toUpperCase())) break
+  }
   if (!meme) return null
   const seq = (board.launched || 0) + 1
-  const name = memeToName(meme.title, `Meme ${seq}`)
-  const symbol = memeToSymbol(meme.title, seq)
+  const community = DISTRICTS[seq % DISTRICTS.length]
   const target = randomBotTargetMcap()
   const seeded = seedReservesToMcap(target)
   const mcap = marketCapUsd(seeded.virtualSol, seeded.virtualTokens)
@@ -73,7 +88,7 @@ async function buildLiveCoin(board) {
     name,
     symbol,
     emoji: '🚀',
-    description: memeToBio(meme, symbol),
+    description: `${memeToBio(meme, symbol)}\n\nRoom: ${community}`,
     imageUrl: meme.url,
     imageHue: (seq * 37) % 360,
     creator,
@@ -102,9 +117,10 @@ async function buildLiveCoin(board) {
       { wallet: creator, amount: creatorHold, pct: 30, isCreator: true },
     ],
     shake: null,
-    tags: ['bot-launch', 'meme', 'managed', 'live', meme.subreddit].filter(Boolean),
+    tags: ['house', community, 'live', meme.subreddit].filter(Boolean),
     source: 'bot',
     managed: true,
+    community,
     twitter: `https://x.com/search?q=%24${symbol}`,
   }
 }
@@ -382,6 +398,100 @@ export default async function handler(req) {
         return { board, extra: {} }
       })
       return json({ ok: out.ok })
+    }
+
+    if (action === 'ai-tick') {
+      const out = await withRetryWrite((board) => {
+        const house = pickHouseTargets(board.tokens || [], 8)
+        if (!house.length) return { board, extra: { ticks: 0 } }
+        let ticks = 0
+        const n = 2 + ((Math.random() * 2) | 0)
+        for (let i = 0; i < n; i++) {
+          const t = house[i % house.length]
+          const idx = board.tokens.findIndex((x) => x.id === t.id)
+          if (idx < 0) continue
+          const reserves = {
+            virtualSol: t.virtualSol,
+            virtualTokens: t.virtualTokens,
+            curveSol: t.curveSol ?? t.realSol ?? 0,
+            marginSol: t.marginSol ?? 0,
+          }
+          const age = Date.now() - (t.createdAt || Date.now())
+          const buy = Math.random() < (age < 8 * 60_000 ? 0.82 : 0.62)
+          if (buy) {
+            const amount = ambientBoostSol(age)
+            const q = managedBuyQuote(amount, reserves)
+            if (!q) continue
+            board.tokens[idx] = {
+              ...t,
+              virtualSol: q.newVirtualSol,
+              virtualTokens: q.newVirtualTokens,
+              realSol: (t.realSol || 0) + q.solToCurve,
+              curveSol: q.newCurveSol,
+              marginSol: q.newMarginSol,
+              priceSol: q.priceSol,
+              marketCapUsd: q.marketCapUsd,
+              volumeSol: (t.volumeSol || 0) + amount,
+              buyCount: (t.buyCount || 0) + 1,
+              lastTradeAt: Date.now(),
+            }
+            board.recentTrades = [
+              {
+                id: `ai${Date.now().toString(36)}${i}`,
+                tokenId: t.id,
+                side: 'buy',
+                solAmount: amount,
+                tokenAmount: q.tokensOut,
+                wallet: AI_WALLET,
+                marketCapUsd: q.marketCapUsd,
+                priceSol: q.priceSol,
+                createdAt: Date.now(),
+                signature: '',
+              },
+              ...(board.recentTrades || []),
+            ].slice(0, 100)
+            ticks++
+          }
+        }
+        return { board, extra: { ticks } }
+      })
+      return json({ ok: out.ok, ticks: out.ticks })
+    }
+
+    if (action === 'ai-react') {
+      const { tokenId, side, amount } = body
+      if (!tokenId || !side) {
+        return json({ ok: false, error: 'tokenId and side required' }, { status: 400 })
+      }
+      const out = await withRetryWrite((board) => {
+        const idx = (board.tokens || []).findIndex((t) => t.id === tokenId)
+        if (idx < 0) return { error: 'Token not found' }
+        const t = board.tokens[idx]
+        if (!isHouseCoin(t)) return { board, extra: { skipped: true } }
+        const sol = reactionSol(side, amount || 0.1)
+        const reserves = {
+          virtualSol: t.virtualSol,
+          virtualTokens: t.virtualTokens,
+          curveSol: t.curveSol ?? t.realSol ?? 0,
+          marginSol: t.marginSol ?? 0,
+        }
+        const q = managedBuyQuote(sol, reserves)
+        if (!q) return { board, extra: {} }
+        board.tokens[idx] = {
+          ...t,
+          virtualSol: q.newVirtualSol,
+          virtualTokens: q.newVirtualTokens,
+          curveSol: q.newCurveSol,
+          marginSol: q.newMarginSol,
+          priceSol: q.priceSol,
+          marketCapUsd: q.marketCapUsd,
+          volumeSol: (t.volumeSol || 0) + sol,
+          buyCount: (t.buyCount || 0) + 1,
+          lastTradeAt: Date.now(),
+        }
+        return { board, extra: { token: board.tokens[idx] } }
+      })
+      return json({ ok: out.ok, token: out.token, skipped: out.skipped })
     }
 
     return json({ ok: false, error: `Unknown action: ${action}` }, { status: 400 })

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { fetchLiveBoard, launchLiveCoin } from '../lib/liveBoardApi'
+import { fetchLiveBoard, launchLiveCoin, postAiTick } from '../lib/liveBoardApi'
 import { PERSONAL_MODE } from '../chain/config'
 
 /**
@@ -83,9 +83,13 @@ export function useLiveBoard() {
 
     const warm = window.setTimeout(() => void tick(), 3_000)
     const id = window.setInterval(() => void tick(), intervalMs)
+    const ai = window.setInterval(() => {
+      void postAiTick()
+    }, 12_000)
     return () => {
       clearTimeout(warm)
       clearInterval(id)
+      clearInterval(ai)
     }
   }, [botEnabled, intervalMs, mergeLiveBoard, setBotLog])
 }

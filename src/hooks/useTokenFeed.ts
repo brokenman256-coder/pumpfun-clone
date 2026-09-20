@@ -2,11 +2,12 @@ import { useMemo } from 'react'
 import { useStore } from '../store/useStore'
 import type { Token } from '../types'
 import { isDisplayable } from '../lib/tokenFilters'
+import { rankScore } from '../engine/novaAiDesk'
 
-/** Target board mix: ~10% Raydium coins, ~50% other Solana dex coins, ~40% our own (bot/local/on-chain). */
-const DEX_SHARE = 0.6
-const RAYDIUM_SHARE = 0.1
-const OWN_SHARE = 0.4
+/** House rooms lead. External listings are unfavoured. */
+const DEX_SHARE = 0.3
+const RAYDIUM_SHARE = 0.08
+const OWN_SHARE = 0.7
 
 /**
  * Caps how many coins of each kind ride on the board so the mix stays at the
@@ -63,13 +64,7 @@ export function useTokenFeed() {
           .sort((a, b) => b.marketCapUsd - a.marketCapUsd)
       case 'movers':
       default:
-        // Default landing view — DexScreener coins lead, our own follow.
-        return copy.sort((a, b) => {
-          const aDex = a.source === 'dexscreener' ? 1 : 0
-          const bDex = b.source === 'dexscreener' ? 1 : 0
-          if (aDex !== bDex) return bDex - aDex
-          return b.marketCapUsd - a.marketCapUsd
-        })
+        return copy.sort((a, b) => rankScore(b) - rankScore(a))
     }
   }, [tokens, sort, search])
 

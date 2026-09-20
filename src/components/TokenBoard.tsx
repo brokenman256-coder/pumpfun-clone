@@ -2,18 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/useStore'
 import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
-import { BountiesStrip } from './BountiesStrip'
-import { KingOfHill } from './KingOfHill'
-import { FeaturedSlideshow } from './FeaturedSlideshow'
-import { LiveMarketHero } from './LiveMarketHero'
 import { LiveTradeTape } from './LiveTradeTape'
 import { useTokenFeed } from '../hooks/useTokenFeed'
 
 const CHIPS: { id: SortTab; label: string }[] = [
-  { id: 'movers', label: '⭐ Movers' },
-  { id: 'mayhem', label: '🔥 Mayhem' },
-  { id: 'featured', label: 'Featured' },
-  { id: 'graduate', label: 'Graduate' },
+  { id: 'movers', label: 'Rooms' },
+  { id: 'mayhem', label: 'Heat' },
+  { id: 'featured', label: 'Salon' },
+  { id: 'graduate', label: 'Open' },
 ]
 
 export function TokenBoard() {
@@ -49,9 +45,16 @@ export function TokenBoard() {
 
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
+      <div className="hero-atlas mb-4 p-5">
+        <p className="relative z-10 font-display text-3xl text-[#f4ead8] sm:text-4xl">
+          Tonight&apos;s rooms
+        </p>
+        <p className="relative z-10 mt-2 max-w-md text-sm text-[#f4ead8]/75">
+          Each listing is its own community — unique art, unique crowd. House
+          rooms are boosted. Open-market coins sit further back.
+        </p>
+      </div>
       <LiveTradeTape />
-      <FeaturedSlideshow />
-      <LiveMarketHero />
 
       <div className="no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto">
         {CHIPS.map((c) => (
@@ -61,8 +64,8 @@ export function TokenBoard() {
             onClick={() => setSort(c.id)}
             className={`chip-press shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition duration-200 ${
               sort === c.id
-                ? 'bg-[#3b82f6] text-white shadow-[0_0_20px_rgba(59,130,246,0.25)]'
-                : 'bg-[#1a1b22] text-[#9a9ba3] hover:bg-[#22232c] hover:text-white'
+                ? 'bg-[#e8a35a] text-[#100814] shadow-[0_0_20px_rgba(232,163,90,0.25)]'
+                : 'bg-[#1a1018] text-[#b7a99a] hover:bg-[#2a1822] hover:text-[#f4ead8]'
             }`}
           >
             {c.label}
@@ -70,16 +73,15 @@ export function TokenBoard() {
         ))}
       </div>
 
-      <KingOfHill />
-      <BountiesStrip />
-
       <section className="mb-5">
-        <h2 className="mb-2 text-[15px] font-bold tracking-tight">Trending now</h2>
+        <h2 className="mb-2 font-display text-xl tracking-tight text-[#f4ead8]">
+          Crowded rooms
+        </h2>
         <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
           {trending.map((t, i) => (
             <div
               key={`tr_${t.id}`}
-              className="w-[140px] shrink-0 fade-up"
+              className="w-[220px] shrink-0 fade-up"
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <TokenCard token={t} />
@@ -96,7 +98,7 @@ export function TokenBoard() {
       </div>
 
       {booting ? (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="skeleton aspect-[3/4] rounded-2xl" />
           ))}
@@ -107,7 +109,7 @@ export function TokenBoard() {
           <p className="mt-2 font-semibold">Markets loading…</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((t, i) => (
             <div
               key={t.id}

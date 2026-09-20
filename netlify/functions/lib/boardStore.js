@@ -15,6 +15,10 @@ const emptyBoard = () => ({
   recentTrades: [],
   usedMemeUrls: [],
   launched: 0,
+  deskPositions: {},
+  usedDepositSigs: [],
+  payoutTokens: [],
+  deskFills: [],
 })
 
 // Warm-instance fallback (not multi-region durable)

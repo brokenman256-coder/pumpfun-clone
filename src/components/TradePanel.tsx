@@ -17,6 +17,13 @@ import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
 import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
 import { postLiveTrade } from '../lib/liveBoardApi'
+import { paySolOnChain } from '../chain/pay'
+import {
+  deskBuy,
+  deskMint,
+  deskSell,
+  isSolanaDeskToken,
+} from '../lib/deskApi'
 import {
   formatJackpotCountdown,
   isJackpotArmed,
@@ -53,6 +60,7 @@ export function TradePanel({ token }: { token: Token }) {
 
   const onChain = Boolean(token.mint && token.curvePda)
   const managed = isManaged(token)
+  const desk = isSolanaDeskToken(token)
   const [mode, setMode] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
@@ -116,7 +124,7 @@ export function TradePanel({ token }: { token: Token }) {
       }
     }
 
-    if (token.complete) {
+    if (token.complete && !desk) {
       setError('Graduated')
       return
     }
@@ -135,6 +143,77 @@ export function TradePanel({ token }: { token: Token }) {
     setLoading(true)
     try {
       let signature: string | undefined
+
+      // ── Real Solana coin: SOL → desk wallet → Jupiter buy/sell ──
+      if (desk) {
+        if (!isRealTrader || !address) {
+          openModal()
+          return
+        }
+        const mint = deskMint(token)
+        if (mode === 'buy') {
+          if (a > solBalance + 0.0001) {
+            setError(`Insufficient SOL in Phantom (need ~${a})`)
+            return
+          }
+          setStatus(`Send ${a} SOL to the NOVA desk…`)
+          signature = await paySolOnChain({
+            wallet: adapter,
+            amountSol: a,
+            memo: `nova:desk:buy:${mint.slice(0, 24)}`,
+          })
+          setTxSig(signature)
+          setStatus('Desk buying on Jupiter…')
+          const fill = await deskBuy({
+            signature,
+            mint,
+            amountSol: a,
+            wallet: address,
+            tokenId: token.id,
+            symbol: token.symbol,
+          })
+          if (!fill.ok) {
+            setError(fill.error || 'Desk buy failed')
+            return
+          }
+          bookHolding(token.id, 'buy', fill.tokensOut || 0, a, fill.swapSig || signature)
+          setTxSig(fill.swapSig || signature)
+          setStatus('Bought on Jupiter · bag is on the desk ✓')
+          confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#e8a35a', '#c084fc', '#f4ead8'],
+          })
+        } else {
+          if (a > holding + 1e-9) {
+            setError('Insufficient tokens on the desk')
+            return
+          }
+          setStatus('Desk selling on Jupiter…')
+          const fill = await deskSell({
+            mint,
+            tokenAmount: a,
+            wallet: address,
+            tokenId: token.id,
+            symbol: token.symbol,
+          })
+          if (!fill.ok) {
+            setError(fill.error || 'Desk sell failed')
+            return
+          }
+          bookHolding(token.id, 'sell', a, fill.solOut || 0, fill.payoutSig || fill.swapSig)
+          setTxSig(fill.payoutSig || fill.swapSig || '')
+          setStatus(
+            fill.payoutPending
+              ? 'Sold on Jupiter · payout pending'
+              : `Sold · ${fill.solOut?.toFixed(4)} SOL sent to Phantom ✓`,
+          )
+        }
+        setAmount('')
+        await refreshBalance()
+        return
+      }
 
       // ── Real Phantom trader on managed market ─────────────
       // Pays real SOL to treasury; curve still system-managed
@@ -419,7 +498,7 @@ export function TradePanel({ token }: { token: Token }) {
         </div>
       )}
 
-      {token.complete ? (
+      {token.complete && !desk ? (
         <div className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-4 text-center">
           <p className="font-bold text-yellow-300">🎓 Graduated</p>
         </div>
@@ -534,9 +613,10 @@ export function TradePanel({ token }: { token: Token }) {
           <p className="mt-3 text-center text-[10px] text-[#555]">
             Instant fills · bonding curve pricing
           </p>
-          {token.source === 'dexscreener' && (
-            <p className="mt-2 text-center text-[10px] text-[#6b6d78]">
-              Real external token — trades happen on the DEX links below, not our curve.
+          {desk && (
+            <p className="mt-2 text-center text-[10px] text-[#b7a99a]">
+              Your SOL goes to the NOVA desk wallet. We buy the mint on Jupiter for you.
+              When you sell, we sell the same bag and send SOL back.
             </p>
           )}
           {!PERSONAL_MODE && (token.mint || token.source === 'dexscreener') && (

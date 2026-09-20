@@ -1,14 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0e1a;
-  --card: #111827;
-  --border: #1e293b;
-  --text: #e8e8ed;
-  --muted: #8b8d97;
-  --green: #3b82f6;
-  --green2: #2563eb;
-  --cyan: #22d3ee;
+  --bg: #100814;
+  --card: #1a1018;
+  --border: #3a2433;
+  --text: #f4ead8;
+  --muted: #b7a99a;
+  --green: #e8a35a;
+  --green2: #c084fc;
+  --cyan: #f0abfc;
+  --copper: #e8a35a;
+  --orchid: #c084fc;
+  --ink: #100814;
 }
 
 * {
@@ -23,16 +26,32 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(192, 132, 252, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 110% 10%, rgba(232, 163, 90, 0.14), transparent 50%),
+    var(--bg);
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: Outfit, Inter, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-.font-logo {
-  font-family: Inter, system-ui, sans-serif;
-  font-weight: 900;
-  letter-spacing: -0.02em;
+body::before {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  opacity: 0.22;
+  background-image: url('/img/foil-texture.jpg');
+  background-size: 520px;
+  mix-blend-mode: overlay;
+}
+
+.font-logo,
+.font-display {
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
 ::selection {
@@ -184,10 +203,46 @@ html {
   animation-play-state: paused;
 }
 
-/* pump.fun-ish dark surface */
 .surface-dark {
-  background: #0a0e1a;
-  border-color: #1e293b;
+  background: #100814;
+  border-color: #3a2433;
+}
+
+.room-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(232, 163, 90, 0.18);
+  background: rgba(16, 8, 20, 0.72);
+  backdrop-filter: blur(10px);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease,
+    border-color 0.3s ease;
+}
+.room-card:hover {
+  transform: translateY(-6px) rotate(-0.35deg);
+  border-color: var(--room-accent, #e8a35a);
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--room-accent, #e8a35a);
+}
+
+@keyframes aurora {
+  0%, 100% { opacity: 0.35; transform: translate3d(0, 0, 0) scale(1); }
+  50% { opacity: 0.7; transform: translate3d(2%, -1%, 0) scale(1.04); }
+}
+
+.hero-atlas {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  min-height: 168px;
+  background:
+    linear-gradient(180deg, rgba(16, 8, 20, 0.15), rgba(16, 8, 20, 0.82)),
+    url('/img/hero-salon.jpg') center/cover;
+}
+.hero-atlas::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 30% 40%, rgba(192, 132, 252, 0.25), transparent 45%);
+  animation: aurora 9s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .bond-fill {
