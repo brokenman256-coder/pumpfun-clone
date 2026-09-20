@@ -3,22 +3,29 @@ import { useStore } from '../store/useStore'
 import type { Token } from '../types'
 import { isDisplayable } from '../lib/tokenFilters'
 
-/** Target board mix: ~60% real DexScreener coins, ~40% our own (bot/local/on-chain). */
+/** Target board mix: ~10% Raydium coins, ~50% other Solana dex coins, ~40% our own (bot/local/on-chain). */
 const DEX_SHARE = 0.6
+const RAYDIUM_SHARE = 0.1
+const OWN_SHARE = 0.4
 
 /**
- * Caps how many "our own" coins ride alongside the DexScreener set so the
- * board stays at roughly the target mix instead of drifting however the
- * bot happens to be pacing. Never drops DexScreener coins to force the
- * ratio — if DexScreener is sparse (loading, rate-limited), we just show
- * more of our own rather than an emptier board.
+ * Caps how many coins of each kind ride on the board so the mix stays at the
+ * target (10% Raydium / 50% other DexScreener / 40% our own) instead of
+ * drifting however the bot happens to be pacing. Never drops DexScreener
+ * coins to force the ratio — if DexScreener is sparse (loading,
+ * rate-limited), we just show more of our own rather than an emptier board.
  */
 function applyBoardMix(list: Token[]): Token[] {
   const dex = list.filter((t) => t.source === 'dexscreener')
   const own = list.filter((t) => t.source !== 'dexscreener')
   if (dex.length === 0) return own
-  const ownCap = Math.max(3, Math.round((dex.length * (1 - DEX_SHARE)) / DEX_SHARE))
-  return [...dex, ...own.slice(0, ownCap)]
+  const isRaydium = (t: Token) => (t.dexId || '').toLowerCase() === 'raydium'
+  const raydium = dex.filter(isRaydium)
+  const otherDex = dex.filter((t) => !isRaydium(t))
+  const raydiumCap = Math.max(1, Math.round((RAYDIUM_SHARE / DEX_SHARE) * dex.length))
+  const otherCap = Math.max(3, Math.round(((DEX_SHARE - RAYDIUM_SHARE) / DEX_SHARE) * dex.length))
+  const ownCap = Math.max(3, Math.round((OWN_SHARE / DEX_SHARE) * dex.length))
+  return [...raydium.slice(0, raydiumCap), ...otherDex.slice(0, otherCap), ...own.slice(0, ownCap)]
 }
 
 export function useTokenFeed() {

@@ -331,9 +331,9 @@ export async function fetchLiveMemes(): Promise<{
 
   const pairs = await fetchTokenPairs(uniqueMints).catch(() => [] as DexPair[])
 
-  // Index pairs by base mint — skip wrapped/major assets, stables, Raydium
-  // listings (already-graduated, doesn't fit the pre-graduation curve story
-  // this board tells), and anything too thin to call "established."
+  // Index pairs by base mint — skip wrapped/major assets, stables, and
+  // anything too thin to call "established." Raydium listings are kept:
+  // the board mix targets a 10% Raydium slice.
   const byMint = new Map<string, DexPair[]>()
   for (const pair of [...pairs, ...pumpSearch, ...solSearch, ...otherSearch]) {
     const addr = pair.baseToken?.address
@@ -341,7 +341,6 @@ export async function fetchLiveMemes(): Promise<{
     const symbol = (pair.baseToken?.symbol || '').toUpperCase()
     if (symbol === nativeQuote(pair.chainId).symbol) continue
     if (MAJOR_ASSETS.has(symbol)) continue
-    if ((pair.dexId || '').toLowerCase() === 'raydium') continue
     const liquidity = pair.liquidity?.usd || 0
     if (liquidity < MIN_FEATURED_LIQUIDITY_USD) continue
     const arr = byMint.get(addr) || []
