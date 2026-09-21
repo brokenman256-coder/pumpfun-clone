@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore'
 import type { Token } from '../types'
 import { isDisplayable } from '../lib/tokenFilters'
 import { rankScore } from '../engine/novaAiDesk'
+import { isPumpFunDex } from '../lib/dexscreener'
 
 /** House rooms lead. External listings are unfavoured. */
 const DEX_SHARE = 0.3
@@ -17,16 +18,29 @@ const OWN_SHARE = 0.7
  * rate-limited), we just show more of our own rather than an emptier board.
  */
 function applyBoardMix(list: Token[]): Token[] {
-  const dex = list.filter((t) => t.source === 'dexscreener')
-  const own = list.filter((t) => t.source !== 'dexscreener')
-  if (dex.length === 0) return own
+  const pump = list.filter((t) => isPumpFunDex(t.dexId) && t.chainId === 'solana')
+  const rest = list.filter((t) => !(isPumpFunDex(t.dexId) && t.chainId === 'solana'))
+  const dex = rest.filter((t) => t.source === 'dexscreener')
+  const own = rest.filter((t) => t.source !== 'dexscreener')
+  if (dex.length === 0 && pump.length === 0) return own
   const isRaydium = (t: Token) => (t.dexId || '').toLowerCase() === 'raydium'
   const raydium = dex.filter(isRaydium)
   const otherDex = dex.filter((t) => !isRaydium(t))
-  const raydiumCap = Math.max(1, Math.round((RAYDIUM_SHARE / DEX_SHARE) * dex.length))
-  const otherCap = Math.max(3, Math.round(((DEX_SHARE - RAYDIUM_SHARE) / DEX_SHARE) * dex.length))
-  const ownCap = Math.max(3, Math.round((OWN_SHARE / DEX_SHARE) * dex.length))
-  return [...raydium.slice(0, raydiumCap), ...otherDex.slice(0, otherCap), ...own.slice(0, ownCap)]
+  const raydiumCap = Math.max(1, Math.round((RAYDIUM_SHARE / DEX_SHARE) * Math.max(dex.length, 8)))
+  const otherCap = Math.max(3, Math.round(((DEX_SHARE - RAYDIUM_SHARE) / DEX_SHARE) * Math.max(dex.length, 8)))
+  const ownCap = Math.max(3, Math.round((OWN_SHARE / DEX_SHARE) * Math.max(dex.length, 8)))
+  const mixed = [
+    ...pump,
+    ...raydium.slice(0, raydiumCap),
+    ...otherDex.slice(0, otherCap),
+    ...own.slice(0, ownCap),
+  ]
+  const seen = new Set<string>()
+  return mixed.filter((t) => {
+    if (seen.has(t.id)) return false
+    seen.add(t.id)
+    return true
+  })
 }
 
 export function useTokenFeed() {

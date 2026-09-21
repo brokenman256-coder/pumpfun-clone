@@ -39,6 +39,11 @@ function nativeQuote(chainId?: string) {
   return NATIVE_QUOTE[chainId || 'solana'] || NATIVE_QUOTE.solana
 }
 
+export function isPumpFunDex(dexId?: string) {
+  const d = (dexId || '').toLowerCase()
+  return d === 'pumpfun' || d === 'pumpswap' || d === 'pump.fun' || d.includes('pump')
+}
+
 /** Never show these as if they were fresh meme launches — wrapped/major
  * assets and stables slip in through broad chain search otherwise. */
 const MAJOR_ASSETS = new Set([
@@ -251,13 +256,11 @@ export function pairToToken(
     name,
     symbol,
     emoji,
-    description:
-      profile?.description ||
-      `${name} ($${symbol}) live on ${pair.dexId || 'DEX'} · data via DexScreener. NFA.`,
+    description: profile?.description || `${name} ($${symbol})`,
     imageUrl: icon || realTokenImageUrl(mint + symbol),
     imageHue: Math.abs(mint.charCodeAt(0) * 13) % 360,
     creator: mint.slice(0, 32) + '…',
-    creatorName: pair.dexId || 'dex',
+    creatorName: (meme.symbol || 'trader').slice(0, 12),
     virtualSol,
     virtualTokens,
     realSol: (pair.liquidity?.quote || 0) / (isQuoteMeme ? 1 : 1),
@@ -271,7 +274,11 @@ export function pairToToken(
     buyCount: buys,
     sellCount: sells,
     replies: Math.min(999, buys + sells),
-    complete: (pair.liquidity?.usd || 0) > 50_000 || (pair.dexId !== 'pumpfun' && (pair.liquidity?.usd || 0) > 20_000),
+    complete:
+      isPumpFunDex(pair.dexId) && pair.dexId?.toLowerCase() === 'pumpfun'
+        ? false
+        : (pair.liquidity?.usd || 0) > 50_000 ||
+          (!isPumpFunDex(pair.dexId) && (pair.liquidity?.usd || 0) > 20_000),
     createdAt: created,
     lastTradeAt: Date.now(),
     candles: [],
@@ -307,18 +314,37 @@ export async function fetchLiveMemes(): Promise<{
 }> {
   // "pump"/"meme" surface small fresh launches on every chain; deliberately
   // not searching bare "ETH"/"BNB" etc — that pulls in wrapped majors, not memes.
-  const [profiles, boosts, pumpSearch, memeSearch, solSearch, bonkSearch, pepeSearch, newSearch] =
-    await Promise.all([
-      fetchLatestProfiles().catch(() => [] as DexProfile[]),
-      fetchLatestBoosts().catch(() => [] as DexProfile[]),
-      searchPairs('pump').catch(() => [] as DexPair[]),
-      searchPairs('meme').catch(() => [] as DexPair[]),
-      searchPairs('SOL').catch(() => [] as DexPair[]),
-      searchPairs('bonk').catch(() => [] as DexPair[]),
-      searchPairs('pepe').catch(() => [] as DexPair[]),
-      searchPairs('solana').catch(() => [] as DexPair[]),
-    ])
-  const otherSearch = [...memeSearch, ...bonkSearch, ...pepeSearch, ...newSearch]
+  const [
+    profiles,
+    boosts,
+    pumpSearch,
+    memeSearch,
+    solSearch,
+    bonkSearch,
+    pepeSearch,
+    newSearch,
+    pumpFunSearch,
+    pumpSwapSearch,
+  ] = await Promise.all([
+    fetchLatestProfiles().catch(() => [] as DexProfile[]),
+    fetchLatestBoosts().catch(() => [] as DexProfile[]),
+    searchPairs('pump').catch(() => [] as DexPair[]),
+    searchPairs('meme').catch(() => [] as DexPair[]),
+    searchPairs('SOL').catch(() => [] as DexPair[]),
+    searchPairs('bonk').catch(() => [] as DexPair[]),
+    searchPairs('pepe').catch(() => [] as DexPair[]),
+    searchPairs('solana').catch(() => [] as DexPair[]),
+    searchPairs('pumpfun').catch(() => [] as DexPair[]),
+    searchPairs('pumpswap').catch(() => [] as DexPair[]),
+  ])
+  const otherSearch = [
+    ...memeSearch,
+    ...bonkSearch,
+    ...pepeSearch,
+    ...newSearch,
+    ...pumpFunSearch,
+    ...pumpSwapSearch,
+  ]
 
   const profileByMint = new Map<string, DexProfile>()
   for (const p of [...profiles, ...boosts]) {
@@ -330,6 +356,8 @@ export async function fetchLiveMemes(): Promise<{
   const mintList = [
     ...profileByMint.keys(),
     ...pumpSearch.map((p) => p.baseToken?.address).filter(Boolean) as string[],
+    ...pumpFunSearch.map((p) => p.baseToken?.address).filter(Boolean) as string[],
+    ...pumpSwapSearch.map((p) => p.baseToken?.address).filter(Boolean) as string[],
   ]
   const uniqueMints = [...new Set(mintList)].slice(0, 80)
 
@@ -342,11 +370,15 @@ export async function fetchLiveMemes(): Promise<{
   for (const pair of [...pairs, ...pumpSearch, ...solSearch, ...otherSearch]) {
     const addr = pair.baseToken?.address
     if (!addr) continue
+    if ((pair.chainId || '') !== 'solana' && !isPumpFunDex(pair.dexId)) {
+      /* keep other-chain later */
+    }
     const symbol = (pair.baseToken?.symbol || '').toUpperCase()
     if (symbol === nativeQuote(pair.chainId).symbol) continue
     if (MAJOR_ASSETS.has(symbol)) continue
     const liquidity = pair.liquidity?.usd || 0
-    if (liquidity < MIN_FEATURED_LIQUIDITY_USD) continue
+    const pumpLaunch = isPumpFunDex(pair.dexId) && pair.chainId === 'solana'
+    if (!pumpLaunch && liquidity < MIN_FEATURED_LIQUIDITY_USD) continue
     const arr = byMint.get(addr) || []
     arr.push(pair)
     byMint.set(addr, arr)
