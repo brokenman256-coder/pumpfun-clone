@@ -78,7 +78,6 @@ export function TradePanel({ token }: { token: Token }) {
   const [txSig, setTxSig] = useState('')
   const [loading, setLoading] = useState(false)
   const [fill, setFill] = useState<FillInfo | null>(null)
-  const practice = useStore((s) => s.practiceMode)
   const journey = loadJourney(address)
   const newWallet = isCappedNewWallet(address)
 
@@ -136,7 +135,7 @@ export function TradePanel({ token }: { token: Token }) {
       return
     }
 
-    if (!isRealTrader && !practice) {
+    if (!isRealTrader) {
       openModal()
       return
     }
@@ -390,28 +389,7 @@ export function TradePanel({ token }: { token: Token }) {
         return
       }
 
-      if (practice && !isRealTrader) {
-        setStatus(mode === 'buy' ? 'Practice fill…' : 'Practice sell…')
-        const res = executeTrade(
-          token.id,
-          mode,
-          a,
-          'practice',
-          true,
-          `practice_${Date.now().toString(36)}`,
-        )
-        if (!res.ok) {
-          setError(res.error || 'Practice fill failed')
-          return
-        }
-        setAmount('')
-        setStatus(
-          mode === 'buy'
-            ? 'Practice buy — not real SOL'
-            : 'Practice sell — not real SOL',
-        )
-        return
-      }
+
 
       // ── Full on-chain program token ───────────────────────
       if (onChain && token.mint) {
@@ -646,20 +624,15 @@ export function TradePanel({ token }: { token: Token }) {
                   ? `Buy ${token.symbol}`
                   : `Sell ${token.symbol}`}
           </button>
-          {practice && !isRealTrader && (
-            <p className="mt-2 text-center text-[11px] font-semibold text-yellow-200">
-              Practice — not real SOL
-            </p>
-          )}
           {isRealTrader && mode === 'buy' && newWallet && (
-            <p className="mt-2 text-center text-[11px] text-[#b7a99a]">
-              First trades start at {FIRST_BUY_SOL} SOL. New wallets are capped at{' '}
-              {NEW_WALLET_MAX_SOL} SOL per buy. You can lose this money.
+            <p className="mt-2 text-center text-[11px] leading-relaxed text-[#b7a99a]">
+              Suggested first order: {FIRST_BUY_SOL} SOL. New accounts are limited to{' '}
+              {NEW_WALLET_MAX_SOL} SOL per buy. Digital assets can lose value.
             </p>
           )}
           {isRealTrader && (
             <p className="mt-2 text-center text-[10px] text-[#7c6f66]">
-              Tokens settle in your Phantom wallet.
+              Fills settle to your connected wallet.
             </p>
           )}
           {fill && (

@@ -3,11 +3,11 @@ import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { shortAddr, formatSol } from '../lib/format'
 const NAV = [
-  { to: '/', label: 'Home', icon: '🏠' },
-  { to: '/create', label: 'Create', icon: '🚀' },
-  { to: '/swap', label: 'Swap', icon: '🔄' },
-  { to: '/profile', label: 'Bag / Profile', icon: '💼' },
-  { to: '/channel', label: 'Channel', icon: '📡' },
+  { to: '/', label: 'Markets', icon: '●' },
+  { to: '/create', label: 'Launch', icon: '+' },
+  { to: '/swap', label: 'Swap', icon: '⇄' },
+  { to: '/profile', label: 'Portfolio', icon: '◇' },
+  { to: '/channel', label: 'Channel', icon: '◎' },
   // Admin is intentionally NOT in the public nav — open /admin privately
 ]
 
@@ -35,7 +35,7 @@ export function LeftSidebar() {
           </p>
           <p className="flex items-center gap-1 text-[10px] text-[#b7a99a]">
             <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#e8a35a]" />
-            Atlas rooms
+            Live markets
           </p>
         </div>
       </div>
@@ -69,8 +69,8 @@ export function LeftSidebar() {
         <div className="my-3 border-t border-[#1e293b]" />
         <p className="px-3 text-[10px] font-bold uppercase tracking-wide text-[#555]">Board</p>
         {[
-          { id: 'board' as const, label: 'Trending' },
-          { id: 'communities' as const, label: 'Communities' },
+          { id: 'board' as const, label: 'Live' },
+          { id: 'communities' as const, label: 'Activity' },
           { id: 'bounties' as const, label: 'Bounties' },
         ].map((t) => (
           <button
@@ -112,7 +112,7 @@ export function LeftSidebar() {
             <p className="font-mono text-[11px] text-[#3b82f6]">{shortAddr(address!, 4)}</p>
             <p className="text-xs text-white">{formatSol(solBalance)} SOL</p>
             <div className="mt-2 flex gap-1">
-              <LinkBtn onClick={() => navigate('/profile')}>Bag</LinkBtn>
+              <LinkBtn onClick={() => navigate('/profile')}>Portfolio</LinkBtn>
               <LinkBtn onClick={() => void disconnect()}>Out</LinkBtn>
             </div>
           </div>

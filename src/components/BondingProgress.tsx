@@ -6,7 +6,7 @@ export function BondingProgress({ mcap, complete }: { mcap: number; complete: bo
   return (
     <div>
       <div className="mb-1 flex justify-between text-[11px] text-[#8b8d97]">
-        <span>bonding curve</span>
+        <span>Listing progress</span>
         <span>
           {formatUsd(mcap)} · {p.toFixed(0)}%
         </span>

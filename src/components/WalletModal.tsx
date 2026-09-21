@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useWallet } from '../hooks/useWallet'
-import { PERSONAL_MODE } from '../chain/config'
+
 import type { WalletName } from '@solana/wallet-adapter-base'
 import { WalletReadyState } from '@solana/wallet-adapter-base'
 import { MEMECOIN_WALLETS, openWalletJoin } from '../lib/wallets'
@@ -15,7 +15,6 @@ export function WalletModal() {
     modalOpen,
     closeModal,
     connectPhantom,
-    connectPersonal,
     selectAndConnect,
     connecting,
     error,
@@ -86,7 +85,7 @@ export function WalletModal() {
           <div>
             <h2 className="text-sm font-black text-white">Connect wallet</h2>
             <p className="mt-0.5 text-[11px] text-[#5d6573]">
-              Solana wallets for meme coin trading
+              Use a Solana wallet to trade
             </p>
           </div>
           <button
@@ -106,7 +105,7 @@ export function WalletModal() {
           )}
 
           <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-[#5d6573]">
-            Popular for memecoins
+            Recommended
           </p>
 
           {MEMECOIN_WALLETS.filter((w) => w.popular).map((w) => {
@@ -208,29 +207,7 @@ export function WalletModal() {
               </button>
             ))}
 
-          {PERSONAL_MODE && (
-            <>
-              <div className="pt-2 text-center text-[10px] uppercase tracking-wide text-[#3d4450]">
-                or
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  connectPersonal?.()
-                  closeModal()
-                }}
-                className="flex w-full items-center gap-3 rounded-xl border border-[#1e293b] px-3 py-3 text-left transition hover:border-[#00c805]/25"
-              >
-                <span className="text-lg">👁</span>
-                <span>
-                  <span className="block text-sm font-semibold text-white">View markets</span>
-                  <span className="block text-[11px] text-[#5d6573]">
-                    Connect Phantom when you are ready to trade
-                  </span>
-                </span>
-              </button>
-            </>
-          )}
+
 
           {error && (
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">

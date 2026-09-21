@@ -4,13 +4,11 @@ import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
 import { LiveTradeTape } from './LiveTradeTape'
 import { useTokenFeed } from '../hooks/useTokenFeed'
-import { PracticeBanner } from './PracticeBanner'
-
 const CHIPS: { id: SortTab; label: string }[] = [
-  { id: 'movers', label: 'Rooms' },
-  { id: 'mayhem', label: 'Heat' },
-  { id: 'featured', label: 'Salon' },
-  { id: 'graduate', label: 'Open' },
+  { id: 'movers', label: 'Live' },
+  { id: 'mayhem', label: 'Volume' },
+  { id: 'featured', label: 'Featured' },
+  { id: 'graduate', label: 'New' },
 ]
 
 export function TokenBoard() {
@@ -46,14 +44,13 @@ export function TokenBoard() {
 
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
-      <PracticeBanner />
       <div className="hero-atlas mb-4 p-5">
         <p className="relative z-10 font-display text-3xl text-[#f4ead8] sm:text-4xl">
           Markets
         </p>
-        <p className="relative z-10 mt-2 max-w-md text-sm text-[#f4ead8]/75">
-          Trade live Solana tokens. Connect Phantom to buy and sell — balances
-          settle in your wallet.
+        <p className="relative z-10 mt-2 max-w-lg text-sm leading-relaxed text-[#f4ead8]/80">
+          Live Solana listings. Connect your wallet to trade. Tokens settle in
+          Phantom.
         </p>
       </div>
       <LiveTradeTape />
@@ -77,7 +74,7 @@ export function TokenBoard() {
 
       <section className="mb-5">
         <h2 className="mb-2 font-display text-xl tracking-tight text-[#f4ead8]">
-          Crowded rooms
+          Trending
         </h2>
         <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
           {trending.map((t, i) => (

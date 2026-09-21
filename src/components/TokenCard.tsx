@@ -13,7 +13,7 @@ export function TokenCard({ token }: { token: Token }) {
   const up = token.change24h >= 0
   const house = isHouseCoin(token)
   const accent = token.communityAccent || (house ? '#e8a35a' : '#c084fc')
-  const room = token.community || token.tags?.[0] || 'Room'
+  const room = token.community || token.tags?.[0] || 'Live'
 
   return (
     <Link

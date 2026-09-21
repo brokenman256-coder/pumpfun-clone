@@ -144,9 +144,9 @@ export function CreatePage() {
           ⛓ {CHAIN_LABEL}
         </span>
       </div>
-      <h1 className="text-center text-2xl font-black">Create coin</h1>
-      <p className="mt-2 text-center text-sm text-[#8b8d97]">
-        Mint a standalone SPL token, or launch on a real on-chain bonding curve.
+      <h1 className="text-center font-display text-3xl text-[#f4ead8]">Launch a token</h1>
+      <p className="mt-2 text-center text-sm text-[#b7a99a]">
+        Issue an SPL token, or list it with a public bonding curve.
       </p>
 
       <div className="mt-4 flex rounded-xl bg-[#111827] p-1">
@@ -155,14 +155,14 @@ export function CreatePage() {
           onClick={() => setMode('spl')}
           className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'spl' ? 'bg-[#3b82f6] text-white' : 'text-[#8b8d97]'}`}
         >
-          Real SPL mint
+          SPL token
         </button>
         <button
           type="button"
           onClick={() => setMode('board')}
           className={`flex-1 rounded-lg py-2 text-sm font-bold ${mode === 'board' ? 'bg-[#3b82f6] text-white' : 'text-[#8b8d97]'}`}
         >
-          Bonding curve
+          Listed launch
         </button>
       </div>
 

@@ -66,20 +66,4 @@ export function isCappedNewWallet(wallet: string | null | undefined): boolean {
   return loadJourney(wallet).realBuys < NEW_WALLET_UNLOCK_BUYS
 }
 
-const PRACTICE_KEY = 'nova_practice_v1'
 
-export function loadPractice(): boolean {
-  try {
-    return localStorage.getItem(PRACTICE_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-export function savePractice(on: boolean) {
-  try {
-    localStorage.setItem(PRACTICE_KEY, on ? '1' : '0')
-  } catch {
-    /* */
-  }
-}

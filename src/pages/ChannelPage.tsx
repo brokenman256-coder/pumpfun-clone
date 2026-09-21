@@ -9,20 +9,20 @@ export function ChannelPage() {
   return (
     <div className="mx-auto max-w-lg px-3 py-8">
       <div className="text-center">
-        <span className="rounded-full bg-[#3b82f6]/15 px-3 py-1 text-[11px] font-bold text-[#3b82f6]">
-          ⛓ OFFICIAL CHANNEL · {CHAIN_LABEL}
+        <span className="rounded-full bg-[#e8a35a]/15 px-3 py-1 text-[11px] font-bold text-[#e8a35a]">
+          Official · {CHAIN_LABEL}
         </span>
-        <h1 className="mt-3 text-2xl font-black">
-          Nova Channel <span className="text-[#3b82f6]">$NOVA</span>
+        <h1 className="mt-3 font-display text-3xl text-[#f4ead8]">
+          NOVA Channel
         </h1>
-        <p className="mt-2 text-sm text-[#8b8d97]">
-          Platform treasury for create fees and buy volume.
+        <p className="mt-2 text-sm text-[#b7a99a]">
+          Official platform account.
         </p>
       </div>
 
       <div className="mt-6 space-y-4 rounded-2xl border border-[#3b82f6]/30 bg-[#111827] p-5">
         <div>
-          <p className="text-[10px] uppercase text-[#8b8d97]">Treasury wallet</p>
+          <p className="text-[10px] uppercase text-[#8b8d97]">Account</p>
           <p className="mt-1 break-all font-mono text-sm text-[#3b82f6]">{CHANNEL_WALLET}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button

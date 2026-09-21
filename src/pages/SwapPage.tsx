@@ -83,9 +83,9 @@ export function SwapPage() {
 
   return (
     <div className="mx-auto max-w-lg px-3 py-6">
-      <h1 className="text-2xl font-black">Swap</h1>
-      <p className="mt-1 text-sm text-[#8b8d97]">
-        Jupiter aggregator · routes through Raydium, Orca, Meteora & more · {CHAIN_LABEL}
+      <h1 className="font-display text-3xl text-[#f4ead8]">Swap</h1>
+      <p className="mt-1 text-sm text-[#b7a99a]">
+        Exchange SOL for any token on {CHAIN_LABEL}.
       </p>
 
       <div className="mt-5 space-y-3 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">

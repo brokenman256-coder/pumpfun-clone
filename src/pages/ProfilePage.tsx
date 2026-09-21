@@ -43,13 +43,13 @@ export function ProfilePage() {
   if (!connected || !address) {
     return (
       <div className="px-4 py-20 text-center">
-        <p className="mb-4 text-[#8b8d97]">Sign in with Phantom to view your bag</p>
+        <p className="mb-4 text-[#8b8d97]">Connect your wallet to view your portfolio</p>
         <button
           type="button"
           onClick={openModal}
-          className="rounded-full bg-[#3b82f6] px-5 py-2 text-sm font-bold text-white"
+          className="rounded-full bg-[#e8a35a] px-5 py-2 text-sm font-bold text-[#100814]"
         >
-          Sign in
+          Connect wallet
         </button>
       </div>
     )
@@ -58,7 +58,7 @@ export function ProfilePage() {
   return (
     <div className="mx-auto max-w-lg px-3 py-6">
       <div className="rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
-        <p className="text-xs text-[#8b8d97]">your bag</p>
+        <p className="text-xs uppercase tracking-wide text-[#8b8d97]">Portfolio</p>
         <p className="mt-1 font-mono text-sm text-[#3b82f6]">{shortAddr(address, 6)}</p>
         <p className="mt-2 text-2xl font-black">{formatSol(solBalance)} SOL</p>
       </div>
@@ -73,7 +73,7 @@ export function ProfilePage() {
               tab === t ? 'bg-[#3b82f6] text-white' : 'bg-[#1a1b22] text-[#8b8d97]'
             }`}
           >
-            {t}
+            {t === 'held' ? 'Held' : t === 'created' ? 'Created' : 'Replies'}
           </button>
         ))}
       </div>
@@ -81,7 +81,7 @@ export function ProfilePage() {
       <div className="mt-4 space-y-2">
         {tab === 'held' &&
           (held.length === 0 ? (
-            <p className="text-sm text-[#6b6d78]">no holdings yet</p>
+            <p className="text-sm text-[#6b6d78]">No positions yet.</p>
           ) : (
             held.map((h) => (
               <Link

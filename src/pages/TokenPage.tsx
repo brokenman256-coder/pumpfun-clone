@@ -12,7 +12,7 @@ import { EXPLORER_ADDR } from '../chain/config'
 import { progressToGraduation, SOL_PRICE_USD } from '../engine/bondingCurve'
 import { multipleFromLaunch } from '../engine/jackpot'
 import { CoinLights } from '../components/CoinLights'
-import { PracticeBanner } from '../components/PracticeBanner'
+
 
 export function TokenPage() {
   const { id } = useParams()
@@ -97,7 +97,6 @@ export function TokenPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-3 py-3 pb-10 sm:py-4">
-      <PracticeBanner />
       <div className="mb-3 flex items-center justify-between">
         <Link
           to="/"
@@ -136,8 +135,8 @@ export function TokenPage() {
             )}
           </div>
           <p className="mt-0.5 text-[11px] text-[#b7a99a]">
-            {token.community || 'Room'} · {timeAgo(token.createdAt)} ·{' '}
-            {token.holders?.length || 0} in the room
+            {token.community || 'Listed'} · {timeAgo(token.createdAt)} ·{' '}
+            {token.holders?.length || 0} holders
           </p>
           <CoinLights token={token} />
           <div className="mt-1.5 flex flex-wrap items-center gap-2">

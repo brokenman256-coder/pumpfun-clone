@@ -8,10 +8,7 @@ export function Navbar() {
   const navigate = useNavigate()
   const search = useStore((s) => s.search)
   const setSearch = useStore((s) => s.setSearch)
-  const { connected, address, solBalance, openModal, disconnect, connecting, isRealTrader } =
-    useWallet()
-  const practice = useStore((s) => s.practiceMode)
-  const setPractice = useStore((s) => s.setPracticeMode)
+  const { connected, address, solBalance, openModal, disconnect, connecting } = useWallet()
   const [menu, setMenu] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -26,19 +23,6 @@ export function Navbar() {
           />
         </Link>
         <div className="flex-1" />
-        {!isRealTrader && (
-          <button
-            type="button"
-            onClick={() => setPractice(!practice)}
-            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-              practice
-                ? 'bg-yellow-300 text-[#100814]'
-                : 'border border-[#3a2433] text-[#b7a99a]'
-            }`}
-          >
-            {practice ? 'Practice on' : 'Practice'}
-          </button>
-        )}
         <button
           type="button"
           aria-label="Channel"
@@ -88,7 +72,7 @@ export function Navbar() {
                     navigate('/profile')
                   }}
                 >
-                  Bag
+                  Portfolio
                 </button>
                 <button
                   type="button"
