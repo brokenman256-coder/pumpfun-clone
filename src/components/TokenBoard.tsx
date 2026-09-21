@@ -4,6 +4,7 @@ import type { SortTab } from '../types'
 import { TokenCard } from './TokenCard'
 import { LiveTradeTape } from './LiveTradeTape'
 import { useTokenFeed } from '../hooks/useTokenFeed'
+import { PracticeBanner } from './PracticeBanner'
 
 const CHIPS: { id: SortTab; label: string }[] = [
   { id: 'movers', label: 'Rooms' },
@@ -45,6 +46,7 @@ export function TokenBoard() {
 
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
+      <PracticeBanner />
       <div className="hero-atlas mb-4 p-5">
         <p className="relative z-10 font-display text-3xl text-[#f4ead8] sm:text-4xl">
           Markets

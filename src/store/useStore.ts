@@ -48,6 +48,7 @@ import {
   saveUsedMemeUrls,
 } from '../lib/tradePersist'
 import { PERSONAL_MODE, PERSONAL_START_SOL } from '../chain/config'
+import { loadPractice, savePractice } from '../lib/traderJourney'
 import {
   JACKPOT_FREEZE_MS,
   JACKPOT_USER_SOL_MIN,
@@ -85,6 +86,8 @@ type Store = {
   botLog: string[]
   payments: PaymentResult[]
   adminAuthed: boolean
+  practiceMode: boolean
+  setPracticeMode: (on: boolean) => void
 
   setSort: (s: SortTab) => void
   setSearch: (q: string) => void
@@ -251,6 +254,11 @@ export const useStore = create<Store>((set, get) => ({
   ],
   payments: [],
   adminAuthed: false,
+  practiceMode: typeof localStorage !== 'undefined' ? loadPractice() : false,
+  setPracticeMode: (on) => {
+    savePractice(on)
+    set({ practiceMode: on })
+  },
   usedMemeUrls: typeof localStorage !== 'undefined' ? loadUsedMemeUrls() : [],
   liveBoardSynced: false,
   traderFleet: createTraderFleet(),

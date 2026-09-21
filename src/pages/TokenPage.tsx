@@ -11,6 +11,8 @@ import { useWallet } from '../hooks/useWallet'
 import { EXPLORER_ADDR } from '../chain/config'
 import { progressToGraduation, SOL_PRICE_USD } from '../engine/bondingCurve'
 import { multipleFromLaunch } from '../engine/jackpot'
+import { CoinLights } from '../components/CoinLights'
+import { PracticeBanner } from '../components/PracticeBanner'
 
 export function TokenPage() {
   const { id } = useParams()
@@ -48,7 +50,7 @@ export function TokenPage() {
     return (
       <div className="px-4 py-20 text-center fade-up">
         <p className="text-[#8b8d97]">Coin not found</p>
-        <Link to="/" className="mt-3 inline-block text-[#00c805]">
+        <Link to="/" className="mt-3 inline-block text-[#e8a35a]">
           ← back to board
         </Link>
       </div>
@@ -95,6 +97,7 @@ export function TokenPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-3 py-3 pb-10 sm:py-4">
+      <PracticeBanner />
       <div className="mb-3 flex items-center justify-between">
         <Link
           to="/"
@@ -132,9 +135,11 @@ export function TokenPage() {
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] text-[#5d6573]">
-            by {token.creatorName} · {timeAgo(token.createdAt)} · last {timeAgo(token.lastTradeAt)}
+          <p className="mt-0.5 text-[11px] text-[#b7a99a]">
+            {token.community || 'Room'} · {timeAgo(token.createdAt)} ·{' '}
+            {token.holders?.length || 0} in the room
           </p>
+          <CoinLights token={token} />
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <p
               className={`text-2xl font-black tabular-nums transition duration-300 sm:text-3xl ${

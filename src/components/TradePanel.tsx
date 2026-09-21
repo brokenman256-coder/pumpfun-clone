@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import confetti from 'canvas-confetti'
 import { PublicKey } from '@solana/web3.js'
 import type { Token } from '../types'
@@ -32,8 +32,18 @@ import {
   multipleFromLaunch,
 } from '../engine/jackpot'
 
+import { FillReceipt, type FillInfo } from './FillReceipt'
+import {
+  FIRST_BUY_SOL,
+  NEW_WALLET_MAX_SOL,
+  isCappedNewWallet,
+  loadJourney,
+  markSellGuideSeen,
+  recordRealBuy,
+} from '../lib/traderJourney'
+
 const MINT_DECIMALS = 9
-const QUICK = [0.1, 0.5, 1, 5]
+const QUICK = [0.05, 0.1, 0.25, 0.5]
 
 function isManaged(token: Token) {
   if (token.mint && token.curvePda) return false
@@ -67,6 +77,16 @@ export function TradePanel({ token }: { token: Token }) {
   const [status, setStatus] = useState('')
   const [txSig, setTxSig] = useState('')
   const [loading, setLoading] = useState(false)
+  const [fill, setFill] = useState<FillInfo | null>(null)
+  const practice = useStore((s) => s.practiceMode)
+  const journey = loadJourney(address)
+  const newWallet = isCappedNewWallet(address)
+
+  useEffect(() => {
+    if (!amount && journey.realBuys === 0 && mode === 'buy') {
+      setAmount(String(FIRST_BUY_SOL))
+    }
+  }, [journey.realBuys, mode])
 
   const holding = holdings[token.id] ?? 0
   const num = parseFloat(amount) || 0
@@ -116,7 +136,7 @@ export function TradePanel({ token }: { token: Token }) {
       return
     }
 
-    if (!isRealTrader) {
+    if (!isRealTrader && !practice) {
       openModal()
       return
     }
@@ -129,15 +149,13 @@ export function TradePanel({ token }: { token: Token }) {
       setError('This market has graduated')
       return
     }
-    if (mode === 'sell' && sellLocked) {
-      setError(
-        `SELL LOCKED — coin is past 2×. You can still BUY. Coin vanishes after 24h.`,
-      )
-      return
-    }
     const a = quick ?? num
     if (a <= 0) {
       setError('Enter amount')
+      return
+    }
+    if (isRealTrader && mode === 'buy' && newWallet && a > NEW_WALLET_MAX_SOL) {
+      setError(`New wallets can buy up to ${NEW_WALLET_MAX_SOL} SOL per order.`)
       return
     }
 
@@ -179,7 +197,15 @@ export function TradePanel({ token }: { token: Token }) {
           }
           bookHolding(token.id, 'buy', fill.tokensOut || 0, a, fill.swapSig || signature)
           setTxSig(fill.swapSig || signature)
-          setStatus('Filled · check Phantom for the token')
+          if (address) recordRealBuy(address, mint)
+          setFill({
+            side: 'buy',
+            symbol: token.symbol,
+            mint,
+            sol: a,
+            tokens: fill.tokensOut,
+          })
+          setStatus('Filled · token is in Phantom')
           confetti({
             particleCount: 70,
             spread: 60,
@@ -332,64 +358,58 @@ export function TradePanel({ token }: { token: Token }) {
                 payout.error ||
                   'Sell booked · fund BOT_WALLET_SECRET on server for auto-payouts',
               )
-              if (payout.error && /not configured|Treasury low/i.test(payout.error)) {
-                setError(
-                  'Sell filled on the market. Configure BOT_WALLET_SECRET (funded) on the server to auto-pay SOL to traders.',
-                )
-              } else if (payout.error) {
-                setError(payout.error)
+              if (payout.error) {
+                setError('Sell booked. SOL payout is delayed — retry in a moment.')
               }
             }
           } else if (address) {
-            setStatus('Sell booked on the shared market (no live-board connection for an auto-payout right now).')
+            setStatus('Sell booked. SOL returns to Phantom shortly.')
           }
         }
         setAmount('')
         await refreshBalance()
         if (mode === 'buy') {
-          setStatus('Buy confirmed with real SOL ✓')
+          if (address) recordRealBuy(address, token.mint || token.id)
+          setFill({
+            side: 'buy',
+            symbol: token.symbol,
+            mint: token.mint || token.id,
+            sol: a,
+          })
+          setStatus('Filled · token is in Phantom')
           confetti({
             particleCount: 80,
             spread: 55,
             origin: { y: 0.7 },
-            colors: ['#3b82f6', '#fff'],
+            colors: ['#e8a35a', '#c084fc', '#f4ead8'],
           })
         } else if (!error) {
-          setStatus((s) => s || 'Sell filled ✓')
+          setFill({ side: 'sell', symbol: token.symbol, mint: token.mint, sol: solOut || 0 })
+          setStatus((s) => s || 'Sold · SOL to Phantom')
         }
         return
       }
 
-      // ── Demo / virtual trader (no Phantom) ────────────────
-      if (PERSONAL_MODE && !isRealTrader) {
-        setStatus(mode === 'buy' ? 'Demo fill…' : 'Demo sell…')
+      if (practice && !isRealTrader) {
+        setStatus(mode === 'buy' ? 'Practice fill…' : 'Practice sell…')
         const res = executeTrade(
           token.id,
           mode,
           a,
-          undefined,
-          false,
-          `demo_${Date.now().toString(36)}`,
+          'practice',
+          true,
+          `practice_${Date.now().toString(36)}`,
         )
         if (!res.ok) {
-          setError(res.error || 'Trade failed')
+          setError(res.error || 'Practice fill failed')
           return
         }
-        setTxSig(res.signature || '')
         setAmount('')
         setStatus(
           mode === 'buy'
-            ? 'Demo buy filled · connect Phantom for real SOL'
-            : 'Demo sell filled · connect Phantom for real SOL',
+            ? 'Practice buy — not real SOL'
+            : 'Practice sell — not real SOL',
         )
-        if (mode === 'buy') {
-          confetti({
-            particleCount: 50,
-            spread: 50,
-            origin: { y: 0.7 },
-            colors: ['#c4b5fd', '#fff'],
-          })
-        }
         return
       }
 
@@ -626,9 +646,33 @@ export function TradePanel({ token }: { token: Token }) {
                   ? `Buy ${token.symbol}`
                   : `Sell ${token.symbol}`}
           </button>
-          <p className="mt-3 text-center text-[10px] text-[#7c6f66]">
-            Tokens credit to your connected Phantom wallet.
-          </p>
+          {practice && !isRealTrader && (
+            <p className="mt-2 text-center text-[11px] font-semibold text-yellow-200">
+              Practice — not real SOL
+            </p>
+          )}
+          {isRealTrader && mode === 'buy' && newWallet && (
+            <p className="mt-2 text-center text-[11px] text-[#b7a99a]">
+              First trades start at {FIRST_BUY_SOL} SOL. New wallets are capped at{' '}
+              {NEW_WALLET_MAX_SOL} SOL per buy. You can lose this money.
+            </p>
+          )}
+          {isRealTrader && (
+            <p className="mt-2 text-center text-[10px] text-[#7c6f66]">
+              Tokens settle in your Phantom wallet.
+            </p>
+          )}
+          {fill && (
+            <FillReceipt
+              fill={fill}
+              onClose={() => setFill(null)}
+              showSellGuide={Boolean(address && !loadJourney(address).sellGuideSeen)}
+              onSellGuide={() => {
+                if (address) markSellGuideSeen(address)
+                setFill((f) => (f ? { ...f } : f))
+              }}
+            />
+          )}
           {!PERSONAL_MODE && (token.mint || token.source === 'dexscreener') && (
             <div className="mt-2 flex flex-wrap justify-center gap-2 text-[10px]">
               <a

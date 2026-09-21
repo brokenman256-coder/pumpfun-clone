@@ -4,6 +4,7 @@ import { formatUsd, shortAddr, timeAgo } from '../lib/format'
 import { useCountUp } from '../hooks/useCountUp'
 import { TokenImage } from './TokenImage'
 import { isHouseCoin } from '../engine/novaAiDesk'
+import { CoinLights } from './CoinLights'
 
 export function TokenCard({ token }: { token: Token }) {
   const mcap = useCountUp(token.marketCapUsd, 300)
@@ -12,7 +13,7 @@ export function TokenCard({ token }: { token: Token }) {
   const up = token.change24h >= 0
   const house = isHouseCoin(token)
   const accent = token.communityAccent || (house ? '#e8a35a' : '#c084fc')
-  const room = token.community || token.tags?.[0] || (house ? 'House room' : 'Open market')
+  const room = token.community || token.tags?.[0] || 'Room'
 
   return (
     <Link
@@ -66,8 +67,9 @@ export function TokenCard({ token }: { token: Token }) {
           </span>
           <span>{timeAgo(token.createdAt)}</span>
         </div>
+        <CoinLights token={token} compact />
         <p className="truncate text-[10px] text-[#7c6f66]">
-          @{token.creatorName || shortAddr(token.creator)}
+          {token.creatorName || shortAddr(token.creator)}
         </p>
       </div>
     </Link>

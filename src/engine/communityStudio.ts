@@ -83,5 +83,5 @@ export function paintCommunity(seq: number, usedUrls: Set<string>): CommunityLoo
 
 export function communityBio(look: CommunityLook, symbol: string, title?: string): string {
   const hook = title ? `${title}\n\n` : ''
-  return `${hook}${look.voice}\n\nRoom: ${look.community}\n$${symbol} is a house listing on the NOVA atlas — unique art, unique crowd. NFA.`
+  return `${hook}${look.voice}\n\n${look.community}`
 }
