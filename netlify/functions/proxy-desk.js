@@ -32,6 +32,13 @@ import {
   MARGIN_BPS,
 } from './lib/solanaPayer.js'
 import { jupiterSwap, quoteBuySol, quoteSellTokens } from './lib/jupiterDesk.js'
+import {
+  detectTokenProgram,
+  ensureAta,
+  createHouseMint,
+  mintToOwner,
+  verifyTokenDeposit,
+} from './lib/splDesk.js'
 
 export const config = { path: '/api/proxy-desk' }
 
@@ -309,10 +316,19 @@ export default async function handler(req) {
       const decimals = await mintDecimals(connection, mint)
       let swapSig
       let outRaw
+      let deliverAta
       try {
+        const programId = await detectTokenProgram(connection, mint)
+        const userAta = await ensureAta(connection, payer, wallet, mint, programId)
+        deliverAta = userAta.toBase58()
         const quote = await quoteBuySol({ mint, lamports: lamportsOf(net) })
         outRaw = Number(quote.outAmount)
-        swapSig = await jupiterSwap({ connection, payer, quote })
+        swapSig = await jupiterSwap({
+          connection,
+          payer,
+          quote,
+          destinationTokenAccount: deliverAta,
+        })
       } catch (e) {
         try {
           await sendSol(connection, payer, wallet, deposit.lamports)
@@ -377,12 +393,51 @@ export default async function handler(req) {
         marginBps: MARGIN_BPS,
         depositSig: signature,
         swapSig,
+        deliveredTo: deliverAta,
         position: booked.position,
       })
     }
 
+    if (action === 'deliver-house') {
+      const { tokenId, wallet, tokensOut, signature } = body
+      if (!tokenId || typeof wallet !== 'string' || wallet.length < 32) {
+        return json({ ok: false, error: 'tokenId and wallet required' }, { status: 400 })
+      }
+      if (!(tokensOut > 0)) {
+        return json({ ok: false, error: 'tokensOut required' }, { status: 400 })
+      }
+      const { board } = await readBoard()
+      const token = (board.tokens || []).find((t) => t.id === tokenId)
+      if (!token) return json({ ok: false, error: 'Token not on board' }, { status: 404 })
+
+      let mint = token.mint
+      let decimals = 6
+      if (!mint || !isSolanaMint(mint)) {
+        const created = await createHouseMint(connection, payer, 6)
+        mint = created.mint
+        decimals = created.decimals
+        await withRetryWrite((b) => {
+          const idx = (b.tokens || []).findIndex((t) => t.id === tokenId)
+          if (idx >= 0) b.tokens[idx] = { ...b.tokens[idx], mint, decimals }
+          return { board: b, extra: {} }
+        })
+      }
+      const raw = Math.floor(Number(tokensOut) * 10 ** decimals)
+      if (raw < 1) return json({ ok: false, error: 'Amount too small to mint' }, { status: 400 })
+      const sent = await mintToOwner(connection, payer, mint, wallet, raw, decimals)
+      return json({
+        ok: true,
+        mint,
+        deliverSig: sent.sig,
+        ata: sent.ata,
+        tokensOut,
+        wallet,
+        depositSig: signature || undefined,
+      })
+    }
+
     if (action === 'sell') {
-      const { mint, tokenAmount, wallet, tokenId, symbol } = body
+      const { mint, tokenAmount, wallet, tokenId, symbol, tokenTransferSig } = body
       if (!isSolanaMint(mint)) {
         return json({ ok: false, error: 'Solana mint required' }, { status: 400 })
       }
@@ -408,6 +463,14 @@ export default async function handler(req) {
 
       const decimals = held.decimals || (await mintDecimals(connection, mint))
       const sellUi = Math.min(tokenAmount, held.tokens)
+      if (typeof tokenTransferSig === 'string' && tokenTransferSig.length > 32) {
+        await verifyTokenDeposit(connection, tokenTransferSig, {
+          mint,
+          fromOwner: wallet,
+          toOwner: desk,
+          minRaw: rawAmount(sellUi, decimals),
+        })
+      }
       const quote = await quoteSellTokens({
         mint,
         amountRaw: rawAmount(sellUi, decimals),

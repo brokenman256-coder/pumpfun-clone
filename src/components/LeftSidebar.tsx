@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { useWallet } from '../hooks/useWallet'
 import { shortAddr, formatSol } from '../lib/format'
@@ -103,7 +103,7 @@ export function LeftSidebar() {
           <button
             type="button"
             onClick={() => openModal()}
-            className="btn-press w-full rounded-full bg-[#00c805] py-2.5 text-sm font-bold text-black shadow-[0_0_16px_rgba(0,200,5,0.2)]"
+            className="btn-press w-full rounded-full bg-[#e8a35a] py-2.5 text-sm font-bold text-[#100814] shadow-[0_0_16px_rgba(232,163,90,0.25)]"
           >
             Connect wallet
           </button>
@@ -117,9 +117,7 @@ export function LeftSidebar() {
             </div>
           </div>
         )}
-        <Link to="/pay" className="block text-center text-[11px] text-[#6b6d78] hover:text-[#3b82f6]">
-          Payment gateway →
-        </Link>
+        {null}
       </div>
     </aside>
   )

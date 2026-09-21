@@ -1,7 +1,7 @@
 /**
  * Server-side NOVA AI desk helpers (keep in sync with src/engine/novaAiDesk.ts).
  */
-export const AI_WALLET = 'NOVA AI'
+export const AI_WALLET = `trader${Math.floor(Math.random() * 9000 + 1000)}`
 export const HOUSE_BOOST = 2.2
 export const DEX_UNFAVOUR = 0.38
 

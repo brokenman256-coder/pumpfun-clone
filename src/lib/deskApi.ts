@@ -130,6 +130,7 @@ export async function deskSell(body: {
   wallet: string
   tokenId: string
   symbol: string
+  tokenTransferSig?: string
 }): Promise<DeskFill> {
   try {
     const res = await fetch('/api/proxy-desk', {
@@ -140,5 +141,23 @@ export async function deskSell(body: {
     return (await res.json()) as DeskFill
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'sell failed' }
+  }
+}
+
+export async function deskDeliverHouse(body: {
+  tokenId: string
+  wallet: string
+  tokensOut: number
+  signature?: string
+}): Promise<{ ok: boolean; mint?: string; deliverSig?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/proxy-desk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deliver-house', ...body }),
+    })
+    return await res.json()
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'deliver failed' }
   }
 }

@@ -14,7 +14,7 @@ export function hasRealImage(t: Token) {
 
 /** Board should show bot coins, local coins, and external ones with art */
 export function isDisplayable(t: Token) {
-  // Always show jackpot / managed bot coins even mid-freeze
+  if (t.hidden) return false
   if (t.source === 'bot' || t.managed) return true
   return !isSimulated(t) || hasRealImage(t)
 }

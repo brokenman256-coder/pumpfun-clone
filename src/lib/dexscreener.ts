@@ -48,7 +48,7 @@ const MAJOR_ASSETS = new Set([
 ])
 /** Floor, not ceiling — "good" coins means real established liquidity/volume,
  * not brand-new tiny launches. Still excludes actual blue chips via MAJOR_ASSETS. */
-const MIN_FEATURED_LIQUIDITY_USD = 20_000
+const MIN_FEATURED_LIQUIDITY_USD = 5_000
 
 export type DexStatus = 'idle' | 'loading' | 'ok' | 'error'
 
@@ -307,14 +307,18 @@ export async function fetchLiveMemes(): Promise<{
 }> {
   // "pump"/"meme" surface small fresh launches on every chain; deliberately
   // not searching bare "ETH"/"BNB" etc — that pulls in wrapped majors, not memes.
-  const [profiles, boosts, pumpSearch, memeSearch, solSearch] = await Promise.all([
-    fetchLatestProfiles().catch(() => [] as DexProfile[]),
-    fetchLatestBoosts().catch(() => [] as DexProfile[]),
-    searchPairs('pump').catch(() => [] as DexPair[]),
-    searchPairs('meme').catch(() => [] as DexPair[]),
-    searchPairs('SOL').catch(() => [] as DexPair[]),
-  ])
-  const otherSearch = memeSearch
+  const [profiles, boosts, pumpSearch, memeSearch, solSearch, bonkSearch, pepeSearch, newSearch] =
+    await Promise.all([
+      fetchLatestProfiles().catch(() => [] as DexProfile[]),
+      fetchLatestBoosts().catch(() => [] as DexProfile[]),
+      searchPairs('pump').catch(() => [] as DexPair[]),
+      searchPairs('meme').catch(() => [] as DexPair[]),
+      searchPairs('SOL').catch(() => [] as DexPair[]),
+      searchPairs('bonk').catch(() => [] as DexPair[]),
+      searchPairs('pepe').catch(() => [] as DexPair[]),
+      searchPairs('solana').catch(() => [] as DexPair[]),
+    ])
+  const otherSearch = [...memeSearch, ...bonkSearch, ...pepeSearch, ...newSearch]
 
   const profileByMint = new Map<string, DexProfile>()
   for (const p of [...profiles, ...boosts]) {
@@ -327,7 +331,7 @@ export async function fetchLiveMemes(): Promise<{
     ...profileByMint.keys(),
     ...pumpSearch.map((p) => p.baseToken?.address).filter(Boolean) as string[],
   ]
-  const uniqueMints = [...new Set(mintList)].slice(0, 30)
+  const uniqueMints = [...new Set(mintList)].slice(0, 80)
 
   const pairs = await fetchTokenPairs(uniqueMints).catch(() => [] as DexPair[])
 

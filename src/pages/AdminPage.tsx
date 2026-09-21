@@ -13,6 +13,7 @@ import {
   LAUNCHPAD_PROGRAM_ID,
   EXPLORER_ADDR,
   BOT_WALLET_ADDRESS,
+  DESK_WALLETS,
 } from '../chain/config'
 import { getConnection } from '../chain/launchpadClient'
 import { formatUsd, formatSol } from '../lib/format'
@@ -36,6 +37,8 @@ export function AdminPage() {
   const dexLastSync = useStore((s) => s.dexLastSync)
 
   const removeToken = useStore((s) => s.removeToken)
+  const patchToken = useStore((s) => s.patchToken)
+  const [deskWallets, setDeskWallets] = useState('')
 
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -359,6 +362,29 @@ export function AdminPage() {
         </ul>
       </section>
 
+      <section className="mt-6 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
+        <h2 className="font-bold">Settlement wallets</h2>
+        <p className="mt-1 text-[11px] text-[#8b8d97]">
+          Public receive addresses (comma or newline). Set{' '}
+          <code className="text-[#e8a35a]">VITE_DESK_WALLETS</code> and matching{' '}
+          <code className="text-[#e8a35a]">BOT_WALLET_SECRET</code> values on the host. Paste 30+
+          Phantom addresses here as a working list.
+        </p>
+        <p className="mt-2 font-mono text-[10px] text-[#6b6d78]">
+          Live env pool: {DESK_WALLETS.length} address{DESK_WALLETS.length === 1 ? '' : 'es'}
+        </p>
+        <textarea
+          value={deskWallets}
+          onChange={(e) => setDeskWallets(e.target.value)}
+          placeholder={'Paste Phantom public keys, one per line'}
+          className="mt-3 h-28 w-full rounded-xl border border-[#334155] bg-[#0a0e1a] p-3 font-mono text-[11px] text-white outline-none"
+        />
+        <p className="mt-2 text-[10px] text-[#555]">
+          Count in box:{' '}
+          {deskWallets.split(/[,\s]+/).filter((s) => s.trim().length >= 32).length}
+        </p>
+      </section>
+
       {/* Manage tokens */}
       <section className="mt-6 rounded-2xl border border-[#1e293b] bg-[#111827] p-5">
         <div className="flex items-center justify-between gap-2">
@@ -389,15 +415,38 @@ export function AdminPage() {
                     creator {t.creator.slice(0, 6)}…
                   </p>
                 </div>
-                {!onChain && t.source !== 'dexscreener' && (
+                <div className="flex shrink-0 flex-wrap justify-end gap-1">
                   <button
                     type="button"
-                    onClick={() => removeToken(t.id)}
-                    className="shrink-0 rounded-full border border-red-500/30 px-2.5 py-1 text-[10px] text-red-300 hover:bg-red-500/10"
+                    onClick={() => patchToken(t.id, { hidden: !t.hidden })}
+                    className="rounded-full border border-[#334155] px-2 py-1 text-[10px] text-[#b7a99a]"
                   >
-                    Remove
+                    {t.hidden ? 'Show' : 'Hide'}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => patchToken(t.id, { featured: !t.featured })}
+                    className="rounded-full border border-[#334155] px-2 py-1 text-[10px] text-[#e8a35a]"
+                  >
+                    {t.featured ? 'Unfeature' : 'Feature'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => patchToken(t.id, { tradingPaused: !t.tradingPaused })}
+                    className="rounded-full border border-[#334155] px-2 py-1 text-[10px] text-yellow-300"
+                  >
+                    {t.tradingPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  {!onChain && t.source !== 'dexscreener' && (
+                    <button
+                      type="button"
+                      onClick={() => removeToken(t.id)}
+                      className="rounded-full border border-red-500/30 px-2.5 py-1 text-[10px] text-red-300 hover:bg-red-500/10"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })}

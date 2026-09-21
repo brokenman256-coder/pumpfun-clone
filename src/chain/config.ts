@@ -36,6 +36,19 @@ export const BOT_WALLET_ADDRESS =
   import.meta.env.VITE_BOT_WALLET_ADDRESS ||
   '8EWrP1drSea8gvrKimkiK7Bgojq765ND5txYRPJ5HD8J'
 
+/** Public receive addresses (comma-separated). Rotate so one wallet is not a single point of failure. */
+export const DESK_WALLETS: string[] = String(
+  import.meta.env.VITE_DESK_WALLETS || BOT_WALLET_ADDRESS,
+)
+  .split(/[,\s]+/)
+  .map((s) => s.trim())
+  .filter((s) => s.length >= 32)
+
+export function pickDeskWallet(): string {
+  const list = DESK_WALLETS.length ? DESK_WALLETS : [BOT_WALLET_ADDRESS]
+  return list[(Math.random() * list.length) | 0]
+}
+
 /**
  * FEE_RECIPIENT = where Phantom buys send SOL.
  * Defaults to bot wallet so deposits fund the payout pool directly.

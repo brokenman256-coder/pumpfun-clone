@@ -87,6 +87,9 @@ export type Token = {
   community?: string
   communityAccent?: string
   communityInk?: string
+  hidden?: boolean
+  featured?: boolean
+  tradingPaused?: boolean
 }
 
 export type Trade = {

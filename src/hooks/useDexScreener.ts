@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
 import { fetchLiveMemes } from '../lib/dexscreener'
-import { PERSONAL_MODE } from '../chain/config'
-
-const POLL_MS = 45_000
+const POLL_MS = 35_000
 let pollStarted = false
 
 /**
@@ -39,7 +37,7 @@ export function useDexScreener() {
 
   useEffect(() => {
     // Personal market is self-contained — no external meme feed
-    if (PERSONAL_MODE || !liveMode) return
+    if (!liveMode) return
     // Single global poll loop
     if (pollStarted) return
     pollStarted = true

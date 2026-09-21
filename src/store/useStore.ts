@@ -56,7 +56,7 @@ import {
   multipleFromLaunch,
 } from '../engine/jackpot'
 import {
-  AI_WALLET,
+  tapeWallet,
   ambientBoostSol,
   pickHouseTargets,
   traderReactionPlan,
@@ -116,6 +116,7 @@ type Store = {
   ) => void
   mergeOnChainTokens: (onChain: Token[]) => void
   removeToken: (tokenId: string) => void
+  patchToken: (tokenId: string, patch: Partial<Token>) => void
   pushPayment: (p: PaymentResult) => void
   setAdminAuthed: (v: boolean) => void
   clearGraduation: () => void
@@ -241,7 +242,7 @@ export const useStore = create<Store>((set, get) => ({
   dexStatus: 'idle',
   dexError: null,
   dexLastSync: null,
-  liveMode: !PERSONAL_MODE,
+  liveMode: true,
   botConfig: { ...DEFAULT_BOT_CONFIG },
   botLog: [
     PERSONAL_MODE
@@ -298,6 +299,10 @@ export const useStore = create<Store>((set, get) => ({
     }),
   removeToken: (tokenId) =>
     set((s) => ({ tokens: s.tokens.filter((t) => t.id !== tokenId) })),
+  patchToken: (tokenId, patch) =>
+    set((s) => ({
+      tokens: s.tokens.map((t) => (t.id === tokenId ? { ...t, ...patch } : t)),
+    })),
   setBotEnabled: (on) =>
     set((s) => ({
       botConfig: { ...s.botConfig, enabled: on },
@@ -1289,10 +1294,10 @@ export const useStore = create<Store>((set, get) => ({
       const age = Date.now() - (token.createdAt || Date.now())
       const buy = Math.random() < (age < 8 * 60_000 ? 0.82 : 0.62)
       if (buy) {
-        get().executeTrade(token.id, 'buy', ambientBoostSol(age), AI_WALLET, true)
+        get().executeTrade(token.id, 'buy', ambientBoostSol(age), tapeWallet(), true)
       } else {
         const slice = Math.min((token.virtualTokens || 1) * 0.00035, 50_000)
-        get().executeTrade(token.id, 'sell', slice, AI_WALLET, true)
+        get().executeTrade(token.id, 'sell', slice, tapeWallet(), true)
       }
     }
   },
@@ -1302,17 +1307,17 @@ export const useStore = create<Store>((set, get) => ({
     if (!token || token.source === 'dexscreener') return
     const clips = traderReactionPlan(side, userSol)
     get().pushBotLog(
-      `NOVA AI · ${side} follow on $${token.symbol} · ${clips.length} clips`,
+      `flow ${token.symbol} · ${clips.length}`,
     )
     for (const clip of clips) {
       window.setTimeout(() => {
         const live = get().tokens.find((t) => t.id === tokenId)
         if (!live || live.complete) return
         if (clip.side === 'buy' && clip.sol) {
-          get().executeTrade(tokenId, 'buy', clip.sol, AI_WALLET, true)
+          get().executeTrade(tokenId, 'buy', clip.sol, tapeWallet(), true)
         } else if (clip.side === 'sell' && clip.tokenFrac) {
           const amt = Math.min((live.virtualTokens || 1) * clip.tokenFrac * 0.002, 40_000)
-          get().executeTrade(tokenId, 'sell', amt, AI_WALLET, true)
+          get().executeTrade(tokenId, 'sell', amt, tapeWallet(), true)
         }
       }, clip.delayMs)
     }

@@ -17,9 +17,10 @@ import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
 import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
 import { postLiveTrade } from '../lib/liveBoardApi'
-import { paySolOnChain } from '../chain/pay'
+import { paySolOnChain, sendSplToDesk } from '../chain/pay'
 import {
   deskBuy,
+  deskDeliverHouse,
   deskMint,
   deskSell,
   isSolanaDeskToken,
@@ -44,7 +45,6 @@ export function TradePanel({ token }: { token: Token }) {
   const executeTrade = useStore((s) => s.executeTrade)
   const applyLiveToken = useStore((s) => s.applyLiveToken)
   const bookHolding = useStore((s) => s.bookHolding)
-  const enterPersonalSession = useStore((s) => s.enterPersonalSession)
   const syncTokenFromChain = useStore((s) => s.syncTokenFromChain)
   const {
     connected,
@@ -116,16 +116,17 @@ export function TradePanel({ token }: { token: Token }) {
       return
     }
 
-    if (!connected) {
-      if (PERSONAL_MODE) enterPersonalSession()
-      else {
-        openModal()
-        return
-      }
+    if (!isRealTrader) {
+      openModal()
+      return
     }
 
+    if (token.tradingPaused) {
+      setError('Trading is paused for this market')
+      return
+    }
     if (token.complete && !desk) {
-      setError('Graduated')
+      setError('This market has graduated')
       return
     }
     if (mode === 'sell' && sellLocked) {
@@ -178,7 +179,7 @@ export function TradePanel({ token }: { token: Token }) {
           }
           bookHolding(token.id, 'buy', fill.tokensOut || 0, a, fill.swapSig || signature)
           setTxSig(fill.swapSig || signature)
-          setStatus('Bought on Jupiter · bag is on the desk ✓')
+          setStatus('Filled · check Phantom for the token')
           confetti({
             particleCount: 70,
             spread: 60,
@@ -190,13 +191,21 @@ export function TradePanel({ token }: { token: Token }) {
             setError('Insufficient tokens on the desk')
             return
           }
-          setStatus('Desk selling on Jupiter…')
+          setStatus('Approve token in Phantom…')
+          const tokenTransferSig = await sendSplToDesk({
+            wallet: adapter,
+            mint,
+            amountUi: a,
+          })
+          setTxSig(tokenTransferSig)
+          setStatus('Settling sell…')
           const fill = await deskSell({
             mint,
             tokenAmount: a,
             wallet: address,
             tokenId: token.id,
             symbol: token.symbol,
+            tokenTransferSig,
           })
           if (!fill.ok) {
             setError(fill.error || 'Desk sell failed')
@@ -243,6 +252,19 @@ export function TradePanel({ token }: { token: Token }) {
           if (live.ok && live.token) {
             applyLiveToken(live.token)
             bookHolding(token.id, 'buy', live.tokensOut || 0, a, signature)
+            if (address && (live.tokensOut || 0) > 0) {
+              setStatus('Sending tokens to Phantom…')
+              const d = await deskDeliverHouse({
+                tokenId: token.id,
+                wallet: address,
+                tokensOut: live.tokensOut || 0,
+                signature,
+              })
+              if (d.ok && d.mint) {
+                applyLiveToken({ ...live.token, mint: d.mint })
+                setTxSig(d.deliverSig || signature)
+              }
+            }
           } else {
             const res = executeTrade(
               token.id,
@@ -597,28 +619,16 @@ export function TradePanel({ token }: { token: Token }) {
             }`}
           >
             {loading
-              ? status || 'Working…'
-              : !connected
-                ? 'Connect to trade'
-                : mode === 'sell' && sellLocked
-                  ? 'SELL LOCKED'
-                  : isRealTrader
-                    ? mode === 'buy'
-                      ? `buy ${token.symbol} (real SOL)`
-                      : `sell ${token.symbol} (real SOL)`
-                    : mode === 'buy'
-                      ? `demo buy ${token.symbol}`
-                      : `demo sell ${token.symbol}`}
+              ? status || 'Confirm in wallet…'
+              : !isRealTrader
+                ? 'Connect Phantom'
+                : mode === 'buy'
+                  ? `Buy ${token.symbol}`
+                  : `Sell ${token.symbol}`}
           </button>
-          <p className="mt-3 text-center text-[10px] text-[#555]">
-            Instant fills · bonding curve pricing
+          <p className="mt-3 text-center text-[10px] text-[#7c6f66]">
+            Tokens credit to your connected Phantom wallet.
           </p>
-          {desk && (
-            <p className="mt-2 text-center text-[10px] text-[#b7a99a]">
-              Your SOL goes to the NOVA desk wallet. We buy the mint on Jupiter for you.
-              When you sell, we sell the same bag and send SOL back.
-            </p>
-          )}
           {!PERSONAL_MODE && (token.mint || token.source === 'dexscreener') && (
             <div className="mt-2 flex flex-wrap justify-center gap-2 text-[10px]">
               <a

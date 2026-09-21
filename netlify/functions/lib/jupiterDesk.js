@@ -29,17 +29,19 @@ export async function jupiterQuote({
   return data
 }
 
-export async function jupiterSwap({ connection, payer, quote }) {
+export async function jupiterSwap({ connection, payer, quote, destinationTokenAccount }) {
+  const body = {
+    quoteResponse: quote,
+    userPublicKey: payer.publicKey.toBase58(),
+    wrapAndUnwrapSol: true,
+    dynamicComputeUnitLimit: true,
+    prioritizationFeeLamports: 'auto',
+  }
+  if (destinationTokenAccount) body.destinationTokenAccount = destinationTokenAccount
   const res = await fetch(JUP_SWAP, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      quoteResponse: quote,
-      userPublicKey: payer.publicKey.toBase58(),
-      wrapAndUnwrapSol: true,
-      dynamicComputeUnitLimit: true,
-      prioritizationFeeLamports: 'auto',
-    }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) {
     const t = await res.text()

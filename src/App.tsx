@@ -1,11 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useEffect } from 'react'
 import { Navbar } from './components/Navbar'
 import { LeftSidebar } from './components/LeftSidebar'
 import { MobileBanner } from './components/MobileBanner'
 import { BottomNav } from './components/BottomNav'
 import { WalletModal } from './components/WalletModal'
-import { HowItWorksModal } from './components/HowItWorksModal'
 import { GraduationToast } from './components/GraduationToast'
 import { HomePage } from './pages/HomePage'
 import { TokenPage } from './pages/TokenPage'
@@ -26,7 +24,6 @@ import { useSystemSupervisor } from './hooks/useSystemSupervisor'
 import { useOnChainTokens } from './hooks/useOnChainTokens'
 import { useDeskPositions } from './hooks/useDeskPositions'
 import { JackpotToast } from './components/JackpotToast'
-import { useStore } from './store/useStore'
 
 export default function App() {
   useLiveBoard()
@@ -37,15 +34,6 @@ export default function App() {
   useJackpotWatch()
   useSystemSupervisor()
   useDeskPositions()
-  const setHowOpen = useStore((s) => s.setHowOpen)
-
-  useEffect(() => {
-    const g = globalThis as typeof globalThis & { __pumpWelcome?: boolean }
-    if (!g.__pumpWelcome) {
-      g.__pumpWelcome = true
-      window.setTimeout(() => setHowOpen(true), 900)
-    }
-  }, [setHowOpen])
 
   return (
     <BrowserRouter>
@@ -78,7 +66,6 @@ export default function App() {
             <BottomNav />
           </div>
           <WalletModal />
-          <HowItWorksModal />
           <GraduationToast />
           <JackpotToast />
         </div>

@@ -204,7 +204,7 @@ export function WalletModal() {
                   <span className="h-9 w-9 rounded-full bg-[#1e2329]" />
                 )}
                 <span className="text-sm font-semibold">{w.adapter.name}</span>
-                <span className="ml-auto text-[11px] text-[#00c805]">Connect</span>
+                <span className="ml-auto text-[11px] text-[#e8a35a]">Connect</span>
               </button>
             ))}
 
@@ -223,9 +223,9 @@ export function WalletModal() {
               >
                 <span className="text-lg">👁</span>
                 <span>
-                  <span className="block text-sm font-semibold text-white">Browse without wallet</span>
+                  <span className="block text-sm font-semibold text-white">View markets</span>
                   <span className="block text-[11px] text-[#5d6573]">
-                    View markets · connect anytime to trade
+                    Connect Phantom when you are ready to trade
                   </span>
                 </span>
               </button>

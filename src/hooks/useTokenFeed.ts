@@ -57,7 +57,12 @@ export function useTokenFeed() {
       case 'mayhem':
         return copy.sort((a, b) => b.volumeSol - a.volumeSol)
       case 'featured':
-        return copy.sort((a, b) => b.replies - a.replies || b.marketCapUsd - a.marketCapUsd)
+        return copy.sort(
+          (a, b) =>
+            Number(!!b.featured) - Number(!!a.featured) ||
+            b.replies - a.replies ||
+            b.marketCapUsd - a.marketCapUsd,
+        )
       case 'graduate':
         return copy
           .filter((t) => !t.complete)

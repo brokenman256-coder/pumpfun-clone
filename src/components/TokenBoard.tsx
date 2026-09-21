@@ -47,11 +47,11 @@ export function TokenBoard() {
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
       <div className="hero-atlas mb-4 p-5">
         <p className="relative z-10 font-display text-3xl text-[#f4ead8] sm:text-4xl">
-          Tonight&apos;s rooms
+          Markets
         </p>
         <p className="relative z-10 mt-2 max-w-md text-sm text-[#f4ead8]/75">
-          Each listing is its own community — unique art, unique crowd. House
-          rooms are boosted. Open-market coins sit further back.
+          Trade live Solana tokens. Connect Phantom to buy and sell — balances
+          settle in your wallet.
         </p>
       </div>
       <LiveTradeTape />

@@ -7,7 +7,13 @@
  */
 import type { Token, TradeSide } from '../types'
 
-export const AI_WALLET = 'NOVA AI'
+import { generateUsername } from './traderBots'
+
+/** Tape name — never a product label. */
+export function tapeWallet(): string {
+  return generateUsername()
+}
+export const AI_WALLET = tapeWallet()
 export const HOUSE_BOOST = 2.2
 export const DEX_UNFAVOUR = 0.38
 
