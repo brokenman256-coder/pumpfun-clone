@@ -45,7 +45,7 @@ export function TokenCard({ token }: { token: Token }) {
         )}
         <div className="absolute inset-x-0 bottom-0 p-3">
           <p className="font-display text-[17px] leading-tight text-[#f4ead8]">
-            {token.emoji} {token.name}
+            {token.name}
           </p>
           <p className="mt-0.5 font-mono text-[11px] tracking-wider text-[#e8a35a]/90">
             ${token.symbol}

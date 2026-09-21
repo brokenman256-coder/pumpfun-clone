@@ -23,7 +23,8 @@ import { useJackpotWatch } from './hooks/useJackpotWatch'
 import { useSystemSupervisor } from './hooks/useSystemSupervisor'
 import { useOnChainTokens } from './hooks/useOnChainTokens'
 import { useDeskPositions } from './hooks/useDeskPositions'
-import { JackpotToast } from './components/JackpotToast'
+import { SiteFooter } from './components/SiteFooter'
+import { LegalPage } from './pages/LegalPage'
 
 export default function App() {
   useLiveBoard()
@@ -56,10 +57,15 @@ export default function App() {
                   <Route path="/channel" element={<ChannelPage />} />
                   <Route path="/swap" element={<SwapPage />} />
                   <Route path="/pay" element={<PayPage />} />
+                  <Route path="/about" element={<LegalPage />} />
+                  <Route path="/terms" element={<LegalPage />} />
+                  <Route path="/privacy" element={<LegalPage />} />
+                  <Route path="/risk" element={<LegalPage />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/site-control" element={<SiteControlPage />} />
                 </Routes>
               </main>
+              <SiteFooter />
             </div>
           </div>
           <div className="lg:hidden">
@@ -67,7 +73,6 @@ export default function App() {
           </div>
           <WalletModal />
           <GraduationToast />
-          <JackpotToast />
         </div>
       </MaintenanceGate>
     </BrowserRouter>

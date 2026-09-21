@@ -31,10 +31,7 @@ export function LeftSidebar() {
           <p className="font-display text-lg tracking-tight text-[#f4ead8]">
             NOVA
           </p>
-          <p className="flex items-center gap-1 text-[10px] text-[#b7a99a]">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#e8a35a]" />
-            Live markets
-          </p>
+          <p className="text-[10px] tracking-wide text-[#b7a99a]">Est. 2021</p>
         </div>
       </div>
 

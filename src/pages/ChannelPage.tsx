@@ -10,7 +10,7 @@ export function ChannelPage() {
     <div className="mx-auto max-w-lg px-3 py-8">
       <div className="text-center">
         <span className="rounded-full bg-[#e8a35a]/15 px-3 py-1 text-[11px] font-bold text-[#e8a35a]">
-          Official · {CHAIN_LABEL}
+          Official · Est. 2021 · {CHAIN_LABEL}
         </span>
         <h1 className="mt-3 font-display text-3xl text-[#f4ead8]">
           NOVA Channel

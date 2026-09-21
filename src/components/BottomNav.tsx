@@ -23,10 +23,10 @@ export function BottomNav() {
             onClick={(e) => e.stopPropagation()}
           >
             {[
-              { label: 'Callout', go: () => navigate('/') },
-              { label: 'Post bounty', go: () => { setHomeTab('bounties'); navigate('/') } },
-              { label: 'Go live', go: () => navigate('/') },
-              { label: 'Create coin', go: () => navigate('/create') },
+              { label: 'Launch token', go: () => navigate('/create') },
+              { label: 'Swap', go: () => navigate('/swap') },
+              { label: 'Channel', go: () => navigate('/channel') },
+              { label: 'Terms', go: () => navigate('/terms') },
             ].map((item) => (
               <button
                 key={item.label}

@@ -45,12 +45,15 @@ export function TokenBoard() {
   return (
     <div className="mx-auto max-w-lg px-3 pb-8 pt-3 sm:max-w-6xl">
       <div className="hero-atlas mb-4 p-5">
-        <p className="relative z-10 font-display text-3xl text-[#f4ead8] sm:text-4xl">
+        <p className="relative z-10 text-[11px] uppercase tracking-[0.2em] text-[#e8a35a]/90">
+          Est. 2021
+        </p>
+        <p className="relative z-10 mt-2 font-display text-3xl text-[#f4ead8] sm:text-4xl">
           Markets
         </p>
         <p className="relative z-10 mt-2 max-w-lg text-sm leading-relaxed text-[#f4ead8]/80">
-          Live Solana listings. Connect your wallet to trade. Tokens settle in
-          Phantom.
+          A Solana trading venue for listed tokens. Connect a wallet to trade.
+          Balances settle in Phantom.
         </p>
       </div>
       <LiveTradeTape />
@@ -105,7 +108,7 @@ export function TokenBoard() {
       ) : shown.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#334155] py-16 text-center fade-up">
           <p className="text-3xl">🔥</p>
-          <p className="mt-2 font-semibold">Markets loading…</p>
+          <p className="mt-2 font-semibold">Loading listings…</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

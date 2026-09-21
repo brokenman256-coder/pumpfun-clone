@@ -5,7 +5,7 @@ export function MobileBanner() {
   if (!open) return null
   return (
     <div className="flex items-center justify-center gap-2 bg-[#12131a] px-3 py-2 text-center text-[12px] text-[#c8c9d0]">
-      <span>NOVA · Live Solana markets</span>
+      <span>NOVA · Solana markets since 2021</span>
       <button type="button" aria-label="Dismiss" onClick={() => setOpen(false)} className="text-[#8b8d97]">
         ✕
       </button>
