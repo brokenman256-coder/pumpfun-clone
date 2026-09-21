@@ -18,8 +18,6 @@ export function LeftSidebar() {
   const setHomeTab = useStore((s) => s.setHomeTab)
   const homeTab = useStore((s) => s.homeTab)
   const { connected, address, solBalance, openModal, disconnect } = useWallet()
-  const tokens = useStore((s) => s.tokens)
-  const trades = useStore((s) => s.tickerTrades)
 
   return (
     <aside className="hidden lg:flex lg:w-56 xl:w-64 shrink-0 flex-col border-r border-[#3a2433] bg-[#100814]/90 min-h-screen sticky top-0 h-screen">
@@ -92,13 +90,6 @@ export function LeftSidebar() {
       </nav>
 
       <div className="space-y-2 border-t border-[#1e293b] p-3">
-        <div className="rounded-xl border border-[#1e293b] bg-[#111827]/80 px-3 py-2">
-          <p className="text-[10px] text-[#6b6d78]">Markets</p>
-          <p className="text-sm font-bold text-white">{tokens.length.toLocaleString()}</p>
-          <p className="mt-0.5 text-[10px] text-[#555]">
-            {trades.length ? `${trades[0]?.side} · live tape` : 'warming up'}
-          </p>
-        </div>
         {!connected ? (
           <button
             type="button"
