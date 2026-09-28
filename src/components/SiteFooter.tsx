@@ -27,6 +27,9 @@ export function SiteFooter() {
           <Link to="/channel" className="hover:text-[#f4ead8]">
             Channel
           </Link>
+          <a href="mailto:support@nova.markets" className="hover:text-[#f4ead8]">
+            Support
+          </a>
         </nav>
       </div>
       <p className="mx-auto mt-6 max-w-6xl text-[10px] tracking-wide">

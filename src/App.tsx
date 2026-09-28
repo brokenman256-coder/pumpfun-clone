@@ -11,9 +11,8 @@ import { CreatePage } from './pages/CreatePage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ChannelPage } from './pages/ChannelPage'
 import { SwapPage } from './pages/SwapPage'
-import { PayPage } from './pages/PayPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { AdminPage } from './pages/AdminPage'
-import { SiteControlPage } from './pages/SiteControlPage'
 import { MaintenanceGate } from './components/MaintenanceGate'
 import { useSimulator } from './hooks/useSimulator'
 import { useDexScreener } from './hooks/useDexScreener'
@@ -56,13 +55,12 @@ export default function App() {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/channel" element={<ChannelPage />} />
                   <Route path="/swap" element={<SwapPage />} />
-                  <Route path="/pay" element={<PayPage />} />
                   <Route path="/about" element={<LegalPage />} />
                   <Route path="/terms" element={<LegalPage />} />
                   <Route path="/privacy" element={<LegalPage />} />
                   <Route path="/risk" element={<LegalPage />} />
                   <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/site-control" element={<SiteControlPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </main>
               <SiteFooter />

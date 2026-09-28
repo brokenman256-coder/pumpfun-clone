@@ -17,14 +17,9 @@ import { jupiterTradeUrl, raydiumTradeUrl } from '../chain/jupiter'
 import { buyOnChain, sellOnChain, fetchBondingCurve, getConnection } from '../chain/launchpadClient'
 import { managedBuyOnChain, requestManagedSellPayout } from '../chain/managedTrade'
 import { postLiveTrade } from '../lib/liveBoardApi'
-import { paySolOnChain, sendSplToDesk } from '../chain/pay'
-import {
-  deskBuy,
-  deskDeliverHouse,
-  deskMint,
-  deskSell,
-  isSolanaDeskToken,
-} from '../lib/deskApi'
+import { paySolOnChain } from '../chain/pay'
+import { deskDeliverHouse, deskMint, isSolanaDeskToken } from '../lib/deskApi'
+import { userBuyToken, userSellToken } from '../chain/userSwap'
 import {
   formatJackpotCountdown,
   isJackpotArmed,
@@ -162,7 +157,7 @@ export function TradePanel({ token }: { token: Token }) {
     try {
       let signature: string | undefined
 
-      // ── Real Solana coin: SOL → desk wallet → Jupiter buy/sell ──
+      // Live Solana mint — user signs the swap; tokens stay in Phantom.
       if (desk) {
         if (!isRealTrader || !address) {
           openModal()
@@ -171,32 +166,15 @@ export function TradePanel({ token }: { token: Token }) {
         const mint = deskMint(token)
         if (mode === 'buy') {
           if (a > solBalance + 0.0001) {
-            setError(`Insufficient SOL in Phantom (need ~${a})`)
+            setError(`Insufficient SOL (need ~${a})`)
             return
           }
-          setStatus(`Send ${a} SOL to the NOVA desk…`)
-          signature = await paySolOnChain({
-            wallet: adapter,
-            amountSol: a,
-            memo: `nova:desk:buy:${mint.slice(0, 24)}`,
-          })
-          setTxSig(signature)
-          setStatus('Desk buying on Jupiter…')
-          const fill = await deskBuy({
-            signature,
-            mint,
-            amountSol: a,
-            wallet: address,
-            tokenId: token.id,
-            symbol: token.symbol,
-          })
-          if (!fill.ok) {
-            setError(fill.error || 'Desk buy failed')
-            return
-          }
-          bookHolding(token.id, 'buy', fill.tokensOut || 0, a, fill.swapSig || signature)
-          setTxSig(fill.swapSig || signature)
-          if (address) recordRealBuy(address, mint)
+          setStatus('Approve in wallet…')
+          const fill = await userBuyToken({ wallet: adapter, mint, amountSol: a })
+          signature = fill.signature
+          bookHolding(token.id, 'buy', fill.tokensOut, a, fill.signature)
+          setTxSig(fill.signature)
+          recordRealBuy(address, mint)
           setFill({
             side: 'buy',
             symbol: token.symbol,
@@ -204,7 +182,7 @@ export function TradePanel({ token }: { token: Token }) {
             sol: a,
             tokens: fill.tokensOut,
           })
-          setStatus('Filled · token is in Phantom')
+          setStatus('Filled · token is in your wallet')
           confetti({
             particleCount: 70,
             spread: 60,
@@ -213,36 +191,21 @@ export function TradePanel({ token }: { token: Token }) {
           })
         } else {
           if (a > holding + 1e-9) {
-            setError('Insufficient tokens on the desk')
+            setError('Insufficient token balance')
             return
           }
-          setStatus('Approve token in Phantom…')
-          const tokenTransferSig = await sendSplToDesk({
-            wallet: adapter,
-            mint,
-            amountUi: a,
-          })
-          setTxSig(tokenTransferSig)
-          setStatus('Settling sell…')
-          const fill = await deskSell({
-            mint,
-            tokenAmount: a,
-            wallet: address,
-            tokenId: token.id,
+          setStatus('Approve in wallet…')
+          const fill = await userSellToken({ wallet: adapter, mint, amountUi: a })
+          signature = fill.signature
+          bookHolding(token.id, 'sell', a, fill.solOut, fill.signature)
+          setTxSig(fill.signature)
+          setFill({
+            side: 'sell',
             symbol: token.symbol,
-            tokenTransferSig,
+            mint,
+            sol: fill.solOut,
           })
-          if (!fill.ok) {
-            setError(fill.error || 'Desk sell failed')
-            return
-          }
-          bookHolding(token.id, 'sell', a, fill.solOut || 0, fill.payoutSig || fill.swapSig)
-          setTxSig(fill.payoutSig || fill.swapSig || '')
-          setStatus(
-            fill.payoutPending
-              ? 'Sold on Jupiter · payout pending'
-              : `Sold · ${fill.solOut?.toFixed(4)} SOL sent to Phantom ✓`,
-          )
+          setStatus(`Sold · ${fill.solOut.toFixed(4)} SOL in your wallet`)
         }
         setAmount('')
         await refreshBalance()

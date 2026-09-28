@@ -9,6 +9,10 @@ import {
   Transaction,
 } from '@solana/web3.js'
 import {
+  PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID,
+  createCreateMetadataAccountV3Instruction,
+} from '@metaplex-foundation/mpl-token-metadata'
+import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -95,6 +99,43 @@ export async function createHouseMint(connection, payer, decimals = 6) {
   ]
   const sig = await sendIxs(connection, payer, ixs, [mintKp])
   return { mint: mintKp.publicKey.toBase58(), sig, decimals }
+}
+
+export async function attachMetadata(connection, payer, mint, { name, symbol, uri }) {
+  const mintPk = new PublicKey(mint)
+  const [metadata] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('metadata'),
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      mintPk.toBuffer(),
+    ],
+    TOKEN_METADATA_PROGRAM_ID,
+  )
+  const ix = createCreateMetadataAccountV3Instruction(
+    {
+      metadata,
+      mint: mintPk,
+      mintAuthority: payer.publicKey,
+      payer: payer.publicKey,
+      updateAuthority: payer.publicKey,
+    },
+    {
+      createMetadataAccountArgsV3: {
+        data: {
+          name: String(name || 'NOVA').slice(0, 32),
+          symbol: String(symbol || 'NOVA').slice(0, 10),
+          uri: String(uri || '').slice(0, 200),
+          sellerFeeBasisPoints: 0,
+          creators: null,
+          collection: null,
+          uses: null,
+        },
+        isMutable: true,
+        collectionDetails: null,
+      },
+    },
+  )
+  return sendIxs(connection, payer, [ix])
 }
 
 export async function mintToOwner(connection, payer, mint, owner, rawAmount, decimals) {

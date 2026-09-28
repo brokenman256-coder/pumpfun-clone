@@ -37,6 +37,7 @@ import {
   ensureAta,
   createHouseMint,
   mintToOwner,
+  attachMetadata,
   verifyTokenDeposit,
 } from './lib/splDesk.js'
 
@@ -416,6 +417,19 @@ export default async function handler(req) {
         const created = await createHouseMint(connection, payer, 6)
         mint = created.mint
         decimals = created.decimals
+        const origin =
+          process.env.URL ||
+          process.env.DEPLOY_PRIME_URL ||
+          'https://nova-memecoin-launch.netlify.app'
+        try {
+          await attachMetadata(connection, payer, mint, {
+            name: token.name,
+            symbol: token.symbol,
+            uri: `${origin}/api/token-meta?mint=${mint}`,
+          })
+        } catch {
+          /* metadata optional — mint still lands in Phantom */
+        }
         await withRetryWrite((b) => {
           const idx = (b.tokens || []).findIndex((t) => t.id === tokenId)
           if (idx >= 0) b.tokens[idx] = { ...b.tokens[idx], mint, decimals }
